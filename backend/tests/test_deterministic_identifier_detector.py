@@ -252,3 +252,102 @@ def test_record_checksum_is_replaced_by_existing_mednexus_pipeline():
     assert output.replaced_count == 1
     assert output.requires_review is False
 
+def test_detects_arabic_patient_name_from_explicit_field():
+    text = "اسم المريض: خالد صالح"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert len(candidates) == 1
+
+    candidate = candidates[0]
+
+    assert candidate.text == "خالد صالح"
+    assert candidate.start == text.index("خالد صالح")
+    assert candidate.end == candidate.start + len(candidate.text)
+    assert candidate.canonical_type == CandidateEntityType.PATIENT_NAME
+    assert candidate.source == CandidateSource.MEDNEXUS_FIELD_RULE
+    assert candidate.raw_label == "اسم المريض"
+    assert candidate.metadata["rule_name"] == "patient_name_field"
+    assert candidate.matches_source_text(text)
+
+
+def test_arabic_patient_name_is_replaced_by_existing_mednexus_pipeline():
+    text = "اسم المريض: خالد صالح"
+
+    deterministic_candidates = DeterministicIdentifierDetector.detect(text)
+
+    intelligence_result = MedNexusIntelligenceOrchestrator.process_candidates(
+        source_text=text,
+        candidates=deterministic_candidates,
+    )
+
+    assert intelligence_result.total_count == 1
+    assert intelligence_result.accepted_count == 1
+
+    output = MedNexusOutputBuilder.build(
+        source_text=text,
+        candidates=intelligence_result.all_candidates,
+    )
+
+    assert "خالد صالح" not in output.text
+    assert output.text == "اسم المريض: [PATIENT_NAME]"
+    assert output.replaced_count == 1
+    assert output.requires_review is False
+
+
+def test_detects_electronic_signature_id_as_document_identifier():
+    text = "Electronic Signature ID: SIG-76645"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert len(candidates) == 1
+
+    candidate = candidates[0]
+
+    assert candidate.text == "SIG-76645"
+    assert candidate.canonical_type == CandidateEntityType.DOCUMENT_ID
+    assert candidate.source == CandidateSource.MEDNEXUS_FIELD_RULE
+    assert candidate.raw_label == "Electronic Signature ID"
+    assert candidate.metadata["rule_name"] == "document_id_field"
+    assert candidate.matches_source_text(text)
+
+
+def test_electronic_signature_id_is_replaced_by_existing_mednexus_pipeline():
+    text = "Electronic Signature ID: SIG-79069"
+
+    deterministic_candidates = DeterministicIdentifierDetector.detect(text)
+
+    intelligence_result = MedNexusIntelligenceOrchestrator.process_candidates(
+        source_text=text,
+        candidates=deterministic_candidates,
+    )
+
+    assert intelligence_result.total_count == 1
+    assert intelligence_result.accepted_count == 1
+
+    output = MedNexusOutputBuilder.build(
+        source_text=text,
+        candidates=intelligence_result.all_candidates,
+    )
+
+    assert "SIG-79069" not in output.text
+    assert output.text.startswith("Electronic Signature ID: [DOCUMENT_ID:")
+    assert output.text.endswith("]")
+    assert output.replaced_count == 1
+    assert output.requires_review is False
+
+
+def test_patient_name_rule_does_not_capture_following_line():
+    text = "اسم المريض: خالد صالح\nالرقم المدني: 290020203333"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    patient_names = [
+        candidate
+        for candidate in candidates
+        if candidate.canonical_type == CandidateEntityType.PATIENT_NAME
+    ]
+
+    assert len(patient_names) == 1
+    assert patient_names[0].text == "خالد صالح"
+

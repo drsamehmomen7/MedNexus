@@ -83,7 +83,27 @@ class DeterministicIdentifierDetector:
         r")"
     )
 
+    _PATIENT_NAME_VALUE = (
+        r"(?P<value>"
+        r"[^\r\n:]{2,120}?"
+        r")"
+        r"(?=\s*(?:\r?\n|$))"
+    )
+
     FIELD_RULES: Tuple[_FieldRule, ...] = (
+        _FieldRule(
+            name="patient_name_field",
+            entity_type=CandidateEntityType.PATIENT_NAME,
+            pattern=re.compile(
+                r"(?P<label>"
+                r"patient\s+name"
+                r"|اسم\s+المريض"
+                r")"
+                + _VALUE_SEPARATOR
+                + _PATIENT_NAME_VALUE,
+                flags=re.IGNORECASE,
+            ),
+        ),
         _FieldRule(
             name="phone_field",
             entity_type=CandidateEntityType.PHONE_NUMBER,
@@ -210,6 +230,10 @@ class DeterministicIdentifierDetector:
                 r"(?P<label>"
                 r"document\s*(?:number|no\.?|id)"
                 r"|report\s*(?:number|no\.?|id)"
+                r"|electronic\s+signature\s*(?:id|number|no\.?)"
+                r"|signature\s*(?:id|number|no\.?)"
+                r"|رقم\s+التوقيع\s+الإلكتروني"
+                r"|معرف\s+التوقيع\s+الإلكتروني"
                 r"|رقم\s+المستند"
                 r"|رقم\s+التقرير"
                 r")"
