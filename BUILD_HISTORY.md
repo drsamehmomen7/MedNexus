@@ -809,6 +809,20 @@ The MedNexus Intelligence Core includes:
 
 The MedNexus Deterministic Identifier Detector is integrated into the real de-identification service and participates in the MedNexus-owned decision and output pipeline.
 
+## Current Document Ingestion and File Processing
+
+The current implementation includes:
+
+- TXT ingestion
+- DOCX ingestion
+- Text-based PDF ingestion
+- Unified `DocumentContent` extraction contract
+- Extractor registry and factory architecture
+- `FileProcessingService`
+- `/api/v1/document/deidentify/file` upload and de-identification endpoint
+
+Extracted text enters the same MedNexus-owned De-identification Intelligence pipeline as direct text input. Text-based PDF processing is implemented; scanned or image-based PDF OCR and image extraction are not implemented yet.
+
 ## Deterministic Detection Extensions
 
 Phase 1 validation drove deterministic detection coverage for:
