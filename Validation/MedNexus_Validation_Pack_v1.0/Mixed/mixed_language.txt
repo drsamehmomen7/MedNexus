@@ -1,0 +1,4 @@
+Patient: محمد أحمد
+MRN: MRN-998122
+Diagnosis: Pneumonia
+Consultant: د. خالد العيسى

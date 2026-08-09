@@ -1,0 +1,32 @@
+GENERAL HOSPITAL
+
+Patient Name: Abdullah Al-Harbi
+Civil ID: 287010123456
+MRN: GH-445566
+Visit Date: 02/08/2026
+
+Chief Complaint:
+Fever and productive cough.
+
+History:
+Three-day history of fever with chills.
+
+Examination:
+Temperature 38.7 C
+BP 125/80
+Pulse 96
+
+Investigations:
+CBC, Chest X-ray.
+
+Diagnosis:
+Community-acquired pneumonia.
+
+Treatment:
+IV antibiotics.
+
+Discharge Plan:
+Oral antibiotics for 5 days.
+
+Consultant:
+Dr. Faisal Al-Rashid

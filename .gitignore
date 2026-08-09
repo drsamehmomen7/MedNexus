@@ -1,0 +1,147 @@
+\# ============================================================
+# MedNexus - Git Ignore
+# Enterprise Medical Document Intelligence Platform
+# ============================================================
+
+# ------------------------------------------------------------
+# Python virtual environments
+# ------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# ------------------------------------------------------------
+# Python generated files
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+
+# ------------------------------------------------------------
+# Test / coverage caches
+# ------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.cache/
+
+# ------------------------------------------------------------
+# IDE / editor local settings
+# ------------------------------------------------------------
+.vscode/
+.idea/
+*.code-workspace
+
+# ------------------------------------------------------------
+# Environment variables / secrets
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ------------------------------------------------------------
+# Credentials / certificates / private keys
+# ------------------------------------------------------------
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+credentials.json
+secrets.json
+
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
+*.log
+logs/
+
+# ------------------------------------------------------------
+# Temporary / OS files
+# ------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.temp
+~$*
+.DS_Store
+Thumbs.db
+
+# ------------------------------------------------------------
+# Python packaging/build
+# ------------------------------------------------------------
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ------------------------------------------------------------
+# Model / ML caches and large local artifacts
+# ------------------------------------------------------------
+huggingface/
+transformers_cache/
+torch_cache/
+models/
+checkpoints/
+
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# ------------------------------------------------------------
+# MedNexus runtime uploads / generated outputs
+# ------------------------------------------------------------
+uploads/
+outputs/
+output/
+generated/
+runtime/
+working/
+
+# ------------------------------------------------------------
+# Local databases
+# ------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# ------------------------------------------------------------
+# Private / real clinical data
+# NEVER commit real patient data or PHI
+# ------------------------------------------------------------
+private_data/
+clinical_data/
+real_reports/
+real_patient_data/
+phi_data/
+sensitive_data/
+
+# ------------------------------------------------------------
+# MedNexus generated validation results
+# Keep controlled validation datasets in Git.
+# Exclude runtime results, original processing artifacts,
+# screenshots and packaged result archives.
+# ------------------------------------------------------------
+Validation/Validation_Results/
+
+# ------------------------------------------------------------
+# Archives / backups
+# ------------------------------------------------------------
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.bak
+*.backup
+# Executable negative-test fixtures
+*.exe

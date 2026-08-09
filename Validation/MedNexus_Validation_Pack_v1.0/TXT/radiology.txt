@@ -1,0 +1,18 @@
+CT CHEST
+
+Patient Name: Ahmed Hassan
+Civil ID: 289010112345
+MRN: MRN-998122
+
+Clinical History:
+Persistent cough.
+
+Findings:
+No focal consolidation.
+No pleural effusion.
+
+Impression:
+No acute cardiopulmonary abnormality.
+
+Radiologist:
+Dr. Mohamed Al-Sabah

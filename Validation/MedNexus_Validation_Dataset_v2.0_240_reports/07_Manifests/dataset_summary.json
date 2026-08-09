@@ -1,0 +1,19 @@
+{
+  "dataset_version": "2.0",
+  "total_reports": 240,
+  "categories": 20,
+  "languages": [
+    "English",
+    "Arabic",
+    "Mixed"
+  ],
+  "formats": [
+    "DOCX",
+    "IMAGE",
+    "PDF",
+    "SCANNED",
+    "TXT"
+  ],
+  "contains_real_patient_data": false,
+  "description": "High-fidelity synthetic medical-document validation dataset."
+}

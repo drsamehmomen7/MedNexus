@@ -1,0 +1,7 @@
+DISCHARGE SUMMARY
+Patient: Ali Abdullah
+MRN:MRN-111222
+Civil ID:285091245678
+Diagnosis: Community acquired pneumonia
+Treatment: IV Ceftriaxone
+Consultant: Dr. Abdullah Al-Fahad

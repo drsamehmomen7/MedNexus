@@ -1,0 +1,1 @@
+Create a password-protected PDF from any sample PDF using Adobe Acrobat or Microsoft Print to PDF with password. Generating encrypted PDFs is intentionally omitted.

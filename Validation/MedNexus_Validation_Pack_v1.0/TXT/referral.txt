@@ -1,0 +1,6 @@
+Referral Letter
+Patient: Noura Alenezi
+MRN:REF-223344
+Civil ID:296010198765
+Reason: Persistent headache
+Consultant: Dr. Khaled Al-Essa

@@ -1,0 +1,13 @@
+Pathology Department
+
+Patient: Mariam Saleh
+Civil ID:290020203333
+MRN:MRN-998122
+Specimen Number:SP-2026-77881
+Accession Number:PATH-2026-4455
+
+Diagnosis:
+Invasive ductal carcinoma.
+
+Consultant Pathologist
+Dr. Huda Al-Awadhi

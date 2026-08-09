@@ -1,0 +1,14 @@
+LAB REPORT
+
+Patient: Fatima Al-Ajmi
+Civil ID:291111123456
+MRN:LAB-882211
+
+WBC 7.2
+Hb 13.6
+Platelets 280
+Creatinine 0.8
+Glucose 96
+
+Reported By
+Dr. Sara Al-Mutairi
