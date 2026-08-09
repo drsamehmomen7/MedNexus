@@ -417,3 +417,109 @@ def test_detects_common_form_identifier_labels(label):
     assert candidates[0].canonical_type == CandidateEntityType.DOCUMENT_ID
     assert candidates[0].source == CandidateSource.MEDNEXUS_FIELD_RULE
 
+def test_detects_deceased_name_as_patient_name():
+    text = "Deceased Name: مريم الصباح"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert len(candidates) == 1
+    candidate = candidates[0]
+
+    assert candidate.text == "مريم الصباح"
+    assert candidate.canonical_type == CandidateEntityType.PATIENT_NAME
+    assert candidate.source == CandidateSource.MEDNEXUS_FIELD_RULE
+    assert candidate.raw_label == "Deceased Name"
+    assert candidate.metadata["rule_name"] == "patient_name_field"
+    assert candidate.matches_source_text(text)
+
+
+def test_deceased_name_is_replaced_by_existing_mednexus_pipeline():
+    text = "Deceased Name: مريم الصباح"
+
+    deterministic_candidates = DeterministicIdentifierDetector.detect(text)
+    intelligence_result = MedNexusIntelligenceOrchestrator.process_candidates(
+        source_text=text,
+        candidates=deterministic_candidates,
+    )
+
+    assert intelligence_result.total_count == 1
+    assert intelligence_result.accepted_count == 1
+
+    output = MedNexusOutputBuilder.build(
+        source_text=text,
+        candidates=intelligence_result.all_candidates,
+    )
+
+    assert "مريم الصباح" not in output.text
+    assert output.text == "Deceased Name: [PATIENT_NAME]"
+    assert output.replaced_count == 1
+    assert output.requires_review is False
+
+
+def test_detects_medical_license_number_as_employee_number():
+    text = "Medical License Number: LIC-3403"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert len(candidates) == 1
+    candidate = candidates[0]
+
+    assert candidate.text == "LIC-3403"
+    assert candidate.canonical_type == CandidateEntityType.EMPLOYEE_NUMBER
+    assert candidate.source == CandidateSource.MEDNEXUS_FIELD_RULE
+    assert candidate.raw_label == "Medical License Number"
+    assert candidate.metadata["rule_name"] == "employee_number_field"
+    assert candidate.matches_source_text(text)
+
+
+def test_medical_license_number_is_replaced_by_existing_mednexus_pipeline():
+    text = "Medical License Number: LIC-3403"
+
+    deterministic_candidates = DeterministicIdentifierDetector.detect(text)
+    intelligence_result = MedNexusIntelligenceOrchestrator.process_candidates(
+        source_text=text,
+        candidates=deterministic_candidates,
+    )
+
+    assert intelligence_result.total_count == 1
+    assert intelligence_result.accepted_count == 1
+
+    output = MedNexusOutputBuilder.build(
+        source_text=text,
+        candidates=intelligence_result.all_candidates,
+    )
+
+    assert "LIC-3403" not in output.text
+    assert output.text.startswith("Medical License Number: [EMPLOYEE_NUMBER:")
+    assert output.text.endswith("]")
+    assert output.replaced_count == 1
+    assert output.requires_review is False
+
+
+def test_deceased_name_rule_does_not_capture_following_line():
+    text = "\n".join(
+        [
+            "Deceased Name: مريم الصباح",
+            "Civil ID: 290020203333",
+        ]
+    )
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    patient_names = [
+        candidate
+        for candidate in candidates
+        if candidate.canonical_type == CandidateEntityType.PATIENT_NAME
+    ]
+
+    assert len(patient_names) == 1
+    assert patient_names[0].text == "مريم الصباح"
+
+
+def test_medical_license_rule_does_not_redact_unlabelled_clinical_code():
+    text = "Clinical code LIC-3403 was documented without a license field label."
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert candidates == ()
+

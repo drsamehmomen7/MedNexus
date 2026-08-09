@@ -97,7 +97,9 @@ class DeterministicIdentifierDetector:
             pattern=re.compile(
                 r"(?P<label>"
                 r"patient\s+name"
+                r"|deceased\s+name"
                 r"|اسم\s+المريض"
+                r"|اسم\s+المتوف(?:ى|اة)"
                 r")"
                 + _VALUE_SEPARATOR
                 + _PATIENT_NAME_VALUE,
@@ -280,7 +282,11 @@ class DeterministicIdentifierDetector:
                 r"(?P<label>"
                 r"employee\s*(?:number|no\.?|id)"
                 r"|staff\s*(?:number|no\.?|id)"
+                r"|medical\s+license\s*(?:number|no\.?|id)"
+                r"|professional\s+license\s*(?:number|no\.?|id)"
                 r"|رقم\s+الموظف"
+                r"|رقم\s+الترخيص\s+الطبي"
+                r"|رقم\s+الترخيص\s+المهني"
                 r")"
                 + _VALUE_SEPARATOR
                 + _IDENTIFIER_VALUE,
