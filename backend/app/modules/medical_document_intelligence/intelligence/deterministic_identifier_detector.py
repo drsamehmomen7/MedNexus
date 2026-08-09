@@ -230,6 +230,7 @@ class DeterministicIdentifierDetector:
                 r"(?P<label>"
                 r"document\s*(?:number|no\.?|id)"
                 r"|report\s*(?:number|no\.?|id)"
+                r"|form\s*(?:number|no\.?|id)"
                 r"|electronic\s+signature\s*(?:id|number|no\.?)"
                 r"|signature\s*(?:id|number|no\.?)"
                 r"|رقم\s+التوقيع\s+الإلكتروني"

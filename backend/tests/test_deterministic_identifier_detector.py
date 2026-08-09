@@ -338,7 +338,12 @@ def test_electronic_signature_id_is_replaced_by_existing_mednexus_pipeline():
 
 
 def test_patient_name_rule_does_not_capture_following_line():
-    text = "اسم المريض: خالد صالح\nالرقم المدني: 290020203333"
+    text = "\n".join(
+        [
+            "اسم المريض: خالد صالح",
+            "الرقم المدني: 290020203333",
+        ]
+    )
 
     candidates = DeterministicIdentifierDetector.detect(text)
 
@@ -350,4 +355,65 @@ def test_patient_name_rule_does_not_capture_following_line():
 
     assert len(patient_names) == 1
     assert patient_names[0].text == "خالد صالح"
+
+def test_detects_form_number_as_document_identifier():
+    text = "Form Number: NF-968254"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert len(candidates) == 1
+
+    candidate = candidates[0]
+
+    assert candidate.text == "NF-968254"
+    assert candidate.start == text.index("NF-968254")
+    assert candidate.end == candidate.start + len(candidate.text)
+    assert candidate.canonical_type == CandidateEntityType.DOCUMENT_ID
+    assert candidate.source == CandidateSource.MEDNEXUS_FIELD_RULE
+    assert candidate.raw_label == "Form Number"
+    assert candidate.metadata["rule_name"] == "document_id_field"
+    assert candidate.matches_source_text(text)
+
+
+def test_form_number_is_replaced_by_existing_mednexus_pipeline():
+    text = "Form Number: NF-968254"
+
+    deterministic_candidates = DeterministicIdentifierDetector.detect(text)
+
+    intelligence_result = MedNexusIntelligenceOrchestrator.process_candidates(
+        source_text=text,
+        candidates=deterministic_candidates,
+    )
+
+    assert intelligence_result.total_count == 1
+    assert intelligence_result.accepted_count == 1
+
+    output = MedNexusOutputBuilder.build(
+        source_text=text,
+        candidates=intelligence_result.all_candidates,
+    )
+
+    assert "NF-968254" not in output.text
+    assert output.text.startswith("Form Number: [DOCUMENT_ID:")
+    assert output.text.endswith("]")
+    assert output.replaced_count == 1
+    assert output.requires_review is False
+
+
+@pytest.mark.parametrize(
+    "label",
+    [
+        "Form ID",
+        "Form No.",
+    ],
+)
+def test_detects_common_form_identifier_labels(label):
+    text = f"{label}: NF-968254"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert len(candidates) == 1
+    assert candidates[0].text == "NF-968254"
+    assert candidates[0].canonical_type == CandidateEntityType.DOCUMENT_ID
+    assert candidates[0].source == CandidateSource.MEDNEXUS_FIELD_RULE
 
