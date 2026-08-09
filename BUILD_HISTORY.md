@@ -776,3 +776,76 @@ No breaking changes.
 Notes
 
 This build introduces the complete file ingestion architecture but does not yet expose file upload through the API. Operational validation using real uploaded files will begin in the next build.
+
+---
+
+# Current State — De-identification Phase 1
+
+**Date:** 2026-08-09
+
+## Scope
+
+This entry records the current MedNexus state after De-identification Phase 1. Earlier build entries above remain historical milestones and describe the system as it existed at those points in time. Where an earlier status or next-step statement differs from this entry, this current-state entry takes precedence.
+
+## Architecture Boundary
+
+- OpenMed is a candidate detector only.
+- OpenMed detections are suggestions that enter the MedNexus Intelligence Core.
+- MedNexus owns canonicalization, role resolution, context validation, detection merging, intelligence decisions, privacy-policy application, and final de-identified output.
+- An external engine detection does not directly determine a privacy action or alter final output without MedNexus evaluation.
+
+## Completed and Integrated
+
+The MedNexus Intelligence Core includes:
+
+- `MedNexusCandidateEntity`
+- `EntityCanonicalizer`
+- `OpenMedCandidateAdapter`
+- `RoleResolver`
+- `ContextValidator`
+- `DetectionMerger`
+- `MedNexusIntelligenceOrchestrator`
+- `MedNexusOutputBuilder`
+
+The MedNexus Deterministic Identifier Detector is integrated into the real de-identification service and participates in the MedNexus-owned decision and output pipeline.
+
+## Deterministic Detection Extensions
+
+Phase 1 validation drove deterministic detection coverage for:
+
+- Phone numbers
+- Record checksums
+- Arabic patient names
+- Electronic signature IDs
+- Form identifiers
+- Deceased names
+- Medical license identifiers
+
+## Regression Baseline
+
+Current confirmed automated regression baseline:
+
+- **645 tests passed**
+- **8 warnings**
+
+## Phase 1 Validation Evidence
+
+Real-document validation completed successfully using samples from:
+
+- Radiology
+- Emergency
+- Discharge Summary
+- Pathology
+- Laboratory
+- Referral
+- Operative Note
+- Notification Form
+- Death Certificate
+- Admission
+- ICU
+
+These results are Phase 1 validation evidence for the current implementation. They are not a claim that de-identification is complete or production-certified.
+
+## Known Minor Output-Quality Debt
+
+Multi-part next-of-kin names may produce repeated `[RELATIVE_NAME]` placeholders. This is currently classified as a minor output-normalization issue, not a known privacy failure. Future normalization work is tracked in `backend/TECH_DEBT.md`.
