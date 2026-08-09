@@ -203,3 +203,52 @@ def test_confirmed_phone_leak_is_replaced_by_mednexus_output_builder():
     assert output.text == "Phone: [PHONE_NUMBER]"
     assert output.replaced_count == 1
     assert output.requires_review is False
+
+def test_detects_record_checksum_as_document_identifier():
+    text = "Record checksum: CHK-12963419"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+
+    assert len(candidates) == 1
+
+    candidate = candidates[0]
+
+    assert candidate.text == "CHK-12963419"
+    assert candidate.start == text.index("CHK-12963419")
+    assert candidate.end == candidate.start + len(candidate.text)
+    assert candidate.canonical_type == CandidateEntityType.DOCUMENT_ID
+    assert candidate.source == CandidateSource.MEDNEXUS_FIELD_RULE
+    assert candidate.raw_label == "Record checksum"
+    assert candidate.metadata["rule_name"] == "record_checksum_field"
+    assert candidate.metadata["field_label"] == "Record checksum"
+    assert candidate.matches_source_text(text)
+
+
+def test_record_checksum_is_replaced_by_existing_mednexus_pipeline():
+    text = "Record checksum: CHK-51431708"
+
+    deterministic_candidates = (
+        DeterministicIdentifierDetector.detect(text)
+    )
+
+    intelligence_result = (
+        MedNexusIntelligenceOrchestrator.process_candidates(
+            source_text=text,
+            candidates=deterministic_candidates,
+        )
+    )
+
+    assert intelligence_result.total_count == 1
+    assert intelligence_result.accepted_count == 1
+
+    output = MedNexusOutputBuilder.build(
+        source_text=text,
+        candidates=intelligence_result.all_candidates,
+    )
+
+    assert "CHK-51431708" not in output.text
+    assert output.text.startswith("Record checksum: [DOCUMENT_ID:")
+    assert output.text.endswith("]")
+    assert output.replaced_count == 1
+    assert output.requires_review is False
+

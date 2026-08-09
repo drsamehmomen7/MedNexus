@@ -219,6 +219,22 @@ class DeterministicIdentifierDetector:
             ),
         ),
         _FieldRule(
+            name="record_checksum_field",
+            entity_type=CandidateEntityType.DOCUMENT_ID,
+            pattern=re.compile(
+                r"(?P<label>"
+                r"record\s+checksum"
+                r"|record\s+hash"
+                r"|document\s+checksum"
+                r"|report\s+checksum"
+                r"|بصمة\s+(?:السجل|المستند|التقرير)"
+                r")"
+                + _VALUE_SEPARATOR
+                + _IDENTIFIER_VALUE,
+                flags=re.IGNORECASE,
+            ),
+        ),
+        _FieldRule(
             name="insurance_number_field",
             entity_type=CandidateEntityType.INSURANCE_NUMBER,
             pattern=re.compile(
