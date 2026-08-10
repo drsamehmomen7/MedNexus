@@ -8,19 +8,29 @@ Enterprise Healthcare AI Platform
 
 MedNexus is an enterprise healthcare AI platform for medical document intelligence powered by open-source medical AI engines.
 
-The current module is **Medical Document Intelligence – De-identification**. It uses a hybrid architecture combining:
+The current module is **Medical Document Intelligence – De-identification**, implemented as a purpose-based **Clinical Privacy Policy Engine**, not merely an anonymizer. It uses a hybrid architecture combining:
 
 - AI-based candidate entity detection
 - Deterministic identifier detection
 - Healthcare-aware role and context validation
-- Configurable privacy policies
+- Purpose-based clinical privacy policies
 - MedNexus-owned output construction
 
-OpenMed is a candidate detector only. Its detections are treated as suggestions and do not directly determine privacy actions or final output. MedNexus owns intelligence decisions, false-positive rejection, policy application, and construction of the final de-identified text.
+OpenMed is a candidate detector only. Its detections are treated as suggestions and its `deidentified_text` is non-authoritative. MedNexus owns intelligence decisions, false-positive rejection, purpose-based policy application, and construction of the final de-identified text.
 
 ---
 
 ## Current De-identification Architecture
+
+```text
+Detection
+  → Unified Intelligence
+  → Purpose-Based Policy Engine
+  → MedNexusOutputBuilder
+  → MedNexus-owned output
+```
+
+Context-rule, deterministic, and OpenMed candidates converge through one canonicalization, role-resolution, context-validation, and detection-merging path. `PolicyTransformer` and `KeepEntityProtector` remain compatibility components outside the authoritative service path.
 
 The MedNexus Intelligence Core currently includes:
 
@@ -34,6 +44,17 @@ The MedNexus Intelligence Core currently includes:
 - `MedNexusOutputBuilder`
 
 The MedNexus Deterministic Identifier Detector is integrated into the real de-identification service alongside the OpenMed candidate path. MedNexus merges and evaluates detections before producing the final output.
+
+The purpose-based policy model uses `PolicyRule` and `PolicyDefinition` and currently provides four canonical profiles:
+
+- `MEDNEXUS_CLINICAL`
+- `MEDNEXUS_RESEARCH`
+- `MEDNEXUS_ANALYTICS_PUBLIC_HEALTH`
+- `MEDNEXUS_STRICT_PRIVACY`
+
+Text and file APIs select policies through the same resolver. Implemented transformations are `KEEP`, `REPLACE`, `HASH`, `MASK`, and `REMOVE`. `GENERALIZE`, `SHIFT_DATE`, age/age-band derivation, geographic generalization, pseudonymization/tokenization, Privacy–Utility assessment, Residual Re-identification Risk assessment, and the Custom Policy Builder are planned, not implemented.
+
+Purpose-of-use policies are distinct from regulatory frameworks. The future policy model will distinguish direct identifiers, quasi-identifiers, clinical attributes, and contextual or analytical attributes while continuing to use the same unified pipeline.
 
 ## Current Document Ingestion
 
@@ -79,8 +100,9 @@ Completed and integrated:
 
 Current confirmed regression baseline:
 
-- **645 passing tests**
+- **671 passing tests**
 - **8 warnings**
+- **0 failures**
 
 Phase 1 real-document validation completed successfully across samples from:
 
@@ -98,4 +120,4 @@ Phase 1 real-document validation completed successfully across samples from:
 
 This validation is Phase 1 evidence for the current implementation. It does not claim that de-identification is complete or production-certified.
 
-Known minor output-quality debt is tracked in `backend/TECH_DEBT.md`.
+The next immediate product milestone is the **MedNexus Frontend Redesign / Policy Experience**. Known technical debt is tracked in `backend/TECH_DEBT.md`.

@@ -25,3 +25,17 @@
 **Priority:** Low
 
 **Status:** Planned; not implemented.
+
+---
+
+## TD-0003 — Replace placeholder-only advanced policy actions with genuine transformers
+
+**Issue:** `GENERALIZE` and `SHIFT_DATE` remain enum-level extension points, but genuine generalization, derivation, date shifting, geography reduction, and pseudonymization transformers are not implemented. The current four executable profiles intentionally use only `KEEP`, `REPLACE`, `HASH`, `MASK`, and `REMOVE`.
+
+**Risk:** Future code could incorrectly present an advanced action as implemented without the required transformation semantics, reference context, or audit evidence.
+
+**Required control:** Keep unsupported actions unavailable at runtime until dedicated, tested transformers exist. Future transformers must reuse the unified privacy pipeline.
+
+**Priority:** Medium
+
+**Status:** Planned; not implemented.

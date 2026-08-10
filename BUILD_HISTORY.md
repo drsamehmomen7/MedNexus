@@ -863,3 +863,29 @@ These results are Phase 1 validation evidence for the current implementation. Th
 ## Known Minor Output-Quality Debt
 
 Multi-part next-of-kin names may produce repeated `[RELATIVE_NAME]` placeholders. This is currently classified as a minor output-normalization issue, not a known privacy failure. Future normalization work is tracked in `backend/TECH_DEBT.md`.
+
+---
+
+# Milestone — Unified Clinical Privacy Policy Engine
+
+**Date:** 2026-08-10
+**Commit:** `49379e7414782b30ea7b01ea44aff903d7195f89`
+
+## Completed
+
+- Unified context-rule, deterministic, and OpenMed candidates through one Intelligence pipeline.
+- Established the authoritative flow: Detection → Unified Intelligence → Purpose-Based Policy Engine → `MedNexusOutputBuilder` → MedNexus-owned output.
+- Kept OpenMed candidate-only; its `deidentified_text` is non-authoritative.
+- Moved `PolicyTransformer` and `KeepEntityProtector` outside the authoritative service path as compatibility components.
+- Added extensible `PolicyRule` and `PolicyDefinition` contracts.
+- Added canonical Clinical, Research, Analytics/Public Health, and Strict Privacy purpose profiles with legacy aliases.
+- Converged text and file API policy selection on one resolver.
+- Limited implemented transformations to `KEEP`, `REPLACE`, `HASH`, `MASK`, and `REMOVE`; advanced privacy transformations remain planned.
+
+## Validation
+
+- **671 passed, 8 warnings, 0 failures**
+
+## Next
+
+MedNexus Frontend Redesign / Policy Experience. The planned Custom Policy Builder and future privacy–utility/risk capabilities must reuse the same unified pipeline.
