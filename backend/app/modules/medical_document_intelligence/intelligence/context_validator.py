@@ -379,9 +379,9 @@ class ContextValidator:
             CandidateEntityType.NURSE_NAME,
         }:
             return (
-                CandidateDecision.KEEP,
+                CandidateDecision.ACCEPT,
                 (
-                    "Healthcare professional name is valid but preserved "
+                    "Healthcare professional name is valid and accepted "
                     "for policy evaluation."
                 ),
             )

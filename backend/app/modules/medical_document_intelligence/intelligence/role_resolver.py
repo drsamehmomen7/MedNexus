@@ -36,6 +36,7 @@ class RoleResolver:
         ),
         CandidateEntityType.PHYSICIAN_NAME: (
             r"physician",
+            r"reporting\s+physician",
             r"doctor",
             r"consultant",
             r"consultant\s+pathologist",

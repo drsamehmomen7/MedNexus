@@ -27,7 +27,7 @@ def test_protector_rejects_non_string_text():
         ClinicalContextProtector.protect(None)
 
 
-def test_protects_clinical_pathologist_in_laboratory_report():
+def test_preserves_clinical_pathologist_as_role_evidence():
     text = (
         "Authorized By\n"
         "Dr. Rania Al-Haddad\n"
@@ -39,13 +39,11 @@ def test_protects_clinical_pathologist_in_laboratory_report():
         document_type="laboratory_report",
     )
 
-    assert "Consultant Clinical Pathologist" not in protected_text
-    assert "__CTX_0001__" in protected_text
-
-    assert "Consultant Clinical Pathologist" in mapping.values()
+    assert "Consultant Clinical Pathologist" in protected_text
+    assert "Consultant Clinical Pathologist" not in mapping.values()
 
 
-def test_protects_pathologist_without_explicit_document_type():
+def test_preserves_pathologist_without_explicit_document_type():
     text = (
         "Authorized By\n"
         "Dr. Rania Al-Haddad\n"
@@ -54,10 +52,8 @@ def test_protects_pathologist_without_explicit_document_type():
 
     protected_text, mapping = ClinicalContextProtector.protect(text)
 
-    assert "Consultant Clinical Pathologist" not in protected_text
-    assert "__CTX_" in protected_text
-
-    assert "Consultant Clinical Pathologist" in mapping.values()
+    assert "Consultant Clinical Pathologist" in protected_text
+    assert "Consultant Clinical Pathologist" not in mapping.values()
 
 
 def test_protects_pathology_diagnosis_term():
@@ -89,7 +85,7 @@ def test_protects_pathology_term_using_section_fallback():
     assert "Invasive Carcinoma" in mapping.values()
 
 
-def test_protects_common_clinical_occupations():
+def test_preserves_common_clinical_occupations_as_role_evidence():
     text = (
         "Consultant\n"
         "Consultant Physician\n"
@@ -97,9 +93,9 @@ def test_protects_common_clinical_occupations():
 
     protected_text, mapping = ClinicalContextProtector.protect(text)
 
-    assert "Consultant Physician" not in protected_text
-    assert "Consultant" in mapping.values()
-    assert "Physician" in mapping.values()
+    assert "Consultant Physician" in protected_text
+    assert "Consultant" not in mapping.values()
+    assert "Physician" not in mapping.values()
 
 
 def test_preserves_section_heading():
@@ -195,18 +191,13 @@ def test_explicit_wrong_document_type_does_not_use_laboratory_profile():
     assert "Clinical Microbiologist" not in mapping.values()
 
 
-def test_token_numbers_are_sequential():
+def test_token_numbers_are_sequential_for_protected_non_role_terms():
     text = (
-        "Consultant\n"
-        "Consultant Physician\n"
+        "Final Diagnosis\n"
+        "Invasive Carcinoma with Metastasis\n"
     )
 
     protected_text, mapping = ClinicalContextProtector.protect(text)
 
     assert "__CTX_0001__" in protected_text
-    assert "__CTX_0002__" in protected_text
-
-    assert list(mapping.keys()) == [
-        "__CTX_0001__",
-        "__CTX_0002__",
-    ]
+    assert list(mapping.keys())[0] == "__CTX_0001__"

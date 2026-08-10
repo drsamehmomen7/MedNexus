@@ -12,6 +12,12 @@ from backend.app.modules.medical_document_intelligence.intelligence.intelligence
     MedNexusIntelligenceOrchestrator,
     MedNexusIntelligenceResult,
 )
+from backend.app.modules.medical_document_intelligence.intelligence.context_rule_candidate_adapter import (
+    ContextRuleCandidateAdapter,
+)
+from backend.app.modules.medical_document_intelligence.policies.context_rules import (
+    ContextRuleEngine,
+)
 
 
 @dataclass
@@ -80,6 +86,30 @@ def test_process_openmed_result_returns_intelligence_result():
         intelligence_result,
         MedNexusIntelligenceResult,
     )
+
+
+def test_context_candidates_share_the_authoritative_intelligence_path():
+    source_text = "Patient Name: Ahmed Hassan"
+    context_candidates = ContextRuleCandidateAdapter.adapt_many(
+        detections=ContextRuleEngine.detect(source_text),
+        source_text=source_text,
+    )
+    result = FakeOpenMedResult(pii_entities=[])
+
+    intelligence_result = (
+        MedNexusIntelligenceOrchestrator.process_openmed_result(
+            engine_result=result,
+            source_text=source_text,
+            context_candidates=context_candidates,
+        )
+    )
+
+    assert intelligence_result.accepted_count == 1
+    candidate = intelligence_result.accepted[0]
+    assert candidate.text == "Ahmed Hassan"
+    assert candidate.canonical_type == CandidateEntityType.PATIENT_NAME
+    assert candidate.source == CandidateSource.MEDNEXUS_FIELD_RULE
+    assert candidate.matches_source_text(source_text)
 
 
 def test_openmed_patient_name_is_resolved_and_accepted():
@@ -151,10 +181,10 @@ def test_openmed_physician_name_is_kept():
         )
     )
 
-    assert intelligence_result.kept_count == 1
+    assert intelligence_result.accepted_count == 1
 
     assert (
-        intelligence_result.kept[0].canonical_type
+        intelligence_result.accepted[0].canonical_type
         == CandidateEntityType.PHYSICIAN_NAME
     )
 
@@ -387,8 +417,8 @@ def test_result_groups_all_decisions():
     )
 
     assert intelligence_result.total_count == 4
-    assert intelligence_result.accepted_count == 1
-    assert intelligence_result.kept_count == 1
+    assert intelligence_result.accepted_count == 2
+    assert intelligence_result.kept_count == 0
     assert intelligence_result.rejected_count == 1
     assert (
         intelligence_result.review_required_count
@@ -608,10 +638,11 @@ def test_arabic_physician_name_is_kept():
         )
     )
 
-    assert intelligence_result.kept_count == 1
+    assert intelligence_result.accepted_count == 1
+    assert intelligence_result.kept_count == 0
 
     assert (
-        intelligence_result.kept[0].canonical_type
+        intelligence_result.accepted[0].canonical_type
         == CandidateEntityType.PHYSICIAN_NAME
     )
 
@@ -659,8 +690,8 @@ def test_realistic_radiology_result():
     )
 
     assert intelligence_result.total_count == 5
-    assert intelligence_result.accepted_count == 2
-    assert intelligence_result.kept_count == 1
+    assert intelligence_result.accepted_count == 3
+    assert intelligence_result.kept_count == 0
     assert intelligence_result.rejected_count == 2
     assert (
         intelligence_result.review_required_count

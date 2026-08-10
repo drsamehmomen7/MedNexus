@@ -8,6 +8,9 @@ from backend.app.core.engine_manager import EngineManager
 from backend.app.modules.medical_document_intelligence.intelligence.deterministic_identifier_detector import (
     DeterministicIdentifierDetector,
 )
+from backend.app.modules.medical_document_intelligence.intelligence.context_rule_candidate_adapter import (
+    ContextRuleCandidateAdapter,
+)
 from backend.app.modules.medical_document_intelligence.intelligence.intelligence_orchestrator import (
     MedNexusIntelligenceOrchestrator,
 )
@@ -20,17 +23,9 @@ from backend.app.modules.medical_document_intelligence.policies.clinical_context
 from backend.app.modules.medical_document_intelligence.policies.context_rules import (
     ContextRuleEngine,
 )
-from backend.app.modules.medical_document_intelligence.policies.keep_entity_protector import (
-    KeepEntityProtector,
-)
-from backend.app.modules.medical_document_intelligence.policies.placeholder_protector import (
-    PlaceholderProtector,
-)
 from backend.app.modules.medical_document_intelligence.policies.policy_profiles import (
     PolicyProfile,
-)
-from backend.app.modules.medical_document_intelligence.policies.policy_transformer import (
-    PolicyTransformer,
+    get_policy_definition,
 )
 
 
@@ -43,9 +38,6 @@ class DeidentificationService(BaseService):
     MedNexus owns:
 
         - deterministic healthcare-context detection
-        - privacy-policy transformation
-        - placeholder protection
-        - KEEP entity protection
         - clinical terminology protection
         - deterministic structured-identifier detection
         - external-engine candidate interpretation
@@ -85,7 +77,7 @@ class DeidentificationService(BaseService):
     def process(
         self,
         text: str,
-        policy: PolicyProfile = PolicyProfile.MEDNEXUS_DEFAULT,
+        policy: PolicyProfile = PolicyProfile.MEDNEXUS_CLINICAL,
     ):
         """
         De-identify medical text through the MedNexus-controlled pipeline.
@@ -94,21 +86,15 @@ class DeidentificationService(BaseService):
 
             Original text
                 ↓
-            MedNexus context detection
+            Clinical vocabulary protection
                 ↓
-            MedNexus policy transformation
+            Context rules + deterministic identifiers + OpenMed
                 ↓
-            Placeholder / KEEP / clinical protection
+            Unified MedNexus Intelligence Core
                 ↓
-            MedNexus deterministic identifier detection
+            Selected policy + MedNexus Output Builder
                 ↓
-            OpenMed candidate detection
-                ↓
-            MedNexus Intelligence Core
-                ↓
-            MedNexus Output Builder
-                ↓
-            Restore protected MedNexus content
+            Restore protected clinical vocabulary
                 ↓
             Final MedNexus-controlled output
         """
@@ -134,86 +120,44 @@ class DeidentificationService(BaseService):
         start = self.start_timer()
 
         # --------------------------------------------------
-        # Step 1: MedNexus deterministic context detection
+        # Step 1: Build the common exact-offset detection representation
         # --------------------------------------------------
 
-        context_entities = ContextRuleEngine.detect(
+        (
+            detection_text,
+            clinical_mapping,
+        ) = ClinicalContextProtector.protect(
             text
         )
 
         # --------------------------------------------------
-        # Step 2: Apply the selected MedNexus privacy policy
+        # Step 2: Collect all candidate sources on one coordinate system
         # --------------------------------------------------
 
-        policy_transformed_text = (
-            PolicyTransformer.transform(
-                text=text,
-                profile=policy,
-                context_entities=context_entities,
+        context_entities = ContextRuleEngine.detect(
+            detection_text
+        )
+        context_candidates = (
+            ContextRuleCandidateAdapter.adapt_many(
+                detections=context_entities,
+                source_text=detection_text,
             )
         )
-
-        # --------------------------------------------------
-        # Step 3: Protect MedNexus-generated placeholders
-        # --------------------------------------------------
-
-        (
-            placeholder_protected_text,
-            placeholder_mapping,
-        ) = PlaceholderProtector.protect(
-            policy_transformed_text
-        )
-
-        # --------------------------------------------------
-        # Step 4: Protect policy KEEP entities
-        # --------------------------------------------------
-
-        (
-            keep_protected_text,
-            keep_mapping,
-        ) = KeepEntityProtector.protect(
-            text=placeholder_protected_text,
-            profile=policy,
-        )
-
-        # --------------------------------------------------
-        # Step 5: Protect clinical terminology
-        # --------------------------------------------------
-
-        (
-            fully_protected_text,
-            clinical_mapping,
-        ) = ClinicalContextProtector.protect(
-            keep_protected_text
-        )
-
-        # --------------------------------------------------
-        # Step 6: MedNexus deterministic identifier detection
-        # --------------------------------------------------
-        #
-        # Detection runs against the exact protected text that will be
-        # supplied to OpenMed. This guarantees that MedNexus and OpenMed
-        # candidates share the same source offsets before merging.
-        # --------------------------------------------------
 
         deterministic_candidates = (
             DeterministicIdentifierDetector.detect(
-                fully_protected_text
+                detection_text
             )
         )
-
-        # --------------------------------------------------
-        # Step 7: OpenMed candidate detection
-        # --------------------------------------------------
 
         engine_result = (
             self.engine_manager.deidentify(
-                fully_protected_text
+                detection_text
             )
         )
 
         # --------------------------------------------------
-        # Step 8: MedNexus Intelligence Core
+        # Step 3: One MedNexus intelligence-decision path
         # --------------------------------------------------
         #
         # OpenMed objects stop at this boundary.
@@ -231,7 +175,8 @@ class DeidentificationService(BaseService):
             MedNexusIntelligenceOrchestrator
             .process_openmed_result(
                 engine_result=engine_result,
-                source_text=fully_protected_text,
+                source_text=detection_text,
+                context_candidates=context_candidates,
                 mednexus_candidates=(
                     deterministic_candidates
                 ),
@@ -239,7 +184,7 @@ class DeidentificationService(BaseService):
         )
 
         # --------------------------------------------------
-        # Step 9: Build output using MedNexus decisions
+        # Step 4: Apply the selected policy and build MedNexus output
         # --------------------------------------------------
         #
         # The OpenMed deidentified_text is deliberately not used.
@@ -259,43 +204,22 @@ class DeidentificationService(BaseService):
 
         mednexus_output = (
             MedNexusOutputBuilder.build(
-                source_text=fully_protected_text,
+                source_text=detection_text,
                 candidates=(
                     intelligence_result.all_candidates
                 ),
+                profile=policy,
             )
         )
 
         # --------------------------------------------------
-        # Step 10: Restore protected clinical terminology
-        # --------------------------------------------------
-
-        clinical_restored_text = (
-            ClinicalContextProtector.restore(
-                mednexus_output.text,
-                clinical_mapping,
-            )
-        )
-
-        # --------------------------------------------------
-        # Step 11: Restore policy KEEP entities
-        # --------------------------------------------------
-
-        keep_restored_text = (
-            KeepEntityProtector.restore(
-                clinical_restored_text,
-                keep_mapping,
-            )
-        )
-
-        # --------------------------------------------------
-        # Step 12: Restore MedNexus policy placeholders
+        # Step 5: Restore protected clinical terminology
         # --------------------------------------------------
 
         final_deidentified_text = (
-            PlaceholderProtector.restore(
-                keep_restored_text,
-                placeholder_mapping,
+            ClinicalContextProtector.restore(
+                mednexus_output.text,
+                clinical_mapping,
             )
         )
 
@@ -345,30 +269,20 @@ class DeidentificationService(BaseService):
                 # Policy
                 # ------------------------------------------
                 "policy": policy.value,
+                "policy_definition": get_policy_definition(policy).to_dict(),
 
                 # ------------------------------------------
-                # Existing compatibility metadata
+                # Unified detection representation and provenance
                 # ------------------------------------------
-                "policy_transformed_text": (
-                    policy_transformed_text
-                ),
-                "placeholder_protected_text": (
-                    placeholder_protected_text
-                ),
-                "keep_protected_text": (
-                    keep_protected_text
-                ),
-                "fully_protected_text": (
-                    fully_protected_text
-                ),
+                "detection_text": detection_text,
+                "context_candidates": [
+                    candidate.to_dict()
+                    for candidate in context_candidates
+                ],
                 "deterministic_candidates": [
                     candidate.to_dict()
                     for candidate in deterministic_candidates
                 ],
-                "placeholder_mapping": (
-                    placeholder_mapping
-                ),
-                "keep_mapping": keep_mapping,
                 "clinical_context_mapping": (
                     clinical_mapping
                 ),
@@ -380,6 +294,7 @@ class DeidentificationService(BaseService):
                 "external_engine_role": (
                     "candidate_detector"
                 ),
+                "privacy_decision_path": "unified",
                 "intelligence_core_enabled": True,
                 "intelligence_result": (
                     intelligence_result.to_dict()
@@ -396,6 +311,7 @@ class DeidentificationService(BaseService):
                 # Audit counts
                 # ------------------------------------------
                 "candidate_counts": {
+                    "context": len(context_candidates),
                     "deterministic": len(
                         deterministic_candidates
                     ),

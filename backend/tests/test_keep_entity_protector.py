@@ -6,7 +6,7 @@ from backend.app.modules.medical_document_intelligence.policies.policy_profiles 
 )
 
 
-def test_research_policy_protects_physician_and_role():
+def test_clinical_policy_protects_physician_and_role():
     text = """
 Pathology Department
 
@@ -17,7 +17,7 @@ Dr. Huda Al-Awadhi
 
     protected_text, mapping = KeepEntityProtector.protect(
         text=text,
-        profile=PolicyProfile.RESEARCH,
+        profile=PolicyProfile.MEDNEXUS_CLINICAL,
     )
 
     assert "Consultant Pathologist" not in protected_text
@@ -30,7 +30,7 @@ Dr. Huda Al-Awadhi
     assert "Dr. Huda Al-Awadhi" in mapping.values()
 
 
-def test_research_policy_restores_physician_and_role():
+def test_clinical_policy_restores_physician_and_role():
     original_text = """
 Consultant Pathologist
 
@@ -39,7 +39,7 @@ Dr. Huda Al-Awadhi
 
     protected_text, mapping = KeepEntityProtector.protect(
         text=original_text,
-        profile=PolicyProfile.RESEARCH,
+        profile=PolicyProfile.MEDNEXUS_CLINICAL,
     )
 
     restored_text = KeepEntityProtector.restore(

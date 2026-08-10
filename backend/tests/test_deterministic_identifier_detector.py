@@ -522,4 +522,3 @@ def test_medical_license_rule_does_not_redact_unlabelled_clinical_code():
     candidates = DeterministicIdentifierDetector.detect(text)
 
     assert candidates == ()
-

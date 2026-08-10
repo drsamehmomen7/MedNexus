@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .models import Specialty
+from .models import ClinicalCategory, Specialty
 from .registry import VocabularyRegistry
 from .service import (
     ClinicalVocabularyMatch,
@@ -104,6 +104,7 @@ class ClinicalVocabularyMatcher:
         section: Optional[str] = None,
         document_type: Optional[str] = None,
         specialties: Optional[Sequence[Specialty]] = None,
+        excluded_categories: Optional[Sequence[ClinicalCategory]] = None,
         token_prefix: str = "__CVE_",
         starting_number: int = 1,
     ) -> Tuple[str, Dict[str, str], int]:
@@ -142,6 +143,14 @@ class ClinicalVocabularyMatcher:
             document_type=document_type,
             specialties=specialties,
         )
+
+        if excluded_categories:
+            excluded = set(excluded_categories)
+            matches = [
+                match
+                for match in matches
+                if match.term.category not in excluded
+            ]
 
         if not matches:
             return text, {}, starting_number

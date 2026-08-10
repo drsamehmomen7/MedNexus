@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Optional, Tuple
 
@@ -8,6 +7,15 @@ from backend.app.modules.medical_document_intelligence.intelligence.candidate_en
     CandidateDecision,
     CandidateEntityType,
     MedNexusCandidateEntity,
+)
+from backend.app.modules.medical_document_intelligence.policies.policy_actions import (
+    PolicyAction,
+)
+from backend.app.modules.medical_document_intelligence.policies.policy_engine import (
+    PolicyEngine,
+)
+from backend.app.modules.medical_document_intelligence.policies.policy_profiles import (
+    PolicyProfile,
 )
 
 
@@ -91,39 +99,6 @@ class MedNexusOutputBuilder:
     stable.
     """
 
-    HASHED_TYPES = {
-        CandidateEntityType.CIVIL_ID,
-        CandidateEntityType.MRN,
-        CandidateEntityType.VISIT_NUMBER,
-        CandidateEntityType.ACCESSION_NUMBER,
-        CandidateEntityType.SPECIMEN_NUMBER,
-        CandidateEntityType.LAB_NUMBER,
-        CandidateEntityType.DOCUMENT_ID,
-        CandidateEntityType.INSURANCE_NUMBER,
-        CandidateEntityType.EMPLOYEE_NUMBER,
-        CandidateEntityType.STUDENT_NUMBER,
-    }
-
-    FIXED_PLACEHOLDER_TYPES = {
-        CandidateEntityType.PERSON_NAME,
-        CandidateEntityType.PATIENT_NAME,
-        CandidateEntityType.GUARDIAN_NAME,
-        CandidateEntityType.RELATIVE_NAME,
-        CandidateEntityType.EMPLOYEE_NAME,
-        CandidateEntityType.STUDENT_NAME,
-        CandidateEntityType.PHONE_NUMBER,
-        CandidateEntityType.EMAIL,
-        CandidateEntityType.ADDRESS,
-        CandidateEntityType.DATE_OF_BIRTH,
-        CandidateEntityType.ADMISSION_DATE,
-        CandidateEntityType.DISCHARGE_DATE,
-        CandidateEntityType.COLLECTION_DATE,
-        CandidateEntityType.EXAM_DATE,
-        CandidateEntityType.GENERAL_DATE,
-        CandidateEntityType.ORGANIZATION,
-        CandidateEntityType.LOCATION,
-    }
-
     @classmethod
     def build(
         cls,
@@ -132,6 +107,7 @@ class MedNexusOutputBuilder:
         candidates: Iterable[
             MedNexusCandidateEntity
         ],
+        profile: PolicyProfile = PolicyProfile.MEDNEXUS_CLINICAL,
         hash_length: int = 10,
     ) -> MedNexusOutputResult:
         """
@@ -197,6 +173,7 @@ class MedNexusOutputBuilder:
 
         output_text = source_text
         replacements = []
+        policy_kept_count = 0
 
         for candidate in sorted(
             accepted,
@@ -206,8 +183,21 @@ class MedNexusOutputBuilder:
             ),
             reverse=True,
         ):
-            surrogate = cls._build_surrogate(
-                candidate=candidate,
+            action = PolicyEngine.get_action(
+                candidate.canonical_type,
+                profile,
+                require_mapping=True,
+            )
+
+            if action == PolicyAction.KEEP:
+                policy_kept_count += 1
+                continue
+
+            surrogate = PolicyEngine.transform_value(
+                value=candidate.text,
+                entity=candidate.canonical_type,
+                profile=profile,
+                require_mapping=True,
                 hash_length=hash_length,
             )
 
@@ -234,14 +224,18 @@ class MedNexusOutputBuilder:
                         candidate.decision.value
                     ),
                     "source": candidate.source.value,
+                    "policy_action": action.value,
                 }
             )
 
         replacements.reverse()
 
-        kept_count = cls._count_decision(
-            materialized,
-            CandidateDecision.KEEP,
+        kept_count = (
+            cls._count_decision(
+                materialized,
+                CandidateDecision.KEEP,
+            )
+            + policy_kept_count
         )
 
         rejected_count = cls._count_decision(
@@ -284,48 +278,6 @@ class MedNexusOutputBuilder:
             ),
             pending_count=len(pending),
         )
-
-    @classmethod
-    def _build_surrogate(
-        cls,
-        *,
-        candidate: MedNexusCandidateEntity,
-        hash_length: int,
-    ) -> str:
-        """
-        Build a MedNexus-owned replacement value.
-        """
-
-        entity_type = candidate.canonical_type
-
-        if entity_type in cls.HASHED_TYPES:
-            digest = hashlib.sha256(
-                candidate.text.encode("utf-8")
-            ).hexdigest()[:hash_length]
-
-            return (
-                f"[{entity_type.value.upper()}:"
-                f"{digest}]"
-            )
-
-        if entity_type in cls.FIXED_PLACEHOLDER_TYPES:
-            return (
-                f"[{entity_type.value.upper()}]"
-            )
-
-        if entity_type in {
-            CandidateEntityType.PHYSICIAN_NAME,
-            CandidateEntityType.NURSE_NAME,
-            CandidateEntityType.PROFESSIONAL_ROLE,
-        }:
-            # These should normally arrive as KEEP or REJECT.
-            # If an accepted candidate reaches this point, use a safe
-            # MedNexus placeholder rather than an external-engine label.
-            return (
-                f"[{entity_type.value.upper()}]"
-            )
-
-        return "[REDACTED]"
 
     @staticmethod
     def _materialize_candidates(

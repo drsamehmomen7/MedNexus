@@ -8,6 +8,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from backend.app.modules.medical_document_intelligence.policies.policy_profiles import (
     PolicyProfile,
+    resolve_policy_profile,
 )
 from backend.app.modules.medical_document_intelligence.services.file_processing_service import (
     FileProcessingService,
@@ -25,7 +26,7 @@ service = FileProcessingService()
 @router.post("/deidentify/file")
 async def deidentify_file(
     file: UploadFile = File(...),
-    policy: str = Form("mednexus_default"),
+    policy: str = Form("mednexus_clinical"),
 ) -> dict[str, Any]:
     """
     Upload and de-identify a supported medical document.
@@ -63,7 +64,7 @@ async def deidentify_file(
         )
 
     try:
-        selected_policy = PolicyProfile(policy)
+        selected_policy = resolve_policy_profile(policy)
     except ValueError as exc:
         raise HTTPException(
             status_code=400,

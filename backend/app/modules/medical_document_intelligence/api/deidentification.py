@@ -1,8 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.app.modules.medical_document_intelligence.services.deidentification import (
     DeidentificationService,
+)
+from backend.app.modules.medical_document_intelligence.policies.policy_profiles import (
+    PolicyProfile,
+    resolve_policy_profile,
 )
 
 
@@ -19,6 +23,10 @@ class DeidentificationRequest(BaseModel):
         ...,
         min_length=1,
         description="Medical text to be de-identified.",
+    )
+    policy: str | None = Field(
+        default=None,
+        description="Canonical or supported legacy MedNexus policy identifier.",
     )
 
 
@@ -37,7 +45,22 @@ def deidentify_document(request: DeidentificationRequest):
     - Processing metadata
     """
 
-    response = service.process(request.text)
+    try:
+        selected_policy = resolve_policy_profile(
+            request.policy
+            if request.policy is not None
+            else PolicyProfile.MEDNEXUS_CLINICAL
+        )
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported policy: {request.policy}",
+        ) from exc
+
+    response = service.process(
+        request.text,
+        selected_policy,
+    )
 
     openmed_result = response.data
 

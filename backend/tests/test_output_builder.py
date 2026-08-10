@@ -153,7 +153,7 @@ def test_hash_is_deterministic():
 
 
 @pytest.mark.parametrize(
-    ("entity_text", "entity_type", "placeholder"),
+    ("entity_text", "entity_type", "expected"),
     [
         (
             "+965 52988745",
@@ -173,14 +173,14 @@ def test_hash_is_deterministic():
         (
             "02/08/1990",
             CandidateEntityType.DATE_OF_BIRTH,
-            "[DATE_OF_BIRTH]",
+            "02/08/1990",
         ),
     ],
 )
-def test_replaces_fixed_placeholder_types(
+def test_applies_default_policy_actions(
     entity_text,
     entity_type,
-    placeholder,
+    expected,
 ):
     source_text = (
         f"Value: {entity_text}"
@@ -199,7 +199,7 @@ def test_replaces_fixed_placeholder_types(
     )
 
     assert result.text == (
-        f"Value: {placeholder}"
+        f"Value: {expected}"
     )
 
 

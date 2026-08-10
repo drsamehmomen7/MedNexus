@@ -222,7 +222,7 @@ class FileProcessingService:
     def process(
         self,
         path: str | Path,
-        policy: PolicyProfile = PolicyProfile.MEDNEXUS_DEFAULT,
+        policy: PolicyProfile = PolicyProfile.MEDNEXUS_CLINICAL,
     ):
         """
         Extract and de-identify a medical document.

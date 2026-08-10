@@ -13,6 +13,9 @@ from backend.app.modules.medical_document_intelligence.intelligence.context_vali
 from backend.app.modules.medical_document_intelligence.intelligence.detection_merger import (
     DetectionMerger,
 )
+from backend.app.modules.medical_document_intelligence.intelligence.entity_canonicalizer import (
+    EntityCanonicalizer,
+)
 from backend.app.modules.medical_document_intelligence.intelligence.openmed_candidate_adapter import (
     OpenMedCandidateAdapter,
 )
@@ -191,6 +194,9 @@ class MedNexusIntelligenceOrchestrator:
         *,
         engine_result: Any,
         source_text: str,
+        context_candidates: Iterable[
+            MedNexusCandidateEntity
+        ] = (),
         mednexus_candidates: Iterable[
             MedNexusCandidateEntity
         ] = (),
@@ -228,6 +234,15 @@ class MedNexusIntelligenceOrchestrator:
                 "mednexus_candidates must be an iterable."
             )
 
+        if context_candidates is None:
+            raise TypeError(
+                "context_candidates must be an iterable."
+            )
+
+        context_candidates = cls._validate_internal_candidates(
+            context_candidates
+        )
+
         internal_candidates = cls._validate_internal_candidates(
             mednexus_candidates
         )
@@ -239,34 +254,13 @@ class MedNexusIntelligenceOrchestrator:
             )
         )
 
-        resolved_openmed_candidates = (
-            RoleResolver.resolve_many(
-                candidates=openmed_candidates,
-                source_text=source_text,
-            )
-        )
-
-        validated_openmed_candidates = (
-            ContextValidator.validate_many(
-                candidates=resolved_openmed_candidates,
-                source_text=source_text,
-            )
-        )
-
-        validated_internal_candidates = (
-            ContextValidator.validate_many(
-                candidates=internal_candidates,
-                source_text=source_text,
-            )
-        )
-
-        merged_candidates = DetectionMerger.merge(
-            validated_internal_candidates,
-            validated_openmed_candidates,
-        )
-
-        return cls._build_result(
-            merged_candidates
+        return cls._process_candidate_groups(
+            source_text=source_text,
+            candidate_groups=(
+                context_candidates,
+                internal_candidates,
+                openmed_candidates,
+            ),
         )
 
     @classmethod
@@ -301,27 +295,41 @@ class MedNexusIntelligenceOrchestrator:
             )
         )
 
-        role_resolved_candidates = (
-            RoleResolver.resolve_many(
-                candidates=validated_candidates,
-                source_text=source_text,
-            )
+        return cls._process_candidate_groups(
+            source_text=source_text,
+            candidate_groups=(validated_candidates,),
         )
 
-        context_validated_candidates = (
-            ContextValidator.validate_many(
-                candidates=role_resolved_candidates,
-                source_text=source_text,
-            )
-        )
+    @classmethod
+    def _process_candidate_groups(
+        cls,
+        *,
+        source_text: str,
+        candidate_groups: Iterable[
+            Iterable[MedNexusCandidateEntity]
+        ],
+    ) -> MedNexusIntelligenceResult:
+        """Run every candidate source through one intelligence path."""
 
-        merged_candidates = DetectionMerger.merge(
-            context_validated_candidates
+        combined = tuple(
+            candidate
+            for group in candidate_groups
+            for candidate in group
         )
+        canonicalized = EntityCanonicalizer.canonicalize_many(
+            combined
+        )
+        role_resolved = RoleResolver.resolve_many(
+            candidates=canonicalized,
+            source_text=source_text,
+        )
+        validated = ContextValidator.validate_many(
+            candidates=role_resolved,
+            source_text=source_text,
+        )
+        merged = DetectionMerger.merge(validated)
 
-        return cls._build_result(
-            merged_candidates
-        )
+        return cls._build_result(merged)
 
     @staticmethod
     def _validate_internal_candidates(

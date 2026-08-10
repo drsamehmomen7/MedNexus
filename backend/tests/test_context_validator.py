@@ -123,7 +123,7 @@ def test_accepts_role_specific_identifying_names(
         CandidateEntityType.NURSE_NAME,
     ],
 )
-def test_keeps_healthcare_professional_names(
+def test_accepts_healthcare_professional_names_for_policy_resolution(
     entity_type,
 ):
     source_text = (
@@ -143,7 +143,7 @@ def test_keeps_healthcare_professional_names(
 
     assert (
         validated.decision
-        == CandidateDecision.KEEP
+        == CandidateDecision.ACCEPT
     )
 
 

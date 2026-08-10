@@ -4,6 +4,9 @@ from typing import Dict, List, Optional, Tuple
 from backend.app.modules.medical_document_intelligence.policies.clinical_vocabulary.matcher import (
     ClinicalVocabularyMatcher,
 )
+from backend.app.modules.medical_document_intelligence.policies.clinical_vocabulary.models import (
+    ClinicalCategory,
+)
 from backend.app.modules.medical_document_intelligence.policies.protected_terms import (
     PROTECTED_TERMS,
 )
@@ -237,6 +240,10 @@ class ClinicalContextProtector:
                 protected_text,
                 section=section,
                 document_type=candidate_document_type,
+                excluded_categories=(
+                    ClinicalCategory.CLINICAL_OCCUPATION,
+                    ClinicalCategory.CLINICAL_SPECIALTY,
+                ),
                 token_prefix="__CTX_",
                 starting_number=token_number,
             )
@@ -252,6 +259,10 @@ class ClinicalContextProtector:
             protected_text,
             section=section,
             document_type=None,
+            excluded_categories=(
+                ClinicalCategory.CLINICAL_OCCUPATION,
+                ClinicalCategory.CLINICAL_SPECIALTY,
+            ),
             token_prefix="__CTX_",
             starting_number=token_number,
         )
