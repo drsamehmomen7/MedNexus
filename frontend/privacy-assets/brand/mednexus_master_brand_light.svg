@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 360" role="img" aria-labelledby="title">
+<title>MedNexus — Clinical Privacy Policy Engine</title>
+<rect width="1500" height="360" fill="#F7F8F3"/>
+<g transform="translate(25,55) scale(.48)">
+<title>MedNexus Balanced Flow mark</title>
+<g fill="none" stroke-linecap="round">
+  <path d="M72 132 C150 132 168 198 246 256 C168 314 150 380 72 380" stroke="#6EE7D6" stroke-width="16"/>
+  <path d="M72 188 C144 188 176 222 244 256 C176 290 144 324 72 324" stroke="#6EE7D6" stroke-width="13"/>
+  <path d="M72 244 C142 244 190 250 240 256 C190 262 142 268 72 268" stroke="#6EE7D6" stroke-width="10"/>
+
+  <path d="M440 132 C362 132 344 198 266 256 C344 314 362 380 440 380" stroke="#B084F7" stroke-width="16"/>
+  <path d="M440 188 C368 188 336 222 268 256 C336 290 368 324 440 324" stroke="#B084F7" stroke-width="13"/>
+  <path d="M440 244 C370 244 322 250 272 256 C322 262 370 268 440 268" stroke="#B084F7" stroke-width="10"/>
+</g>
+<g>
+  <circle cx="72" cy="132" r="9" fill="#6EE7D6"/><circle cx="72" cy="188" r="7" fill="#6EE7D6"/><circle cx="72" cy="244" r="6" fill="#6EE7D6"/>
+  <circle cx="72" cy="268" r="6" fill="#6EE7D6"/><circle cx="72" cy="324" r="7" fill="#6EE7D6"/><circle cx="72" cy="380" r="9" fill="#6EE7D6"/>
+  <circle cx="440" cy="132" r="9" fill="#B084F7"/><circle cx="440" cy="188" r="7" fill="#B084F7"/><circle cx="440" cy="244" r="6" fill="#B084F7"/>
+  <circle cx="440" cy="268" r="6" fill="#B084F7"/><circle cx="440" cy="324" r="7" fill="#B084F7"/><circle cx="440" cy="380" r="9" fill="#B084F7"/>
+</g>
+</g>
+<text x="350" y="205" fill="#061417" font-family="Arial,Helvetica,sans-serif" font-size="118" font-weight="400" letter-spacing="17">MEDNE</text>
+<g transform="translate(922,82) scale(.22)">
+<title>MedNexus Balanced Flow mark</title>
+<g fill="none" stroke-linecap="round">
+  <path d="M72 132 C150 132 168 198 246 256 C168 314 150 380 72 380" stroke="#6EE7D6" stroke-width="16"/>
+  <path d="M72 188 C144 188 176 222 244 256 C176 290 144 324 72 324" stroke="#6EE7D6" stroke-width="13"/>
+  <path d="M72 244 C142 244 190 250 240 256 C190 262 142 268 72 268" stroke="#6EE7D6" stroke-width="10"/>
+
+  <path d="M440 132 C362 132 344 198 266 256 C344 314 362 380 440 380" stroke="#B084F7" stroke-width="16"/>
+  <path d="M440 188 C368 188 336 222 268 256 C336 290 368 324 440 324" stroke="#B084F7" stroke-width="13"/>
+  <path d="M440 244 C370 244 322 250 272 256 C322 262 370 268 440 268" stroke="#B084F7" stroke-width="10"/>
+</g>
+<g>
+  <circle cx="72" cy="132" r="9" fill="#6EE7D6"/><circle cx="72" cy="188" r="7" fill="#6EE7D6"/><circle cx="72" cy="244" r="6" fill="#6EE7D6"/>
+  <circle cx="72" cy="268" r="6" fill="#6EE7D6"/><circle cx="72" cy="324" r="7" fill="#6EE7D6"/><circle cx="72" cy="380" r="9" fill="#6EE7D6"/>
+  <circle cx="440" cy="132" r="9" fill="#B084F7"/><circle cx="440" cy="188" r="7" fill="#B084F7"/><circle cx="440" cy="244" r="6" fill="#B084F7"/>
+  <circle cx="440" cy="268" r="6" fill="#B084F7"/><circle cx="440" cy="324" r="7" fill="#B084F7"/><circle cx="440" cy="380" r="9" fill="#B084F7"/>
+</g>
+</g>
+<text x="1093" y="205" fill="#061417" font-family="Arial,Helvetica,sans-serif" font-size="118" font-weight="400" letter-spacing="17">US</text>
+<text x="350" y="286" fill="#6EE7D6" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="500" letter-spacing="7">CLINICAL PRIVACY POLICY ENGINE</text>
+</svg>

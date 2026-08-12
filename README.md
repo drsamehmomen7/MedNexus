@@ -1,12 +1,21 @@
 # MedNexus
 
-Enterprise Healthcare AI Platform
+Enterprise Medical Document Intelligence Platform
 
 ---
 
 ## Overview
 
-MedNexus is an enterprise healthcare AI platform for medical document intelligence powered by open-source medical AI engines.
+MedNexus is an enterprise platform that turns medical documents into protected, structured, standardized, and analyzable clinical information. Capabilities are modular and may operate independently while participating in one connected document journey.
+
+The enterprise target journey is:
+
+```text
+01 INGEST → 02 UNDERSTAND → 03 PROTECT → 04 EXTRACT
+→ 05 STANDARDIZE → 06 ANALYZE → 07 VISUALIZE → 08 INDICATORS
+```
+
+This is the target architecture, not a claim that all eight stages are implemented.
 
 The current module is **Medical Document Intelligence – De-identification**, implemented as a purpose-based **Clinical Privacy Policy Engine**, not merely an anonymizer. It uses a hybrid architecture combining:
 
@@ -70,6 +79,13 @@ The implemented document-processing path supports:
 
 Extracted text enters the same MedNexus-owned De-identification Intelligence pipeline used for direct text processing. Scanned or image-based PDF OCR and image extraction are not implemented yet.
 
+## Current Product Experience
+
+- `/app` — MedNexus Enterprise Medical Document Intelligence homepage and eight-stage platform vision.
+- `/privacy` — functional Clinical Privacy Policy Engine POC.
+
+The current frontend is an accepted working design baseline, not final brand or visual polish. Public Health Intelligence is active parallel domain work aligned to the shared document journey; it is not represented as production-complete.
+
 ---
 
 ## Project Structure
@@ -86,7 +102,9 @@ Validation/
 
 ## Current Status
 
-**Medical Document Intelligence – De-identification Phase 1**
+**Medical Document Intelligence – Clinical Privacy Policy Engine / De-identification Phase 1**
+
+Status: **Functionally complete end-to-end POC, pending final real-document acceptance validation.**
 
 Completed and integrated:
 
@@ -104,7 +122,7 @@ Current confirmed regression baseline:
 - **8 warnings**
 - **0 failures**
 
-Phase 1 real-document validation completed successfully across samples from:
+Earlier controlled and synthetic validation provides evidence across samples from:
 
 - Radiology
 - Emergency
@@ -118,6 +136,6 @@ Phase 1 real-document validation completed successfully across samples from:
 - Admission
 - ICU
 
-This validation is Phase 1 evidence for the current implementation. It does not claim that de-identification is complete or production-certified.
+This historical validation is evidence for the current implementation. It does not close Phase 1 or establish clinical/production certification.
 
-The next immediate product milestone is the **MedNexus Frontend Redesign / Policy Experience**. Known technical debt is tracked in `backend/TECH_DEBT.md`.
+The next immediate task is **Clinical Privacy Policy Engine real-document acceptance validation**, followed by regression confirmation and a verified Phase 1 baseline freeze. Known technical debt is tracked in `backend/TECH_DEBT.md`.

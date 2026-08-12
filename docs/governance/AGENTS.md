@@ -4,8 +4,9 @@
 
 MedNexus is an existing, continuing enterprise healthcare AI project. Never treat a new Codex or chat session as a new MedNexus project.
 
-- Current active module: Medical Document Intelligence
-- Current active capability: De-identification
+- Platform identity: Enterprise Medical Document Intelligence Platform
+- Current functional module: Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification
+- Current Phase 1 status: functionally complete end-to-end POC, pending final real-document acceptance validation
 
 ## 2. Workspace and Git Boundary
 
@@ -83,4 +84,10 @@ After meaningful approved implementation milestones, assess whether `README.md`,
 
 Do not implement future stages merely because they appear in architecture documents. Planned capabilities include Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
 
-The immediate product milestone is the MedNexus Frontend Redesign / Policy Experience while preserving the validated Intelligence Core and purpose-based policy architecture.
+The enterprise target document journey is Ingest → Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. This is a target architecture, not an implementation claim. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey.
+
+Public Health Intelligence is active parallel domain work aligned to the shared journey, but must not be described as production-complete without implementation and validation evidence.
+
+The current `/app` and `/privacy` frontend experience is an accepted working baseline, not final brand or visual polish. Do not reopen deferred cosmetic design work unless explicitly requested.
+
+The immediate next milestone is representative real-document acceptance validation of the Clinical Privacy Policy Engine, followed by appropriate regression confirmation and a verified Phase 1 baseline freeze.

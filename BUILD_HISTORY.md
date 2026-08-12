@@ -889,3 +889,29 @@ Multi-part next-of-kin names may produce repeated `[RELATIVE_NAME]` placeholders
 ## Next
 
 MedNexus Frontend Redesign / Policy Experience. The planned Custom Policy Builder and future privacy–utility/risk capabilities must reuse the same unified pipeline.
+
+---
+
+# Frontend Platform Vision & Product Experience Checkpoint — 12 Aug 2026
+
+## Completed
+
+- Introduced the main MedNexus Enterprise Medical Document Intelligence homepage at `/app`.
+- Retained the functional Clinical Privacy Policy Engine as a standalone POC at `/privacy`.
+- Adopted the enterprise eight-stage document journey: Ingest, Understand, Protect, Extract, Standardize, Analyze, Visualize, and Indicators.
+- Integrated the cinematic medical-document journey hero and scroll-driven journey narrative.
+- Established the modular-but-connected product principle: capabilities may operate independently while participating in the shared journey.
+- Accepted the current Deep Teal Hybrid frontend as a working baseline; final logo, journey, domain, and privacy-product refinements remain deferred.
+- Recorded Public Health Intelligence as active parallel domain work aligned to the shared journey without claiming production completion.
+
+## Privacy Phase 1 Status
+
+The Clinical Privacy Policy Engine is a functionally complete end-to-end POC, pending final real-document acceptance validation. The frontend checkpoint does not close Phase 1.
+
+## Validation Baseline
+
+Last verified documented automated baseline remains **671 passed, 8 warnings, 0 failures**. No new regression run was performed for this documentation/frontend checkpoint.
+
+## Next
+
+Resume representative real medical-report validation, resolve any confirmed privacy leaks, false positives, or policy mismatches, rerun the appropriate regression suite, and freeze Phase 1 only after acceptance.
