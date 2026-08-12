@@ -915,3 +915,31 @@ Last verified documented automated baseline remains **671 passed, 8 warnings, 0 
 ## Next
 
 Resume representative real medical-report validation, resolve any confirmed privacy leaks, false positives, or policy mismatches, rerun the appropriate regression suite, and freeze Phase 1 only after acceptance.
+
+---
+
+# Phase 1 Clinical Privacy Acceptance Checkpoint — 12 Aug 2026
+
+## Status
+
+**Phase 1 — Accepted POC Checkpoint / Paused.** Synthetic acceptance is intentionally stopped here; this is not production certification or exhaustive real-world validation.
+
+## Final Targeted Acceptance Fixes
+
+- Fixed conservative validation of formatted international phone values such as `+123 456 7890`.
+- Unified contextual clinician handling for Reporting Physician, Admitting Consultant, and Consultant Pathologist.
+- Added complete Arabic clinician-name spans for supported professional contexts, including Arabic Radiologist / `طبيب الأشعة`.
+- Preserved professional labels and `Dr.` / `د.` titles outside personal-name identity spans.
+- Preserved purpose-profile authority: Clinical may KEEP clinician identity; Research and stricter profiles apply their configured transformation.
+- Preserved normal clinical content and existing identifier protection.
+
+## Verification
+
+- Targeted acceptance: **103 passed, 7 warnings**.
+- Full regression: **681 passed, 8 warnings, 0 failures**.
+- `git diff --check`: passed.
+- No new blocker introduced.
+
+## Deliberate Boundary
+
+Further synthetic tuning is paused. Broader multilingual coverage, additional privacy cases, and acceptance validation are deferred to future work using real medical reports.

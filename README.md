@@ -104,7 +104,7 @@ Validation/
 
 **Medical Document Intelligence – Clinical Privacy Policy Engine / De-identification Phase 1**
 
-Status: **Functionally complete end-to-end POC, pending final real-document acceptance validation.**
+Status: **Phase 1 — Accepted POC Checkpoint / Paused.** The synthetic acceptance baseline is frozen; this is not production certification or exhaustive clinical validation.
 
 Completed and integrated:
 
@@ -118,7 +118,7 @@ Completed and integrated:
 
 Current confirmed regression baseline:
 
-- **671 passing tests**
+- **681 passing tests**
 - **8 warnings**
 - **0 failures**
 
@@ -136,6 +136,6 @@ Earlier controlled and synthetic validation provides evidence across samples fro
 - Admission
 - ICU
 
-This historical validation is evidence for the current implementation. It does not close Phase 1 or establish clinical/production certification.
+The current synthetic POC acceptance checkpoint is complete. Broader real medical-document validation is intentionally deferred and is expected to reveal additional cases. This checkpoint does not establish clinical or production certification.
 
-The next immediate task is **Clinical Privacy Policy Engine real-document acceptance validation**, followed by regression confirmation and a verified Phase 1 baseline freeze. Known technical debt is tracked in `backend/TECH_DEBT.md`.
+Public Health Intelligence continues as active parallel work aligned to the enterprise document journey. After this pause, the next major development direction may proceed while broader privacy validation resumes later with real medical reports. Known technical debt is tracked in `backend/TECH_DEBT.md`.

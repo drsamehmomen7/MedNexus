@@ -74,6 +74,20 @@ def test_detects_local_phone_when_strong_field_label_exists():
     assert candidates[0].source == CandidateSource.MEDNEXUS_FIELD_RULE
 
 
+def test_accepts_spaced_international_phone_from_explicit_field():
+    text = "Phone: +123 456 7890"
+
+    candidates = DeterministicIdentifierDetector.detect(text)
+    result = MedNexusIntelligenceOrchestrator.process_candidates(
+        source_text=text,
+        candidates=candidates,
+    )
+
+    assert len(result.accepted) == 1
+    assert result.accepted[0].text == "+123 456 7890"
+    assert result.accepted[0].canonical_type == CandidateEntityType.PHONE_NUMBER
+
+
 def test_does_not_treat_unlabelled_local_eight_digit_number_as_phone():
     text = "Measurement reference 52988745 was imported from the device."
 

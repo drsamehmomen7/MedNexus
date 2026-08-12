@@ -58,4 +58,4 @@ MedNexus123
 Expected PHI values for every case are available in:
 07_Manifests/manifest.json
 
-Current-state note (12 August 2026): this synthetic dataset and its prior results are validation evidence, not final Phase 1 clinical acceptance. The Clinical Privacy Policy Engine remains pending representative real-document acceptance validation before Phase 1 closure.
+Current checkpoint (12 August 2026): synthetic POC acceptance is complete for the current checkpoint at **681 passed, 8 warnings, 0 failures**. Real medical-document acceptance is deferred to future validation. This evidence does not establish production readiness, exhaustive privacy coverage, or clinical certification.

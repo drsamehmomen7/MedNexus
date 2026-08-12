@@ -143,6 +143,7 @@ class ContextValidator:
     PROFESSIONAL_CONTEXT_PATTERNS = (
         r"\breporting\s+radiologist\b",
         r"\breporting\s+physician\b",
+        r"\badmitting\s+consultant\b",
         r"\bconsultant\s+pathologist\b",
         r"\battending\s+physician\b",
         r"\breferring\s+physician\b",
@@ -168,13 +169,9 @@ class ContextValidator:
 
     PHONE_PATTERN = re.compile(
         r"""
-        (?<!\d)
-        (?:
-            \+?\d{1,3}
-            [\s\-]?
-        )?
-        \d{7,10}
-        (?!\d)
+        (?:\+\s*)?
+        [0-9٠-٩۰-۹]
+        (?:[\s().\-/]*[0-9٠-٩۰-۹]){6,14}
         """,
         flags=re.VERBOSE,
     )
@@ -490,7 +487,7 @@ class ContextValidator:
         value = candidate.text.strip()
 
         if entity_type == CandidateEntityType.PHONE_NUMBER:
-            if cls.PHONE_PATTERN.search(value):
+            if cls.PHONE_PATTERN.fullmatch(value):
                 return (
                     CandidateDecision.ACCEPT,
                     "Phone number matched a MedNexus contact-number pattern.",

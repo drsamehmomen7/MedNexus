@@ -165,6 +165,33 @@ class ContextRuleEngine:
             ),
             MedicalContextEntity.PHYSICIAN_NAME,
         ),
+        (
+            re.compile(
+                r"""
+                ^[ \t]*
+                (?P<label>
+                    reporting[ \t]+physician
+                    |
+                    admitting[ \t]+consultant
+                    |
+                    consultant[ \t]+pathologist
+                    |
+                    طبيب[ \t]+الأشعة
+                    |
+                    الطبيب[ \t]+المعالج
+                    |
+                    استشاري[ \t]+(?:الباثولوجي|علم[ \t]+الأمراض)
+                )
+                [ \t]*:[ \t]*
+                (?:\r?\n[ \t]*)*
+                (?:(?:Dr|د)\.?[ \t]+)
+                (?P<value>[^\r\n=]+?)
+                [ \t]*$
+                """,
+                re.IGNORECASE | re.MULTILINE | re.VERBOSE,
+            ),
+            MedicalContextEntity.PHYSICIAN_NAME,
+        ),
     ]
 
     INLINE_RULES: List[Tuple[re.Pattern, MedicalContextEntity]] = [

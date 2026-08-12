@@ -4,34 +4,53 @@
 
 ## Current Platform State
 
-MedNexus is an Enterprise Medical Document Intelligence Platform. Its target journey is Ingest → Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. Capabilities are modular but share common platform contracts and may participate in the complete journey.
+MedNexus is an Enterprise Medical Document Intelligence Platform. Its target journey is Ingest → Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. Capabilities are modular, independently usable, and connected through shared platform contracts.
 
-## Implemented
+## Phase 1 Status
 
-- Clinical Privacy Policy Engine / De-identification end-to-end POC.
-- Paste text, TXT, DOCX, and text-based PDF input; no scanned-PDF OCR.
-- Unified MedNexus intelligence and purpose-based policy path with MedNexus-owned final output.
-- Four canonical purpose profiles and executable KEEP, REPLACE, HASH, MASK, and REMOVE actions.
-- `/app` enterprise homepage and `/privacy` functional privacy POC.
+**Phase 1 — Accepted POC Checkpoint / Paused.** The Clinical Privacy Policy Engine has reached its accepted architecture and synthetic-validation checkpoint. It is not production-ready, exhaustively validated, or clinically certified.
 
-## Accepted Design Baseline
+## Current Functional Capability
 
-The current Deep Teal Hybrid homepage, cinematic journey, eight-stage scroll narrative, capability/domain sections, and separate privacy-engine entry point are accepted as a working baseline, not final visual polish.
+Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification is functional end to end. `/app` is the enterprise homepage; `/privacy` is the functional privacy POC.
 
-## Known Limitations
+## Supported Input
 
-- OCR and scanned/image PDF processing are not implemented.
-- Advanced privacy transformations and Custom Policy Builder remain planned.
-- Phase 1 is not clinically or production certified.
+Implemented: pasted text, TXT, DOCX, and text-based PDF. Scanned-PDF OCR is not implemented.
+
+## Privacy Profiles
+
+Canonical profiles are `MEDNEXUS_CLINICAL`, `MEDNEXUS_RESEARCH`, `MEDNEXUS_ANALYTICS_PUBLIC_HEALTH`, and `MEDNEXUS_STRICT_PRIVACY`. Executable actions are `KEEP`, `REPLACE`, `HASH`, `MASK`, and `REMOVE`; advanced transformations remain planned.
+
+## Current Architecture Ownership
+
+Contextual and deterministic MedNexus detection plus OpenMed candidates converge through canonicalization, `RoleResolver`, `ContextValidator`, merging/orchestration, the purpose-based policy engine, and `MedNexusOutputBuilder`. OpenMed is candidate-only; its `deidentified_text` is non-authoritative. MedNexus owns interpretation, privacy decisions, transformations, and final protected output.
+
+## Latest Acceptance Fixes
+
+- Formatted international phone values such as `+123 456 7890` are accepted by conservative contact validation and remain policy-controlled.
+- Reporting Physician, Admitting Consultant, and Consultant Pathologist contexts resolve consistently as clinician identity.
+- Supported Arabic professional contexts, including `طبيب الأشعة`, create complete clinician-name spans.
+- `Dr.` and `د.` remain outside personal-name spans; the selected policy controls clinician KEEP or transformation.
+
+## Verified Test Baseline
+
+- Targeted acceptance: **103 passed, 7 warnings**.
+- Full regression: **681 passed, 8 warnings, 0 failures**.
+- Synthetic acceptance is intentionally frozen at this checkpoint.
+
+## Known Limitations / Deferred Validation
+
+Deferred: broader real medical-report validation, additional real-report privacy edge cases, broader multilingual person/clinician coverage, OCR, production hardening, performance/load validation, formal benchmark expansion, and remaining frontend visual refinements. These are not blockers for this POC checkpoint.
+
+## Frontend Checkpoint
+
+The current Deep Teal Hybrid `/app` and `/privacy` experience is an accepted working baseline. Minor visual refinements are intentionally deferred.
 
 ## Active Parallel Work
 
-Public Health Intelligence is progressing as an active parallel MedNexus domain aligned to the shared document journey. Its domain-specific schemas, analytics, dashboards, and indicators must not be described as enterprise-wide production completion.
+Public Health Intelligence is active parallel MedNexus work aligned to the shared journey while retaining domain-specific extraction schemas, analytics, dashboards, and indicators. It is not declared production-complete.
 
-## Immediate Next Step
+## Next Development Direction
 
-Resume Clinical Privacy Policy Engine real-document acceptance validation across representative reports and policies.
-
-## Phase 1 Exit Condition
-
-Confirm representative real-document results, address verified privacy leaks, false positives, and policy mismatches, rerun the appropriate regression suite, and freeze a verified baseline. Current status: **functionally complete end-to-end POC, pending final real-document acceptance validation**.
+Stop synthetic perfection loops at this checkpoint. Broader privacy validation will resume later using real medical reports while the platform proceeds to its next approved development direction. Do not start Phase 2 without explicit authorization.

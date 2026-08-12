@@ -1,3 +1,5 @@
+import pytest
+
 from backend.app.modules.medical_document_intelligence.policies.context_rules import (
     ContextRuleEngine,
 )
@@ -157,6 +159,32 @@ def test_detect_physician_name():
     assert detection.value == "Dr. Sarah Al-Mutairi"
     assert detection.label == "Requesting Physician"
     assert detection.normalized_label == "requesting_physician"
+    assert detection.matches_source_text(text) is True
+
+
+@pytest.mark.parametrize(
+    ("label", "title", "name"),
+    [
+        ("Reporting Physician", "Dr.", "Huda Khaled"),
+        ("Admitting Consultant", "Dr.", "Mohamed Al-Sabah"),
+        ("Consultant Pathologist", "د.", "خالد العيسى"),
+        ("طبيب الأشعة", "د.", "عبدالله الفهد"),
+    ],
+)
+def test_detects_complete_name_after_explicit_clinician_label(
+    label,
+    title,
+    name,
+):
+    text = f"{label}: {title} {name}"
+
+    detection = get_detection(
+        ContextRuleEngine.detect(text),
+        MedicalContextEntity.PHYSICIAN_NAME,
+    )
+
+    assert detection.value == name
+    assert detection.label == label
     assert detection.matches_source_text(text) is True
 
 

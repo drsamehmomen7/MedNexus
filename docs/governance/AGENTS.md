@@ -6,7 +6,7 @@ MedNexus is an existing, continuing enterprise healthcare AI project. Never trea
 
 - Platform identity: Enterprise Medical Document Intelligence Platform
 - Current functional module: Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification
-- Current Phase 1 status: functionally complete end-to-end POC, pending final real-document acceptance validation
+- Current Phase 1 status: Accepted POC Checkpoint / Paused; synthetic baseline frozen at 681 passed, 8 warnings, 0 failures
 
 ## 2. Workspace and Git Boundary
 
@@ -58,7 +58,7 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
-- Current documented baseline: 671 passed, 8 warnings, 0 failures.
+- Current documented baseline: 681 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.
@@ -90,4 +90,4 @@ Public Health Intelligence is active parallel domain work aligned to the shared 
 
 The current `/app` and `/privacy` frontend experience is an accepted working baseline, not final brand or visual polish. Do not reopen deferred cosmetic design work unless explicitly requested.
 
-The immediate next milestone is representative real-document acceptance validation of the Clinical Privacy Policy Engine, followed by appropriate regression confirmation and a verified Phase 1 baseline freeze.
+Phase 1 synthetic tuning is intentionally paused at the accepted POC checkpoint. Broader validation will resume later using real medical reports. Do not start Phase 2 or reopen synthetic edge-case tuning without explicit authorization.

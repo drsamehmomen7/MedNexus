@@ -53,6 +53,10 @@ def build_name_candidate(
             CandidateEntityType.PHYSICIAN_NAME,
         ),
         (
+            "Admitting Consultant",
+            CandidateEntityType.PHYSICIAN_NAME,
+        ),
+        (
             "Reporting Radiologist",
             CandidateEntityType.PHYSICIAN_NAME,
         ),

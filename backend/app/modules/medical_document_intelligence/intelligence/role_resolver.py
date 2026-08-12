@@ -39,6 +39,7 @@ class RoleResolver:
             r"reporting\s+physician",
             r"doctor",
             r"consultant",
+            r"admitting\s+consultant",
             r"consultant\s+pathologist",
             r"reporting\s+radiologist",
             r"radiologist",

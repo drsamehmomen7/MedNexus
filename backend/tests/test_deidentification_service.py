@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import pytest
+
 from backend.app.modules.medical_document_intelligence.policies.context_taxonomy import (
     MedicalContextEntity,
 )
@@ -307,5 +309,34 @@ def test_explicit_physician_field_remains_role_resolvable_and_policy_governed():
     assert research_candidate["canonical_type"] == "physician_name"
     assert "Huda Al-Awadhi" in clinical.data.deidentified_text
     assert "Huda Al-Awadhi" not in research.data.deidentified_text
+    assert "Diagnosis: Pneumonia" in clinical.data.deidentified_text
+    assert "Diagnosis: Pneumonia" in research.data.deidentified_text
+
+
+@pytest.mark.parametrize(
+    ("field", "title", "name"),
+    [
+        ("Reporting Physician", "Dr.", "Huda Khaled"),
+        ("Admitting Consultant", "Dr.", "Mohamed Al-Sabah"),
+        ("Consultant Pathologist", "د.", "خالد العيسى"),
+        ("طبيب الأشعة", "د.", "عبدالله الفهد"),
+    ],
+)
+def test_explicit_clinician_names_are_consistently_policy_governed(
+    field,
+    title,
+    name,
+):
+    text = f"{field}: {title} {name}\nDiagnosis: Pneumonia"
+    service = DeidentificationService(
+        engine_manager=FakeEngineManager(),
+    )
+
+    clinical = service.process(text, PolicyProfile.MEDNEXUS_CLINICAL)
+    research = service.process(text, PolicyProfile.MEDNEXUS_RESEARCH)
+
+    assert name in clinical.data.deidentified_text
+    assert name not in research.data.deidentified_text
+    assert f"{field}: {title}" in research.data.deidentified_text
     assert "Diagnosis: Pneumonia" in clinical.data.deidentified_text
     assert "Diagnosis: Pneumonia" in research.data.deidentified_text
