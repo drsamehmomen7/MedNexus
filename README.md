@@ -17,7 +17,9 @@ The enterprise target journey is:
 
 This is the target architecture, not a claim that all eight stages are implemented.
 
-The current module is **Medical Document Intelligence – De-identification**, implemented as a purpose-based **Clinical Privacy Policy Engine**, not merely an anonymizer. It uses a hybrid architecture combining:
+The current implemented capabilities are **Clinical Privacy Policy Engine / De-identification** and the accepted foundation of **Medical Document Understanding & Recognition**. Phase 2 implements the MedNexus-owned UNDERSTAND stage after existing ingestion; Phase 1 remains frozen at its accepted POC checkpoint.
+
+The Clinical Privacy Policy Engine combines:
 
 - AI-based candidate entity detection
 - Deterministic identifier detection
@@ -79,6 +81,26 @@ The implemented document-processing path supports:
 
 Extracted text enters the same MedNexus-owned De-identification Intelligence pipeline used for direct text processing. Scanned or image-based PDF OCR and image extraction are not implemented yet.
 
+## Medical Document Understanding & Recognition
+
+Phase 2 Foundation status: **FOUNDATION CHECKPOINT ACCEPTED** at commit `a1e8ff2`, with **714 passed, 8 warnings, 0 failures**. The standalone implemented flow is:
+
+```text
+Source File / Text
+  → Existing ExtractorFactory and DocumentContent
+  → Language Detection
+  → Structural Section Detection
+  → Evidence-Based Document Classification
+  → Confidence and Decision Evidence
+  → Symbolic Downstream Routing
+```
+
+The deterministic, explainable POC recognizes Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, Public Health, and Unknown. Supported types are `RADIOLOGY_REPORT`, `PATHOLOGY_REPORT`, `LABORATORY_REPORT`, `EMERGENCY_REPORT`, `ADMISSION_NOTE`, `DISCHARGE_SUMMARY`, `PUBLIC_HEALTH_DOCUMENT`, and `UNKNOWN`. Radiology may resolve `X_RAY`, `CT`, `MRI`, `ULTRASOUND`, `MAMMOGRAPHY`, or `NUCLEAR_MEDICINE` when evidence is adequate. Language results are `ENGLISH`, `ARABIC`, `MIXED`, or `UNKNOWN`.
+
+The result includes domain, type, optional subtype, language, complete non-overlapping major-section ranges, confidence/band, explainable evidence, symbolic routing, metadata, and warnings. `UNKNOWN` and low confidence are intentional safe outcomes. Routing recommends future profiles only; it does not claim that extraction or terminology engines exist.
+
+Phase 2 reuses the existing TXT, DOCX, text-based PDF, `ExtractorFactory`, and `DocumentContent` boundary. It introduces no parser or duplicate content contract and does not depend on Phase 1 privacy internals. Standalone APIs are `POST /api/v1/understanding/analyze-text` and `POST /api/v1/understanding/analyze-file`.
+
 ## Current Product Experience
 
 - `/app` — MedNexus Enterprise Medical Document Intelligence homepage and eight-stage platform vision.
@@ -102,7 +124,7 @@ Validation/
 
 ## Current Status
 
-**Medical Document Intelligence – Clinical Privacy Policy Engine / De-identification Phase 1**
+**Medical Document Intelligence — Phase 1 frozen; Phase 2 Foundation accepted**
 
 Status: **Phase 1 — Accepted POC Checkpoint / Paused.** The synthetic acceptance baseline is frozen; this is not production certification or exhaustive clinical validation.
 
@@ -116,11 +138,11 @@ Completed and integrated:
 - Unified document extraction contract and extractor registry/factory
 - File-processing service and upload/de-identification API path
 
-Current confirmed regression baseline:
+Accepted checkpoint baselines:
 
-- **681 passing tests**
-- **8 warnings**
-- **0 failures**
+- Phase 1 frozen: **681 passed, 8 warnings, 0 failures** at `3486c206085652e2edac2574d277ff0970e037e2`.
+- Phase 2 initial foundation: **705 passed, 8 warnings, 0 failures**.
+- Phase 2 hardened checkpoint: **714 passed, 8 warnings, 0 failures** at `a1e8ff2`; focused Phase 2 suite: **33 passed**.
 
 Earlier controlled and synthetic validation provides evidence across samples from:
 
@@ -138,4 +160,4 @@ Earlier controlled and synthetic validation provides evidence across samples fro
 
 The current synthetic POC acceptance checkpoint is complete. Broader real medical-document validation is intentionally deferred and is expected to reveal additional cases. This checkpoint does not establish clinical or production certification.
 
-Public Health Intelligence continues as active parallel work aligned to the enterprise document journey. After this pause, the next major development direction may proceed while broader privacy validation resumes later with real medical reports. Known technical debt is tracked in `backend/TECH_DEBT.md`.
+The next intended milestone is **Phase 2 Recognition Validation — Round 1**, using a small representative set across supported domains plus ambiguous/UNKNOWN cases. OCR, scanned-document recognition, layout vision, tables, ML/transformer/LLM classification, external classifiers, embeddings, advanced clinical extraction, FHIR/HL7, frontend integration, dashboards, and broad synthetic classifier tuning remain deliberately deferred. Known technical debt is tracked in `backend/TECH_DEBT.md`.

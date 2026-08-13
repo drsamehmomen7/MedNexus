@@ -5,8 +5,9 @@
 MedNexus is an existing, continuing enterprise healthcare AI project. Never treat a new Codex or chat session as a new MedNexus project.
 
 - Platform identity: Enterprise Medical Document Intelligence Platform
-- Current functional module: Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification
+- Current functional modules: Clinical Privacy Policy Engine / De-identification and Medical Document Understanding & Recognition
 - Current Phase 1 status: Accepted POC Checkpoint / Paused; synthetic baseline frozen at 681 passed, 8 warnings, 0 failures
+- Current Phase 2 status: Foundation Checkpoint Accepted at `a1e8ff2`; baseline 714 passed, 8 warnings, 0 failures
 
 ## 2. Workspace and Git Boundary
 
@@ -58,7 +59,8 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
-- Current documented baseline: 681 passed, 8 warnings, 0 failures.
+- Phase 1 frozen baseline: 681 passed, 8 warnings, 0 failures.
+- Current accepted repository baseline: 714 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.
@@ -69,7 +71,7 @@ Before proposing completion, inspect `git diff`, `git status`, and confirm that 
 
 ## 9. Documentation Synchronization
 
-After meaningful approved implementation milestones, assess whether `README.md`, `BUILD_HISTORY.md`, `TECH_DEBT.md`, the Enterprise Architecture Blueprint, and validation documentation need synchronization. Preserve historical entries instead of rewriting history. Clearly distinguish implemented, validated, planned, and technical-debt states.
+Documentation synchronization is mandatory at every meaningful implementation checkpoint. Review relevant state, build history, architecture/status documentation, validation documentation, and Blueprint version before moving to the next major stage. Preserve historical entries instead of rewriting history and clearly distinguish implemented, validated, planned, and technical-debt states.
 
 ## 10. Clinical Privacy and Safety
 
@@ -82,7 +84,7 @@ After meaningful approved implementation milestones, assess whether `README.md`,
 
 ## 11. Current Roadmap Boundary
 
-Do not implement future stages merely because they appear in architecture documents. Planned capabilities include Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
+Do not implement future stages merely because they appear in architecture documents. The Phase 2 deterministic Understanding foundation is implemented; its next milestone is Recognition Validation — Round 1. Planned capabilities include expanded Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
 
 The enterprise target document journey is Ingest → Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. This is a target architecture, not an implementation claim. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey.
 
@@ -90,4 +92,4 @@ Public Health Intelligence is active parallel domain work aligned to the shared 
 
 The current `/app` and `/privacy` frontend experience is an accepted working baseline, not final brand or visual polish. Do not reopen deferred cosmetic design work unless explicitly requested.
 
-Phase 1 synthetic tuning is intentionally paused at the accepted POC checkpoint. Broader validation will resume later using real medical reports. Do not start Phase 2 or reopen synthetic edge-case tuning without explicit authorization.
+Phase 1 synthetic tuning is intentionally paused at the accepted POC checkpoint. Broader validation will resume later using real medical reports. Do not expand Phase 2 beyond the authorized milestone or reopen synthetic edge-case tuning without explicit authorization.

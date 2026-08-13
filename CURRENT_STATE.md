@@ -1,6 +1,6 @@
 # MedNexus Current State
 
-**Authoritative date:** 12 August 2026
+**Authoritative date:** 13 August 2026
 
 ## Current Platform State
 
@@ -12,7 +12,7 @@ MedNexus is an Enterprise Medical Document Intelligence Platform. Its target jou
 
 ## Current Functional Capability
 
-Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification is functional end to end. `/app` is the enterprise homepage; `/privacy` is the functional privacy POC.
+Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification is functional end to end, and Medical Document Understanding & Recognition has an accepted standalone foundation. `/app` is the enterprise homepage; `/privacy` is the functional privacy POC.
 
 ## Supported Input
 
@@ -39,6 +39,14 @@ Contextual and deterministic MedNexus detection plus OpenMed candidates converge
 - Full regression: **681 passed, 8 warnings, 0 failures**.
 - Synthetic acceptance is intentionally frozen at this checkpoint.
 
+## Phase 2 Foundation Checkpoint
+
+**Medical Document Understanding & Recognition — FOUNDATION CHECKPOINT ACCEPTED.** Checkpoint commit: `a1e8ff2`. Accepted regression baseline: **714 passed, 8 warnings, 0 failures**; focused Phase 2 hardening suite: **33 passed**. The earlier initial foundation baseline was **705 passed, 8 warnings, 0 failures**, with no Phase 1 regression.
+
+The implemented boundary is `Source File / Text → existing ExtractorFactory → existing DocumentContent → Language Detection → Structural Section Detection → Evidence-Based Classification → Confidence/Evidence → Symbolic Routing`. UNDERSTAND is independently usable and does not depend on privacy internals. Text and file APIs are exposed at `/api/v1/understanding/analyze-text` and `/api/v1/understanding/analyze-file`.
+
+Initial domains are Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, Public Health, and Unknown. Results include type/subtype, language, major section ranges, confidence, explainable evidence, symbolic routing, metadata, and warnings. `UNKNOWN` and low confidence are intentionally valid.
+
 ## Known Limitations / Deferred Validation
 
 Deferred: broader real medical-report validation, additional real-report privacy edge cases, broader multilingual person/clinician coverage, OCR, production hardening, performance/load validation, formal benchmark expansion, and remaining frontend visual refinements. These are not blockers for this POC checkpoint.
@@ -53,6 +61,6 @@ Public Health Intelligence is active parallel MedNexus work aligned to the share
 
 ## Next Development Direction
 
-Phase 2 is now authorized: **Medical Document Understanding & Recognition** implements the UNDERSTAND stage as a MedNexus-owned, deterministic POC. Its initial flow is `INGEST → DocumentContent → UNDERSTAND`, comprising language detection, evidence-based classification, major-section detection, confidence/evidence, and downstream routing.
+**Phase 2 Recognition Validation — Round 1.** Validate the current foundation using a small representative set spanning Radiology, Pathology, Laboratory, Emergency, Admission, Discharge, Public Health, and ambiguous/UNKNOWN documents. Review domain, type, subtype, language, sections, confidence, evidence, and routing before expanding the classifier or frontend.
 
-Initial domains are Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, and Public Health. `UNKNOWN` and low confidence are valid outputs. OCR, ML/transformer/LLM classification, layout vision, table extraction, universal taxonomy, and frontend redesign remain deferred. Phase 1 stays frozen at commit `3486c206085652e2edac2574d277ff0970e037e2` and its 681-pass baseline; broader privacy validation remains deferred to real medical reports.
+OCR, scanned recognition, layout vision, table extraction, universal or ML/transformer/LLM classifiers, external classification, embeddings, advanced clinical extraction, FHIR/HL7, frontend/dashboard integration, and broad synthetic tuning remain deliberately deferred.

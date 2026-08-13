@@ -956,3 +956,17 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 - Initial domains: Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, and Public Health.
 - `UNKNOWN` and low confidence are expected safe outcomes; classification is never forced.
 - Deferred: OCR, ML/LLM classifiers, layout vision, table extraction, universal taxonomy, and frontend redesign.
+
+---
+
+# Phase 2 Foundation Checkpoint Accepted — 13 Aug 2026
+
+**Commit:** `a1e8ff2`
+
+- Accepted the hardened Medical Document Understanding & Recognition foundation.
+- Reused existing ingestion and `DocumentContent`; no duplicate parser or privacy dependency was introduced.
+- Implemented deterministic language detection, structural section ranges, explainable evidence-based classification, conservative confidence/UNKNOWN behavior, and symbolic routing.
+- Added standalone text and file Understanding APIs.
+- Initial foundation baseline: **705 passed, 8 warnings, 0 failures**.
+- Hardened checkpoint baseline: **714 passed, 8 warnings, 0 failures**; focused Phase 2 suite: **33 passed**.
+- Next milestone: **Phase 2 Recognition Validation — Round 1** using a small representative healthcare-document set.
