@@ -7,6 +7,9 @@ from fastapi.staticfiles import StaticFiles
 from backend.app.modules.medical_document_intelligence.api.deidentification import (
     router as deidentification_router,
 )
+from backend.app.modules.medical_document_intelligence.api.understanding import (
+    router as understanding_router,
+)
 
 from backend.app.api.routes.file_upload import (
     router as file_upload_router,
@@ -26,6 +29,7 @@ app = FastAPI(
 
 app.include_router(deidentification_router)
 app.include_router(file_upload_router)
+app.include_router(understanding_router)
 
 
 # ============================================================

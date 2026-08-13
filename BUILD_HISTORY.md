@@ -943,3 +943,16 @@ Resume representative real medical-report validation, resolve any confirmed priv
 ## Deliberate Boundary
 
 Further synthetic tuning is paused. Broader multilingual coverage, additional privacy cases, and acceptance validation are deferred to future work using real medical reports.
+
+---
+
+# Phase 2 Foundation Started — Medical Document Understanding & Recognition
+
+**Date:** 2026-08-13
+
+- Phase 1 remains frozen/paused at commit `3486c206085652e2edac2574d277ff0970e037e2` with **681 passed, 8 warnings, 0 failures**.
+- Phase 2 implements UNDERSTAND after existing extraction and `DocumentContent`, independently of privacy internals.
+- Initial deterministic POC scope: language, evidence-based document classification, major sections, confidence, explainable evidence, and symbolic downstream routing.
+- Initial domains: Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, and Public Health.
+- `UNKNOWN` and low confidence are expected safe outcomes; classification is never forced.
+- Deferred: OCR, ML/LLM classifiers, layout vision, table extraction, universal taxonomy, and frontend redesign.

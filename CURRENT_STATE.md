@@ -53,4 +53,6 @@ Public Health Intelligence is active parallel MedNexus work aligned to the share
 
 ## Next Development Direction
 
-Stop synthetic perfection loops at this checkpoint. Broader privacy validation will resume later using real medical reports while the platform proceeds to its next approved development direction. Do not start Phase 2 without explicit authorization.
+Phase 2 is now authorized: **Medical Document Understanding & Recognition** implements the UNDERSTAND stage as a MedNexus-owned, deterministic POC. Its initial flow is `INGEST → DocumentContent → UNDERSTAND`, comprising language detection, evidence-based classification, major-section detection, confidence/evidence, and downstream routing.
+
+Initial domains are Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, and Public Health. `UNKNOWN` and low confidence are valid outputs. OCR, ML/transformer/LLM classification, layout vision, table extraction, universal taxonomy, and frontend redesign remain deferred. Phase 1 stays frozen at commit `3486c206085652e2edac2574d277ff0970e037e2` and its 681-pass baseline; broader privacy validation remains deferred to real medical reports.
