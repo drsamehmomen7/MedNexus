@@ -1,6 +1,6 @@
 # MedNexus Current State
 
-**Authoritative date:** 13 August 2026
+**Authoritative date:** 15 August 2026
 
 ## Current Platform State
 
@@ -12,7 +12,7 @@ MedNexus is an Enterprise Medical Document Intelligence Platform. Its target jou
 
 ## Current Functional Capability
 
-Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification is functional end to end, and Medical Document Understanding & Recognition has an accepted standalone foundation. `/app` is the enterprise homepage; `/privacy` is the functional privacy POC.
+Medical Document Intelligence — Clinical Privacy Policy Engine / De-identification is functional end to end. Medical Document Understanding & Recognition has reached the accepted Document Context & Journey Foundation checkpoint. `/app` is the enterprise homepage; `/understanding` is the standalone UNDERSTAND workspace; `/privacy` is the functional privacy POC.
 
 ## Supported Input
 
@@ -46,6 +46,18 @@ Contextual and deterministic MedNexus detection plus OpenMed candidates converge
 The implemented boundary is `Source File / Text → existing ExtractorFactory → existing DocumentContent → Language Detection → Structural Section Detection → Evidence-Based Classification → Confidence/Evidence → Symbolic Routing`. UNDERSTAND is independently usable and does not depend on privacy internals. Text and file APIs are exposed at `/api/v1/understanding/analyze-text` and `/api/v1/understanding/analyze-file`.
 
 Initial domains are Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, Public Health, and Unknown. Results include type/subtype, language, major section ranges, confidence, explainable evidence, symbolic routing, metadata, and warnings. `UNKNOWN` and low confidence are intentionally valid.
+
+## Phase 2 Accepted Document Context & Journey Foundation Checkpoint
+
+**Status: ACCEPTED DOCUMENT CONTEXT & JOURNEY FOUNDATION CHECKPOINT.** Accepted commit: `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`. Previous Phase 2 checkpoints are `a1e8ff2` (foundation) and `551be07` (foundation documentation synchronization). Phase 1 remains frozen at `3486c206085652e2edac2574d277ff0970e037e2`.
+
+The canonical target journey is `INGEST → UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS`. `MedNexusDocumentContext` is the reusable semantic handoff between stages. UNDERSTAND produces document identity, structure, clinical context, privacy context, processing context, and provenance while preserving unknown values as null/unknown.
+
+The current POC flow is `Upload once → INGEST → UNDERSTAND → MedNexusDocumentContext → Continue to Privacy Protection → existing Phase 1 privacy pipeline`, without a second upload. The retained source filename and document status remain visible during the handoff.
+
+Recognition Knowledge Layer v1 provides MedNexus-owned multilingual concepts, domain signatures, evidence interpretation, and external-reference provenance, with Radiology as the first reference domain. LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 are reference inputs only. MedNexus owns curation, normalization, recognition signatures, context construction, and decision logic.
+
+Progressive Result Reveal is frontend presentation of a completed authoritative result, not backend streaming. Accepted regression baseline: **742 passed, 8 warnings, 0 failures**.
 
 ## Phase 2 Product Integration
 

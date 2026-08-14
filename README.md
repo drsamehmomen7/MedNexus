@@ -83,7 +83,7 @@ Extracted text enters the same MedNexus-owned De-identification Intelligence pip
 
 ## Medical Document Understanding & Recognition
 
-Phase 2 Foundation status: **FOUNDATION CHECKPOINT ACCEPTED** at commit `a1e8ff2`. The standalone implemented flow is:
+Phase 2 status: **ACCEPTED DOCUMENT CONTEXT & JOURNEY FOUNDATION CHECKPOINT** at commit `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`. Previous checkpoints are `a1e8ff2` (foundation) and `551be07` (documentation synchronization). The standalone implemented flow is:
 
 ```text
 Source File / Text
@@ -105,9 +105,9 @@ The active POC product page is `/understanding`, supporting pasted text and TXT/
 
 The result workspace uses progressive disclosure for a broad audience: a dominant human-readable recognition summary comes first, followed by detected structure, plain-language evidence, and the recommended journey. Raw enums, offsets, evidence weights/matches, and routing identifiers remain available in collapsed technical details. Primary-language detection favors the dominant clinical content rather than short second-script labels or technical footers.
 
-Radiology recognition is backed by an offline MedNexus-owned knowledge package containing typed bilingual concepts, stable concept IDs, a registry, modality mappings, section aliases, and a multi-signal Radiology Report signature. Standards such as LOINC Document Ontology, DICOM/DICOM SR, RSNA terminology/reporting families, SNOMED CT, and HL7 CDA/C-CDA are recorded as provenance families only; they do not supply runtime classification decisions. The result page presents one vertical primary result in domain/type/subtype/language/confidence order, two secondary blocks, a compact journey, and collapsed technical traceability.
+Radiology recognition is backed by an offline MedNexus-owned knowledge package containing typed bilingual concepts, stable concept IDs, a registry, modality mappings, section aliases, and a multi-signal Radiology Report signature. LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 are recorded as reference/provenance families only; they do not supply runtime classification decisions. MedNexus owns curation, normalization, signatures, context construction, and decision logic. The result page presents one vertical primary result in domain/type/subtype/language/confidence order, two secondary blocks, a compact journey, and collapsed technical traceability.
 
-The primary UNDERSTAND output is now `MedNexusDocumentContext`, not classification alone. It carries document identity and ingestion metadata, recognized domain/type/confidence, semantic sections, conservative domain context, privacy-relevant regions, symbolic downstream recommendations, and evidence/knowledge provenance. Radiology v1 derives supported modality, examination, body region, contrast, structure, and radiologist/authentication context without claiming full clinical extraction.
+The primary UNDERSTAND output is now `MedNexusDocumentContext`, not classification alone. It is the reusable semantic handoff between stages and carries document identity, structure, clinical context, privacy context, processing context, and provenance. Radiology v1 derives supported modality, examination, body region, contrast, structure, and radiologist/authentication context without claiming full clinical extraction.
 
 For the POC journey, a bounded in-memory session retains the original `DocumentContent` together with its context. The `/understanding` workspace can continue the same document to `/privacy`, which calls the existing privacy service with the retained source and selected policy. This is deliberately process-local and non-durable; production session persistence remains future infrastructure.
 
@@ -136,7 +136,7 @@ Validation/
 
 ## Current Status
 
-**Medical Document Intelligence — Phase 1 frozen; Phase 2 Foundation accepted**
+**Medical Document Intelligence — Phase 1 frozen; Phase 2 Document Context & Journey Foundation accepted**
 
 Status: **Phase 1 — Accepted POC Checkpoint / Paused.** The synthetic acceptance baseline is frozen; this is not production certification or exhaustive clinical validation.
 
@@ -160,6 +160,7 @@ Accepted checkpoint baselines:
 - Recognition Knowledge Layer v1 and simplified result UX: **731 passed, 8 warnings, 0 failures**; focused suite: **50 passed**.
 - MedNexus Document Context foundation and same-document journey: **737 passed, 8 warnings, 0 failures**; focused suite: **64 passed**.
 - Phase 2 UI polish and Progressive Result Reveal: **739 passed, 8 warnings, 0 failures**; focused suite: **75 passed**.
+- Phase 2 Document Context & Journey Foundation accepted checkpoint: **742 passed, 8 warnings, 0 failures** at `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`.
 
 Earlier controlled and synthetic validation provides evidence across samples from:
 

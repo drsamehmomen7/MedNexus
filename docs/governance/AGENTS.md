@@ -7,7 +7,7 @@ MedNexus is an existing, continuing enterprise healthcare AI project. Never trea
 - Platform identity: Enterprise Medical Document Intelligence Platform
 - Current functional modules: Clinical Privacy Policy Engine / De-identification and Medical Document Understanding & Recognition
 - Current Phase 1 status: Accepted POC Checkpoint / Paused; synthetic baseline frozen at 681 passed, 8 warnings, 0 failures
-- Current Phase 2 status: Foundation Checkpoint Accepted at `a1e8ff2`; baseline 714 passed, 8 warnings, 0 failures
+- Current Phase 2 status: Accepted Document Context & Journey Foundation Checkpoint at `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`; baseline 742 passed, 8 warnings, 0 failures
 
 ## 2. Workspace and Git Boundary
 
@@ -60,7 +60,7 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
 - Phase 1 frozen baseline: 681 passed, 8 warnings, 0 failures.
-- Current accepted repository baseline: 714 passed, 8 warnings, 0 failures.
+- Current accepted repository baseline: 742 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.

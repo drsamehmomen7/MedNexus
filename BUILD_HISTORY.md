@@ -1010,6 +1010,26 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 
 ---
 
+# Phase 2 Document Context & Journey Foundation — Accepted Checkpoint
+
+**Date:** 15 August 2026
+**Status:** ACCEPTED DOCUMENT CONTEXT & JOURNEY FOUNDATION CHECKPOINT
+**Commit:** `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`
+
+- Phase 1 remains frozen at `3486c206085652e2edac2574d277ff0970e037e2` with **681 passed, 8 warnings, 0 failures**.
+- Previous Phase 2 checkpoints: `a1e8ff2` — foundation; `551be07` — foundation documentation synchronization.
+- Accepted Recognition Knowledge Layer v1 with MedNexus-owned multilingual concepts, domain signatures, evidence interpretation, and external-reference provenance; Radiology is the first reference domain.
+- Accepted `MedNexusDocumentContext` as the reusable semantic handoff carrying document identity, structure, clinical context, privacy context, processing context, and provenance.
+- Accepted the standalone `/understanding` workspace and same-document `Upload once → INGEST → UNDERSTAND → MedNexusDocumentContext → PROTECT` flow into the existing Phase 1 privacy pipeline without re-upload.
+- Accepted retained filename/status presentation, broad-audience recognition results, privacy handoff UX, and Progressive Result Reveal. Progressive reveal presents completed authoritative output in the frontend; it is not backend streaming.
+- Canonical target journey remains `INGEST → UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS`.
+- LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 remain reference inputs. MedNexus owns curation, normalization, signatures, context construction, and decision logic.
+- Final accepted regression baseline: **742 passed, 8 warnings, 0 failures**.
+- Documentation synchronization remains mandatory after every meaningful implementation checkpoint.
+- Blueprint v1.6 remains the architecture version because the accepted implementation is already represented by its Knowledge Layer and Document Context addenda.
+
+---
+
 # Phase 2 Privacy Handoff UX & Progressive Reveal Correction — 13 Aug 2026
 
 - Preserved the uploaded filename inside retained `DocumentContent`, so UNDERSTAND → PROTECT carries truthful document identity rather than a temporary extraction filename.
