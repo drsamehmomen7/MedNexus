@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .knowledge.models import RecognitionSignal as WeightedSignal
+from .knowledge.radiology import (
+    RADIOLOGY_CONCEPTS,
+    RADIOLOGY_SECTION_ALIASES,
+    RADIOLOGY_SUBTYPE_SIGNALS,
+    radiology_signals,
+)
 from .models import DocumentDomain, DocumentSubtype, DocumentType
-
-
-@dataclass(frozen=True, slots=True)
-class WeightedSignal:
-    phrase: str
-    weight: float
-    category: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,13 +24,8 @@ def _signals(*items):
 
 
 PROFILES = (
-    DocumentProfile(DocumentDomain.RADIOLOGY, DocumentType.RADIOLOGY_REPORT, _signals(
-        ("radiology report", 5, "title"), ("imaging report", 4, "title"),
-        ("technique", 2, "section"), ("findings", 2, "section"), ("impression", 3, "section"),
-        ("comparison", 1.5, "section"), ("ct", 2, "modality"), ("mri", 2, "modality"),
-        ("x-ray", 2, "modality"), ("ultrasound", 2, "modality"), ("mammography", 2, "modality"),
-        ("تقرير الأشعة", 5, "title"), ("النتائج", 1.5, "section"), ("الانطباع", 2.5, "section"),
-    )),
+    DocumentProfile(DocumentDomain.RADIOLOGY, DocumentType.RADIOLOGY_REPORT,
+                    radiology_signals(RADIOLOGY_CONCEPTS)),
     DocumentProfile(DocumentDomain.PATHOLOGY, DocumentType.PATHOLOGY_REPORT, _signals(
         ("pathology report", 5, "title"), ("histopathology", 4, "title"),
         ("gross description", 3, "section"), ("microscopic description", 3, "section"),
@@ -71,8 +66,6 @@ PROFILES = (
 
 SECTION_ALIASES = {
     "clinical_history": ("clinical history", "history", "التاريخ السريري"),
-    "comparison": ("comparison", "المقارنة"), "technique": ("technique", "التقنية"),
-    "findings": ("findings", "النتائج"), "impression": ("impression", "الانطباع"),
     "recommendation": ("recommendation", "recommendations", "التوصية"),
     "clinical_information": ("clinical information",), "specimen": ("specimen", "العينة"),
     "gross_description": ("gross description",), "microscopic_description": ("microscopic description",),
@@ -89,12 +82,8 @@ SECTION_ALIASES = {
     "discharge_diagnosis": ("discharge diagnosis",), "discharge_medications": ("discharge medications",),
     "follow_up": ("follow-up", "follow up"), "notification_details": ("notification details", "case notification"),
     "surveillance_summary": ("surveillance summary", "epidemiological investigation"),
+    **RADIOLOGY_SECTION_ALIASES,
 }
 
 
-SUBTYPE_SIGNALS = {
-    DocumentSubtype.CT: ("ct", "computed tomography"), DocumentSubtype.MRI: ("mri", "magnetic resonance"),
-    DocumentSubtype.X_RAY: ("x-ray", "x ray", "radiograph"), DocumentSubtype.ULTRASOUND: ("ultrasound", "sonography"),
-    DocumentSubtype.MAMMOGRAPHY: ("mammography", "mammogram"),
-    DocumentSubtype.NUCLEAR_MEDICINE: ("nuclear medicine", "pet scan", "scintigraphy"),
-}
+SUBTYPE_SIGNALS = RADIOLOGY_SUBTYPE_SIGNALS

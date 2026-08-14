@@ -111,7 +111,7 @@ textarea{width:100%;min-height:350px;border:1px solid #d7dfda;border-radius:17px
 .btn.primary{background:var(--lime);color:#0a1715;border-color:var(--lime);font-weight:800}
 .results-grid{display:grid;grid-template-columns:1fr 1fr 350px;gap:15px}
 .result-panel,.privacy-report{border:1px solid var(--line);border-radius:20px;background:#0a2025;overflow:hidden}
-.panel-head{padding:14px 16px;border-bottom:1px solid var(--line);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:#a7b9b6}
+.panel-head{min-height:51px;padding:14px 16px;border-bottom:1px solid var(--line);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:#a7b9b6}.panel-head.reveal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.reveal-tools{display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0}.reveal-status{color:var(--teal);font-size:.72rem}.reveal-status:not(:empty)::before{content:'';display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(85,223,208,.1);animation:revealPulse 1.4s ease-in-out infinite}.reveal-skip{border:0;background:none;color:#d5e5e1;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:.72rem}.reveal-skip[hidden]{display:none}@keyframes revealPulse{50%{opacity:.35}}
 pre{margin:0;padding:18px;white-space:pre-wrap;word-break:break-word;min-height:410px;max-height:620px;overflow:auto;font-family:Consolas,monospace;font-size:.83rem;line-height:1.6;color:#d9e7e4}
 .privacy-report{padding:20px}
 .privacy-report h3{font-family:var(--serif);font-size:1.75rem;margin:0 0 14px}
@@ -159,6 +159,11 @@ footer{padding:30px 0;border-top:1px solid var(--line);color:#91a4a0;background:
 .footer-grid img{height:42px}
 
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media(prefers-reduced-motion:reduce){.reveal-status:not(:empty)::before{animation:none}}
+
+.handoff-status{margin:18px 0;padding:22px;border:1px solid #7adac7;border-radius:18px;background:linear-gradient(145deg,#e8f7f1,#f8faf5);color:#123b34}.handoff-status[hidden]{display:none}.handoff-journey{display:flex;align-items:center;gap:10px;margin-bottom:18px;color:#398d7c;font-size:.68rem;letter-spacing:.12em}.handoff-journey strong{color:#123b34}.handoff-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.handoff-head small{color:#168f76;font-size:.7rem;font-weight:900;letter-spacing:.12em}.handoff-head h3{margin:7px 0 0;font-size:1.15rem;overflow-wrap:anywhere}.ready-pill{padding:7px 10px;border-radius:999px;background:#c9f0df;color:#106f5d;font-size:.67rem;font-weight:900;letter-spacing:.1em}.handoff-status>p{margin:12px 0;color:#536e68;font-size:.83rem}.handoff-status ul{display:grid;gap:7px;margin:14px 0;padding:0;list-style:none;font-size:.82rem}.handoff-status li::before{content:'✓';margin-right:8px;color:#168f76;font-weight:900}.handoff-status details{border-color:#b6d8cf}.context-summary{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin:12px 0 0;font-size:.78rem}.context-summary dt{color:#67827b}.context-summary dd{margin:0;font-weight:800}.handoff-next{display:flex;gap:12px;margin-top:15px;padding-top:14px;border-top:1px solid #c0ddd5;font-size:.82rem}.handoff-next b{color:#168f76}.use-another{margin-top:16px;padding:0;border:0;background:none;color:#426c63;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:.78rem}.input-panel.journey-active>#manualInputTabs,.input-panel.journey-active>#textInput,.input-panel.journey-active>#uploadBox{opacity:.25;pointer-events:none;max-height:70px;overflow:hidden}.input-panel.journey-active>.input-step{opacity:.55}.process-btn.is-processing{cursor:wait;opacity:.75}.process-btn.is-processing strong{animation:revealPulse 1s ease-in-out infinite}
+.input-panel.journey-active>#manualInputTabs,.input-panel.journey-active>#textInput,.input-panel.journey-active>#uploadBox,.input-panel.journey-active>.input-step{display:none}
+.input-panel:has(>#handoffStatus:not([hidden]))>.input-step,#handoffStatus:not([hidden])~#manualInputTabs,#handoffStatus:not([hidden])~#textInput,#handoffStatus:not([hidden])~#uploadBox{display:none!important}
 @media(max-width:1100px){
   .policy-grid{grid-template-columns:repeat(2,1fr)}
   .results-grid{grid-template-columns:1fr 1fr} .privacy-report{grid-column:1/-1}
@@ -599,7 +604,17 @@ footer{padding:30px 0;border-top:1px solid var(--line);color:#91a4a0;background:
             <div><b>Provide the medical document</b><small>Paste text or upload a supported file.</small></div>
           </div>
 
-          <div class="tabs">
+          <section class="handoff-status" id="handoffStatus" hidden>
+            <div class="handoff-journey"><b>UNDERSTAND</b><span>→</span><strong>PRIVACY PROTECTION</strong></div>
+            <div class="handoff-head"><div><small>DOCUMENT RECEIVED</small><h3 id="handoffDocumentName">Pasted medical text</h3></div><span class="ready-pill" id="handoffState">READY</span></div>
+            <p>Received from Document Understanding · Ready for Privacy Protection</p>
+            <ul><li>Document transferred successfully</li><li>MedNexus Document Context available</li><li>No re-upload required</li></ul>
+            <details><summary>Document context summary</summary><dl class="context-summary" id="handoffContext"></dl></details>
+            <div class="handoff-next"><b>Next</b><span>Review the selected privacy workflow, then click Process.</span></div>
+            <button class="use-another" id="useAnotherDocument" type="button">Use another document instead</button>
+          </section>
+
+          <div class="tabs" id="manualInputTabs">
             <button class="tab active" id="tabText" type="button">Paste Medical Text</button>
             <button class="tab" id="tabFile" type="button">Upload Document</button>
           </div>
@@ -624,7 +639,7 @@ Diagnosis: Invasive ductal carcinoma. Margins are free.</textarea>
         <aside class="policy-panel selected-policy-panel">
           <div class="input-step">
             <span>02</span>
-            <div><b>Selected purpose of use</b><small>Choose a policy above. This workspace follows it automatically.</small></div>
+            <div><b>Selected purpose of use</b><small id="policyDocumentLink">Choose a policy above. This workspace follows it automatically.</small></div>
           </div>
 
           <div class="policy-summary" id="policySummary">
@@ -681,7 +696,7 @@ Diagnosis: Invasive ductal carcinoma. Margins are free.</textarea>
     </div>
     <div class="results-grid">
       <div class="result-panel"><div class="panel-head">Original Document</div><pre id="originalOutput"></pre></div>
-      <div class="result-panel"><div class="panel-head">Protected Document</div><pre id="protectedOutput"></pre></div>
+      <div class="result-panel"><div class="panel-head reveal-head"><span>Protected Document</span><span class="reveal-tools"><span class="reveal-status" id="revealStatus" aria-live="polite"></span><button class="reveal-skip" id="revealSkip" type="button" hidden>Show full result</button></span></div><pre id="protectedOutput" aria-live="off"></pre></div>
       <aside class="privacy-report">
         <h3>Privacy Report</h3>
         <div class="report-row"><span>Selected policy</span><b id="rPolicy">—</b></div>
@@ -770,10 +785,13 @@ Diagnosis: Invasive ductal carcinoma. Margins are free.</textarea>
   </div>
 </footer>
 
+<script src="/progressive-result.js"></script>
 <script>
 (()=>{
  let textEndpoint=null, fileEndpoint=null;
- let mode='text', policy='mednexus_clinical', last='';
+ let mode='text', policy='mednexus_clinical', last='', activeReveal=null;
+ let activeJourneyId=new URLSearchParams(window.location.search).get('journey_id');
+ const forceRevealMotion=location.hostname.match(/^(localhost|127\.0\.0\.1)$/)&&new URLSearchParams(location.search).get('reveal_motion')==='force';
 
  async function resolveApiEndpoints(){
    if(textEndpoint && fileEndpoint) return;
@@ -819,6 +837,23 @@ Diagnosis: Invasive ductal carcinoma. Margins are free.</textarea>
    if(pill){ pill.textContent='API · CONNECTED'; pill.style.color='#168f76'; pill.style.borderColor='#168f76'; }
  }
  const $=id=>document.getElementById(id);
+
+ function displayDocumentName(name){return !name||name==='pasted-text.txt'?'Pasted medical text':name}
+ function renderContextSummary(context){
+   const identity=context.identity||{},clinical=context.clinical_context||{},document=context.document||{};
+   const items=[['Domain',identity.healthcare_domain],['Type',identity.document_type],['Examination',clinical.examination],['Language',document.primary_language]].filter(([,v])=>v);
+   $('handoffContext').replaceChildren();items.forEach(([key,value])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;dd.textContent=String(value).replaceAll('_',' ');$('handoffContext').append(dt,dd)});
+ }
+ async function loadJourney(){
+   if(!activeJourneyId)return;
+   const response=await fetch(`/api/v1/understanding/journeys/${encodeURIComponent(activeJourneyId)}`,{cache:'no-store'});
+   if(!response.ok)throw new Error('The transferred document is no longer available. Return to Document Understanding and try again.');
+   const payload=await response.json(),context=payload.document_context||{},name=displayDocumentName(context.document?.source_name);
+   $('handoffDocumentName').textContent=name;$('handoffStatus').hidden=false;$('handoffState').textContent='READY';renderContextSummary(context);
+   $('policyDocumentLink').textContent=`Document: ${name} · Select a workflow, then process.`;
+   document.querySelector('.input-panel').classList.add('journey-active');
+   requestAnimationFrame(()=>document.getElementById('workspace').scrollIntoView({block:'start'}));
+ }
 
  function setMode(m){
    mode=m; const t=m==='text';
@@ -896,6 +931,8 @@ Diagnosis: Invasive ductal carcinoma. Margins are free.</textarea>
  if(changePolicyBtn) changePolicyBtn.onclick=()=>document.getElementById('policies').scrollIntoView({behavior:'smooth',block:'center'});
  document.querySelectorAll('[data-policy-hot]').forEach(a=>a.addEventListener('click',()=>setPolicy(a.dataset.policyHot)));
  setPolicy('mednexus_clinical');
+ if(activeJourneyId)loadJourney().catch(error=>{$('status').textContent=error.message;$('status').style.color='#8d5048'});
+ $('useAnotherDocument').onclick=()=>{activeJourneyId=null;$('handoffStatus').hidden=true;document.querySelector('.input-panel').classList.remove('journey-active');$('policyDocumentLink').textContent='Choose a policy above. This workspace follows it automatically.';$('textInput').readOnly=false;$('textInput').value='';history.replaceState(null,'','/privacy#workspace');};
 
  function pick(o,paths,f=''){
    for(const p of paths){
@@ -920,11 +957,13 @@ Diagnosis: Invasive ductal carcinoma. Margins are free.</textarea>
  }
 
  $('processBtn').onclick=async()=>{
-   const s=$('status'); s.textContent='Processing…'; $('processBtn').disabled=true;
+   const s=$('status'); s.textContent=activeJourneyId?'Protecting the retained document…':'Protecting document…'; $('processBtn').disabled=true;$('processBtn').classList.add('is-processing');$('processButtonLabel').textContent='Protecting document…';if(activeJourneyId)$('handoffState').textContent='PROCESSING';
    try{
      await resolveApiEndpoints();
      let r;
-     if(mode==='text'){
+     if(activeJourneyId){
+       r=await fetch(`/api/v1/understanding/journeys/${encodeURIComponent(activeJourneyId)}/protect`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({policy})});
+     }else if(mode==='text'){
        const text=$('textInput').value.trim(); if(!text)throw Error('Please paste medical text first.');
        r=await fetch(textEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,policy})});
      }else{
@@ -935,19 +974,21 @@ Diagnosis: Invasive ductal carcinoma. Margins are free.</textarea>
      const p=await r.json();
      if(!r.ok)throw Error(p.detail||p.message||p.error||`HTTP ${r.status}`);
      const n=norm(p),orig=n.original||(mode==='text'?$('textInput').value:'');
-     $('originalOutput').textContent=orig; $('protectedOutput').textContent=n.protectedText; last=n.protectedText;
-     $('rPolicy').textContent=n.policy; $('rTime').textContent=n.time||'Available in metadata';
+     if(activeReveal)activeReveal.finish();
+     $('originalOutput').textContent=orig; last=n.protectedText;
+     const seconds=Number(n.time);$('rPolicy').textContent=n.policy; $('rTime').textContent=Number.isFinite(seconds)?`${seconds.toFixed(2)} s`:'Available in metadata';
      $('rOwner').textContent=n.owner; $('rFormat').textContent=n.source;
      $('rWarnings').textContent=Array.isArray(n.warnings)?n.warnings.length:(n.warnings?1:0);
      $('metadataOutput').textContent=JSON.stringify(n.metadata||p,null,2);
-     s.style.color='#168f76'; s.textContent='Processed successfully.';
+     s.style.color='#168f76'; s.textContent='Authoritative protected result received.';
      $('results').classList.add('show'); $('results').scrollIntoView({behavior:'smooth'});
+     activeReveal=MedNexusProgressiveResult.reveal({target:$('protectedOutput'),text:last,status:$('revealStatus'),skip:$('revealSkip'),forceMotion:forceRevealMotion});if(activeJourneyId)$('handoffState').textContent='PROTECTED';
    }catch(e){
      console.error('MedNexus processing error',e);
      s.style.color='#8d5048';
      s.textContent=e && e.message ? e.message : 'Processing failed.';
    }
-   finally{ $('processBtn').disabled=false; }
+   finally{ $('processBtn').disabled=false;$('processBtn').classList.remove('is-processing');$('processButtonLabel').textContent=(policyUI[policy]||policyUI.mednexus_clinical).button; }
  };
 
  $('anotherBtn').onclick=()=>{ $('results').classList.remove('show'); $('workspace').scrollIntoView({behavior:'smooth'}); };

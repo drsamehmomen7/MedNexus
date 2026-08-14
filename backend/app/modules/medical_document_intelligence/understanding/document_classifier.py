@@ -12,6 +12,7 @@ from .models import (
     DocumentType,
 )
 from .profiles import PROFILES, SECTION_ALIASES, SUBTYPE_SIGNALS, DocumentProfile, WeightedSignal
+from .knowledge.radiology import RADIOLOGY_REPORT_SIGNATURE
 from .section_detector import SectionDetector
 
 
@@ -47,6 +48,12 @@ class DocumentClassifier:
         ]
         scored.sort(key=lambda item: item[0], reverse=True)
         best_score, best_profile, best_evidence = scored[0]
+        if best_profile.domain is DocumentDomain.RADIOLOGY:
+            assessment = RADIOLOGY_REPORT_SIGNATURE.assess({
+                item.concept_id for item in best_evidence if item.concept_id
+            })
+            if not assessment.satisfied:
+                best_score = min(best_score, cls.MINIMUM_ACCEPTED_SCORE - 0.1)
         second_score = scored[1][0]
         all_evidence = tuple(
             item for score, _, entries in scored if score > 0 for item in entries
@@ -94,7 +101,7 @@ class DocumentClassifier:
         matched_section_concepts: set[str] = set()
         for signal in profile.signals:
             section_concept = (
-                cls._section_concept(signal.phrase)
+                signal.concept_id or cls._section_concept(signal.phrase)
                 if signal.category == "section"
                 else None
             )
@@ -103,7 +110,8 @@ class DocumentClassifier:
             reference = cls._find_signal(text, signal, sections)
             if reference is not None:
                 evidence.append(ClassificationEvidence(
-                    profile.document_type, signal.phrase, signal.category, signal.weight, reference
+                    profile.document_type, signal.phrase, signal.category, signal.weight, reference,
+                    signal.concept_id, signal.reference_systems,
                 ))
                 if section_concept is not None:
                     matched_section_concepts.add(section_concept)
@@ -151,12 +159,12 @@ class DocumentClassifier:
     ) -> DocumentSubtype:
         header_lines = [line for line in text.splitlines() if line.strip()]
         header_text = header_lines[:1]
-        technique_text = "\n".join(
+        modality_section_text = "\n".join(
             text[section.start:section.end]
             for section in sections
-            if section.canonical_name == "technique"
+            if section.canonical_name in {"radiology_examination", "technique"}
         )
-        modality_context = f"{' '.join(header_text)}\n{technique_text}"
+        modality_context = f"{' '.join(header_text)}\n{modality_section_text}"
         matched = [
             subtype for subtype, phrases in SUBTYPE_SIGNALS.items()
             if any(

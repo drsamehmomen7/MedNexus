@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#031715">
+  <title>Document Understanding Workspace — MedNexus</title>
+  <meta name="description" content="MedNexus Medical Document Understanding & Recognition.">
+  <link rel="stylesheet" href="/understanding-styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/app" aria-label="MedNexus home"><span class="brand-mark">⌁</span><b>MEDNE<span>X</span>US</b></a>
+  <nav><a href="/app">Platform</a><a href="/privacy">Privacy Engine</a><a class="active" href="/understanding">Document Recognition</a></nav>
+</header>
+
+<main>
+  <section class="hero shell">
+    <div>
+      <p class="eyebrow">02 UNDERSTAND · LIVE POC</p>
+      <h1>Medical Document<br><span>Understanding Workspace.</span></h1>
+      <p class="lead">Turn one ingested medical document into reusable MedNexus context for privacy, extraction and later clinical intelligence.</p>
+    </div>
+    <div class="journey" aria-label="MedNexus journey"><i>01 INGEST</i><b>→</b><i class="current">02 UNDERSTAND</i><b>→</b><i>03 PROTECT</i></div>
+  </section>
+
+  <section class="workspace shell" id="workspace">
+    <div class="workspace-head">
+      <div><p class="eyebrow">DOCUMENT INPUT</p><h2>What should MedNexus understand?</h2></div>
+      <div class="tabs" role="tablist"><button class="active" id="textTab" type="button">Paste text</button><button id="fileTab" type="button">Upload document</button></div>
+    </div>
+    <div class="input-panel">
+      <div id="textMode">
+        <label for="textInput">Medical document text</label>
+        <textarea id="textInput" placeholder="Paste a radiology, pathology, laboratory, emergency, admission, discharge or public-health document…"></textarea>
+      </div>
+      <label class="upload" id="fileMode" for="fileInput">
+        <span class="upload-icon">↑</span><b>Choose a supported medical document</b>
+        <small>TXT, DOCX or text-based PDF</small><em id="fileName">No file selected</em>
+        <input id="fileInput" type="file" accept=".txt,.docx,.pdf">
+      </label>
+      <div class="action-row"><button class="analyze" id="analyzeBtn" type="button">Analyze Document <span>→</span></button><p class="status" id="status" aria-live="polite"></p></div>
+    </div>
+  </section>
+
+  <section class="results" id="results" aria-live="polite">
+    <div class="shell">
+      <header class="results-head"><p class="eyebrow">DOCUMENT UNDERSTANDING</p><button id="anotherBtn" type="button">Analyze another</button></header>
+
+      <div class="result-primary">
+      <article class="recognition-summary" id="recognitionSummary">
+        <div class="domain-result"><small>MEDNEXUS DOCUMENT CONTEXT</small><strong id="domainValue">—</strong><p id="documentSummary">—</p></div>
+        <div class="confidence-line"><span id="languageValue">—</span><b id="confidenceBand">—</b><small id="confidenceNote"></small></div>
+      </article>
+
+      <article class="overview-card"><small>DOCUMENT OVERVIEW</small><h3>What MedNexus understands</h3><dl id="overviewList"></dl></article>
+      </div>
+
+      <div class="audience-grid">
+        <article class="audience-card structure-card"><header><div><small>DOCUMENT STRUCTURE</small><h3>Recognized sections</h3></div></header><div class="structure-list" id="sectionList"></div></article>
+        <article class="audience-card explanation-card"><header><div><small>CLINICAL CONTEXT IDENTIFIED</small><h3>Reusable document context</h3></div></header><div class="context-tags" id="clinicalContextList"></div></article>
+      </div>
+
+      <section class="journey-card"><div><small>READY FOR MEDNEXUS</small><h3 id="journeyTitle">Document context established.</h3><p id="routeNote"></p></div><button class="continue-btn" id="continueBtn" type="button">Continue to Privacy Protection →</button></section>
+      <aside class="warnings" id="warnings"></aside>
+
+      <details class="technical-details">
+        <summary><span>Technical details</span><small>Enums, offsets, evidence weights and routing identifiers</small></summary>
+        <div class="technical-grid">
+          <section><h4>Machine-readable context</h4><pre id="machineDetails"></pre></section>
+          <section><h4>Section offsets</h4><div id="technicalSections"></div></section>
+          <section><h4>Knowledge evidence</h4><div id="technicalEvidence"></div></section>
+          <section><h4>Symbolic routing</h4><pre id="technicalRouting"></pre></section>
+        </div>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer><div class="shell"><b>MEDNEXUS</b><p>Enterprise Medical Document Intelligence · UNDERSTAND foundation</p></div></footer>
+<script src="/understanding.js"></script>
+</body>
+</html>

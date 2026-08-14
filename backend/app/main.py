@@ -136,3 +136,36 @@ def privacy_styles():
         FRONTEND_DIR / "privacy-styles.css",
         media_type="text/css",
     )
+
+
+# ============================================================
+# MEDICAL DOCUMENT UNDERSTANDING & RECOGNITION
+# ============================================================
+
+@app.get("/understanding")
+def understanding_application():
+    return FileResponse(FRONTEND_DIR / "understanding.html")
+
+
+@app.get("/understanding-styles.css")
+def understanding_styles():
+    return FileResponse(
+        FRONTEND_DIR / "understanding-styles.css",
+        media_type="text/css",
+    )
+
+
+@app.get("/understanding.js")
+def understanding_javascript():
+    return FileResponse(
+        FRONTEND_DIR / "understanding.js",
+        media_type="application/javascript",
+    )
+
+
+@app.get("/progressive-result.js")
+def progressive_result_javascript():
+    return FileResponse(
+        FRONTEND_DIR / "progressive-result.js",
+        media_type="application/javascript",
+    )

@@ -8,6 +8,8 @@ from backend.app.modules.medical_document_intelligence.extractors.bootstrap impo
 from backend.app.modules.medical_document_intelligence.extractors.factory import ExtractorFactory
 
 from .document_classifier import DocumentClassifier
+from .context_builder import DocumentContextBuilder
+from .context_models import MedNexusDocumentContext
 from .language_detector import LanguageDetector
 from .models import DocumentUnderstandingResult
 from .routing import UnderstandingRouter
@@ -64,6 +66,21 @@ class DocumentUnderstandingService:
         }
         return self.analyze_text(document.text, metadata=metadata, warnings=document.warnings)
 
+    def build_context(
+        self, document: DocumentContent, result: DocumentUnderstandingResult | None = None
+    ) -> MedNexusDocumentContext:
+        if not isinstance(document, DocumentContent):
+            raise TypeError("document must be a DocumentContent instance.")
+        return DocumentContextBuilder.build(result or self.analyze_document(document), document)
+
+    @staticmethod
+    def text_document(text: str) -> DocumentContent:
+        if not isinstance(text, str):
+            raise TypeError("text must be a string.")
+        return DocumentContent(text, "pasted-text.txt", "text/plain", ".txt", len(text.encode("utf-8")), encoding="utf-8")
+
+    def extract_file(self, path: str | Path) -> DocumentContent:
+        return self._factory.resolve(path).extract(path)
+
     def analyze_file(self, path: str | Path) -> DocumentUnderstandingResult:
-        extractor = self._factory.resolve(path)
-        return self.analyze_document(extractor.extract(path))
+        return self.analyze_document(self.extract_file(path))

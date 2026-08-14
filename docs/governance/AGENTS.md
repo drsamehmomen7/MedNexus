@@ -84,6 +84,10 @@ Documentation synchronization is mandatory at every meaningful implementation ch
 
 ## 11. Current Roadmap Boundary
 
+Document Recognition knowledge must remain MedNexus-owned, offline, explainable, and domain-modular. External standards and terminologies may inform provenance and interoperability mapping, but must not become authoritative runtime classifiers or silently replace curated multilingual concepts and MedNexus recognition signatures. New domain knowledge should use stable concept identifiers, explicit evidence roles, conservative multi-signal signatures, and traceable reference families.
+
+`MedNexusDocumentContext` is the shared semantic handoff for one ingested document. UNDERSTAND constructs context; PROTECT applies privacy decisions to the original document informed by context where supported; EXTRACT will later create formal structured clinical data; STANDARDIZE will normalize extracted concepts. Never collapse these stages or duplicate `DocumentContent`, privacy detection, or clinical extraction inside the context layer. Unknown context must remain null/unknown rather than inferred without evidence.
+
 Do not implement future stages merely because they appear in architecture documents. The Phase 2 deterministic Understanding foundation is implemented; its next milestone is Recognition Validation — Round 1. Planned capabilities include expanded Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
 
 The enterprise target document journey is Ingest → Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. This is a target architecture, not an implementation claim. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey.

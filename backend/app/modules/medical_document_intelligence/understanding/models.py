@@ -66,6 +66,8 @@ class ClassificationEvidence:
     category: str
     weight: float
     reference: str | None = None
+    concept_id: str | None = None
+    reference_systems: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

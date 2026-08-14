@@ -970,3 +970,134 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 - Initial foundation baseline: **705 passed, 8 warnings, 0 failures**.
 - Hardened checkpoint baseline: **714 passed, 8 warnings, 0 failures**; focused Phase 2 suite: **33 passed**.
 - Next milestone: **Phase 2 Recognition Validation — Round 1** using a small representative healthcare-document set.
+
+---
+
+# Phase 2 Frontend Integration — 13 Aug 2026
+
+- Added the standalone `/understanding` POC for pasted text and supported document uploads.
+- Integrated the existing text/file Understanding APIs without changing classifier, privacy, or ingestion architecture.
+- Added recognition, confidence, structural sections, explainable evidence, symbolic routing, warnings, and UNKNOWN/manual-review presentation.
+- Corrected `/app` capability order to Document Recognition → Clinical Privacy Policy Engine → Clinical Extraction → Public Health Intelligence; Document Recognition is now marked LIVE POC.
+- Focused Understanding/API/frontend verification: **37 passed, 1 warning**.
+- Full regression: **718 passed, 8 warnings, 0 failures**.
+- Blueprint v1.5 remains current; this product integration does not change the accepted architecture.
+
+---
+
+# Phase 2 Recognition UX & Real-Document Hardening — 13 Aug 2026
+
+- Added conservative reusable Arabic Radiology context, headings, radiologist-role, and modality evidence.
+- Changed language semantics to favor the primary meaningful document language while retaining MIXED for substantial bilingual content.
+- Validated `MNX-01-03_Radiology_Arabic.txt` through real ingestion as Radiology / Radiology Report / CT / Arabic, confidence 1.0 HIGH.
+- Reorganized `/understanding` for broad audiences: dominant summary, structure, plain-language evidence, recommended journey, warnings, then collapsed technical details.
+- Preserved raw enums, offsets, weights, matched text, and routing identifiers for advanced review without exposing them as the primary result.
+- Added negative incidental-CT and cross-domain tests to prevent Radiology overclassification.
+- Focused suite: **44 passed, 1 warning**. Full regression: **725 passed, 8 warnings, 0 failures**.
+- Blueprint v1.5 remains current; no architecture boundary changed.
+
+---
+
+# Phase 2 Recognition Knowledge Layer v1 & Result UX Correction — 13 Aug 2026
+
+- Added MedNexus-owned typed Radiology concepts, bilingual aliases, stable IDs, registry lookup, reference-family provenance, and a multi-signal Radiology Report signature.
+- Refactored Radiology classifier signals, section aliases, and modality subtype signals to consume the knowledge package; other domain profiles remain unchanged.
+- Kept external standards as offline traceability inputs only; no external terminology or classifier dependency was introduced.
+- Simplified `/understanding` to one dominant vertical result card, two secondary explanation blocks, a compact recommended journey, and collapsed technical details.
+- Confirmed direct and fresh live-runtime parity on `MNX-01-03_Radiology_Arabic.txt`: Radiology / Radiology Report / CT / Arabic, confidence 1.0 HIGH, five detected sections.
+- Focused knowledge/Understanding suite: **50 passed, 1 warning**. Full regression: **731 passed, 8 warnings, 0 failures**.
+- Blueprint v1.6 records the Recognition Knowledge Layer as a material implemented architecture addition.
+
+---
+
+# Phase 2 Privacy Handoff UX & Progressive Reveal Correction — 13 Aug 2026
+
+- Preserved the uploaded filename inside retained `DocumentContent`, so UNDERSTAND → PROTECT carries truthful document identity rather than a temporary extraction filename.
+- Added a compact privacy handoff receipt with document name, reusable context availability, no-reupload confirmation, and READY → PROCESSING → PROTECTED status.
+- Kept policy choice explicit, provided “Use another document instead,” and preserved standalone `/privacy` paste/upload behavior.
+- Stabilized journey navigation at `#workspace` and made progressive reveal paint its first intact chunk immediately while retaining Show Full Result.
+- Preserved production reduced-motion behavior; forced animation is restricted to localhost acceptance review.
+- Kept the complete backend response authoritative; no backend streaming or Phase 1 privacy-semantic change was introduced.
+- Focused correction suite: **78 passed, 8 warnings**. Full regression: **742 passed, 8 warnings, 0 failures**.
+- Live Arabic and English browser journeys verified retained filenames, lifecycle state, progressive reveal/skip, protected output, and standalone safety.
+- Blueprint v1.6 remains current because this correction does not change the architecture boundary.
+
+---
+
+# Phase 2 MedNexus Document Context Foundation — 13 Aug 2026
+
+- Added `MedNexusDocumentContext` v1 as the reusable semantic contract from INGEST/UNDERSTAND to downstream MedNexus stages.
+- Added Radiology context construction for supported modality, examination, body region, contrast, semantic sections, provider-authentication regions, processing recommendations, and knowledge provenance.
+- Preserved the stage boundary: UNDERSTAND builds semantic context; EXTRACT will later produce formal structured clinical data.
+- Added a bounded process-local journey store retaining `DocumentContent + MedNexusDocumentContext` and a same-document UNDERSTAND → PROTECT adapter.
+- Kept `DeidentificationService` and Phase 1 intelligence/policy/output internals unchanged; standalone `/privacy` remains functional.
+- Reframed `/understanding` as a Document Understanding Workspace with overview, structure, clinical context, review-safe UNKNOWN behavior, and same-document continuation to privacy.
+- Resolved browser/direct discrepancy as stale non-reload server state; fresh service, API, browser, and journey results agree.
+- Focused suite: **64 passed, 8 warnings**. Full regression: **737 passed, 8 warnings, 0 failures**.
+- Blueprint v1.6 was extended within this still-uncommitted architecture batch to define the Document Context stage contract.
+
+---
+
+# Phase 2 UI Polish & Progressive Result Reveal — 13 Aug 2026
+
+- Polished `/understanding` desktop space usage with a wider balanced identity/overview layout while preserving its accepted hierarchy and mobile behavior.
+- Added reusable `MedNexusProgressiveResult` frontend presentation for complete authoritative results.
+- Privacy now displays the supplied original immediately and reveals the protected result through intact line groups, preserving Arabic, placeholders, whitespace, and bullets.
+- Added Show Full Result control, automatic reduced-motion fallback, adaptive several-second timing, and full-output copy semantics.
+- Kept backend processing synchronous and authoritative; no token-streaming or fabricated backend stage was introduced.
+- Kept Phase 1 detection, policy, intelligence, and output semantics unchanged, and preserved the no-reupload UNDERSTAND → PROTECT journey.
+- Focused frontend/integration suite: **75 passed, 8 warnings**. Full regression: **739 passed, 8 warnings, 0 failures**.
+- Blueprint v1.6 remains current; this frontend interaction convention does not change backend or journey architecture.
+
+---
+
+# Phase 2 UI Polish & Progressive Result Reveal — 13 Aug 2026
+
+- Polished `/understanding` desktop space usage with a wider balanced identity/overview layout while preserving its accepted hierarchy and mobile behavior.
+- Added reusable `MedNexusProgressiveResult` frontend presentation for complete authoritative results.
+- Privacy now displays the supplied original immediately and reveals the protected result through intact line groups, preserving Arabic, placeholders, whitespace, and bullets.
+- Added Show Full Result control, automatic reduced-motion fallback, adaptive several-second timing, and full-output copy semantics.
+- Kept backend processing synchronous and authoritative; no token-streaming or fabricated backend stage was introduced.
+- Kept Phase 1 detection, policy, intelligence, and output semantics unchanged, and preserved the no-reupload UNDERSTAND → PROTECT journey.
+- Focused frontend/integration suite: **75 passed, 8 warnings**. Full regression: **739 passed, 8 warnings, 0 failures**.
+- Blueprint v1.6 remains current; this frontend interaction convention does not change backend or journey architecture.
+
+---
+
+# Phase 2 MedNexus Document Context Foundation — 13 Aug 2026
+
+- Added `MedNexusDocumentContext` v1 as the reusable semantic contract from INGEST/UNDERSTAND to downstream MedNexus stages.
+- Added Radiology context construction for supported modality, examination, body region, contrast, semantic sections, provider-authentication regions, processing recommendations, and knowledge provenance.
+- Preserved the stage boundary: UNDERSTAND builds semantic context; EXTRACT will later produce formal structured clinical data.
+- Added a bounded process-local journey store retaining `DocumentContent + MedNexusDocumentContext` and a same-document UNDERSTAND → PROTECT adapter.
+- Kept `DeidentificationService` and Phase 1 intelligence/policy/output internals unchanged; standalone `/privacy` remains functional.
+- Reframed `/understanding` as a Document Understanding Workspace with overview, structure, clinical context, review-safe UNKNOWN behavior, and same-document continuation to privacy.
+- Resolved browser/direct discrepancy as stale non-reload server state; fresh service, API, browser, and journey results agree.
+- Focused suite: **64 passed, 8 warnings**. Full regression: **737 passed, 8 warnings, 0 failures**.
+- Blueprint v1.6 was extended within this still-uncommitted architecture batch to define the Document Context stage contract.
+
+---
+
+# Phase 2 MedNexus Document Context Foundation — 13 Aug 2026
+
+- Added `MedNexusDocumentContext` v1 as the reusable semantic contract from INGEST/UNDERSTAND to downstream MedNexus stages.
+- Added Radiology context construction for supported evidence: modality, examination, body region, contrast, semantic sections, provider-authentication regions, processing recommendations, and knowledge provenance.
+- Preserved the boundary: UNDERSTAND builds semantic context; EXTRACT will later produce formal structured clinical data.
+- Added a bounded process-local journey store retaining `DocumentContent + MedNexusDocumentContext` and a same-document UNDERSTAND → PROTECT adapter.
+- Kept `DeidentificationService` and Phase 1 intelligence/policy/output internals unchanged; standalone `/privacy` remains functional.
+- Reframed `/understanding` as a Document Understanding Workspace with overview, structure, clinical context, review-safe UNKNOWN behavior, and same-document continuation to privacy.
+- Resolved browser/direct discrepancy as stale non-reload server state; fresh service, API, browser, and journey results agree.
+- Focused suite: **64 passed, 8 warnings**. Full regression: **737 passed, 8 warnings, 0 failures**.
+- Blueprint v1.6 was extended within this still-uncommitted architecture batch to define the Document Context stage contract.
+
+---
+
+# Phase 2 Recognition Knowledge Layer v1 & Result UX Correction — 13 Aug 2026
+
+- Added MedNexus-owned typed Radiology concepts, bilingual aliases, stable IDs, registry lookup, reference-family provenance, and a multi-signal Radiology Report signature.
+- Refactored Radiology classifier signals, section aliases, and modality subtype signals to consume the knowledge package; other domain profiles remain unchanged.
+- Kept external standards as offline traceability inputs only; no external terminology or classifier dependency was introduced.
+- Simplified `/understanding` to one dominant vertical result card, two secondary explanation blocks, a compact recommended journey, and collapsed technical details.
+- Confirmed direct and fresh live-runtime parity on `MNX-01-03_Radiology_Arabic.txt`: Radiology / Radiology Report / CT / Arabic, confidence 1.0 HIGH, five detected sections.
+- Focused knowledge/Understanding suite: **50 passed, 1 warning**. Full regression: **731 passed, 8 warnings, 0 failures**.
+- Blueprint v1.6 records the Recognition Knowledge Layer as a material implemented architecture addition.
