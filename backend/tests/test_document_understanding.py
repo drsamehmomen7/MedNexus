@@ -359,3 +359,18 @@ def test_homepage_lists_live_capabilities_in_canonical_order():
     public_health = page.text.index("Public Health Intelligence", extraction)
     assert recognition < privacy < extraction < public_health
     assert 'href="/understanding"' in page.text
+
+
+def test_homepage_presents_mednexus_seven_without_changing_routes():
+    page = client.get("/app")
+    assert page.status_code == 200
+    assert page.text.count('class="stage ') == 7
+    assert 'data-stage="8"' not in page.text
+    assert "Eight transformations" not in page.text
+    assert "Seven intelligent transformations" in page.text
+    assert 'aria-label="MedNexus Seven"' in page.text
+    assert '<small>01</small><p class="eyebrow">UNDERSTAND</p>' in page.text
+    assert '<small>07</small><p class="eyebrow">INDICATORS</p>' in page.text
+    assert 'TXT · DOCX · PDF' in page.text
+    assert 'href="/understanding"' in page.text
+    assert 'href="/privacy"' in page.text

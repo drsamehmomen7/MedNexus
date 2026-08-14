@@ -4,7 +4,11 @@
 
 ## Current Platform State
 
-MedNexus is an Enterprise Medical Document Intelligence Platform. Its target journey is Ingest → Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. Capabilities are modular, independently usable, and connected through shared platform contracts.
+MedNexus is an Enterprise Medical Document Intelligence Platform. Its public MEDNEXUS⁷ journey is Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. Capabilities are modular, independently usable, and connected through shared platform contracts.
+
+Public product signature: **MEDNEXUS⁷ — One document. Seven intelligent transformations.** The homepage presents seven public transformations and treats INGEST as internal file/text intake, extraction/parsing, and `DocumentContent` construction inside UNDERSTAND. Internal identifiers and backend architecture remain `MedNexus`. Latest verification for this UI/product-architecture update: focused homepage suite **48 passed, 1 warning**; full repository regression **743 passed, 8 warnings, 0 failures**.
+
+Public product signature: **MEDNEXUS⁷ — One document. Seven intelligent transformations.** The homepage presents seven public transformations and treats INGEST as internal file/text intake, extraction/parsing, and `DocumentContent` construction inside UNDERSTAND. Internal identifiers and backend architecture remain `MedNexus`. Latest verification for this UI/product-architecture update: focused homepage suite **48 passed, 1 warning**; full repository regression **743 passed, 8 warnings, 0 failures**.
 
 ## Phase 1 Status
 
@@ -51,7 +55,7 @@ Initial domains are Radiology, Pathology, Laboratory, Emergency, Admission/Disch
 
 **Status: ACCEPTED DOCUMENT CONTEXT & JOURNEY FOUNDATION CHECKPOINT.** Accepted commit: `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`. Previous Phase 2 checkpoints are `a1e8ff2` (foundation) and `551be07` (foundation documentation synchronization). Phase 1 remains frozen at `3486c206085652e2edac2574d277ff0970e037e2`.
 
-The canonical target journey is `INGEST → UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS`. `MedNexusDocumentContext` is the reusable semantic handoff between stages. UNDERSTAND produces document identity, structure, clinical context, privacy context, processing context, and provenance while preserving unknown values as null/unknown.
+The canonical public target journey is `01 UNDERSTAND → 02 PROTECT → 03 EXTRACT → 04 STANDARDIZE → 05 ANALYZE → 06 VISUALIZE → 07 INDICATORS`. INGEST remains an internal technical operation within UNDERSTAND: file/text intake, extraction/parsing, and `DocumentContent` construction. `MedNexusDocumentContext` is the reusable semantic handoff between stages. UNDERSTAND produces document identity, structure, clinical context, privacy context, processing context, and provenance while preserving unknown values as null/unknown.
 
 The current POC flow is `Upload once → INGEST → UNDERSTAND → MedNexusDocumentContext → Continue to Privacy Protection → existing Phase 1 privacy pipeline`, without a second upload. The retained source filename and document status remain visible during the handoff.
 

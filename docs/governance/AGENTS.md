@@ -90,7 +90,7 @@ Document Recognition knowledge must remain MedNexus-owned, offline, explainable,
 
 Do not implement future stages merely because they appear in architecture documents. The Phase 2 deterministic Understanding foundation is implemented; its next milestone is Recognition Validation — Round 1. Planned capabilities include expanded Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
 
-The enterprise target document journey is Ingest → Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. This is a target architecture, not an implementation claim. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey.
+The public MEDNEXUS⁷ journey is Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. INGEST remains a real internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction; it is not a separate public transformation. This is a target architecture, not a claim that all seven stages are implemented. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey. `MEDNEXUS⁷` is a visual/product signature only; internal code, APIs, packages, routes, and repositories remain `MedNexus`.
 
 Public Health Intelligence is active parallel domain work aligned to the shared journey, but must not be described as production-complete without implementation and validation evidence.
 

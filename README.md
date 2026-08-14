@@ -8,14 +8,16 @@ Enterprise Medical Document Intelligence Platform
 
 MedNexus is an enterprise platform that turns medical documents into protected, structured, standardized, and analyzable clinical information. Capabilities are modular and may operate independently while participating in one connected document journey.
 
-The enterprise target journey is:
+The public MEDNEXUS⁷ product journey is:
 
 ```text
-01 INGEST → 02 UNDERSTAND → 03 PROTECT → 04 EXTRACT
-→ 05 STANDARDIZE → 06 ANALYZE → 07 VISUALIZE → 08 INDICATORS
+01 UNDERSTAND → 02 PROTECT → 03 EXTRACT → 04 STANDARDIZE
+→ 05 ANALYZE → 06 VISUALIZE → 07 INDICATORS
 ```
 
-This is the target architecture, not a claim that all eight stages are implemented.
+This is the target product architecture, not a claim that all seven stages are implemented. INGEST remains an internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction.
+
+Public signature: **MEDNEXUS⁷ — One document. Seven intelligent transformations.** This is a visual/product brand signature. Internal code identifiers, packages, classes, APIs, routes, repositories, and runtime contracts remain `MedNexus`; `MedNexus7` is only a textual fallback where superscript typography is unavailable.
 
 The current implemented capabilities are **Clinical Privacy Policy Engine / De-identification** and the accepted foundation of **Medical Document Understanding & Recognition**. Phase 2 implements the MedNexus-owned UNDERSTAND stage after existing ingestion; Phase 1 remains frozen at its accepted POC checkpoint.
 
@@ -115,7 +117,7 @@ The frontend includes a reusable Progressive Result Reveal convention for substa
 
 ## Current Product Experience
 
-- `/app` — MedNexus Enterprise Medical Document Intelligence homepage and eight-stage platform vision.
+- `/app` — MEDNEXUS⁷ Enterprise Medical Document Intelligence homepage and seven-transformation product journey.
 - `/privacy` — functional Clinical Privacy Policy Engine POC.
 
 The current frontend is an accepted working design baseline, not final brand or visual polish. Public Health Intelligence is active parallel domain work aligned to the shared document journey; it is not represented as production-complete.
@@ -161,6 +163,7 @@ Accepted checkpoint baselines:
 - MedNexus Document Context foundation and same-document journey: **737 passed, 8 warnings, 0 failures**; focused suite: **64 passed**.
 - Phase 2 UI polish and Progressive Result Reveal: **739 passed, 8 warnings, 0 failures**; focused suite: **75 passed**.
 - Phase 2 Document Context & Journey Foundation accepted checkpoint: **742 passed, 8 warnings, 0 failures** at `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`.
+- MEDNEXUS⁷ seven-transformation UI/product-architecture update: **743 passed, 8 warnings, 0 failures**; focused homepage suite: **48 passed, 1 warning**.
 
 Earlier controlled and synthetic validation provides evidence across samples from:
 

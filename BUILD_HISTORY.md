@@ -1010,6 +1010,19 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 
 ---
 
+# MEDNEXUS⁷ Seven Transformations Product Architecture — 15 Aug 2026
+
+- Adopted the public signature `MEDNEXUS⁷ — One document. Seven intelligent transformations.` without renaming internal `MedNexus` code, packages, APIs, routes, or repositories.
+- Retired the public eight-transformation model and established `01 UNDERSTAND → 02 PROTECT → 03 EXTRACT → 04 STANDARDIZE → 05 ANALYZE → 06 VISUALIZE → 07 INDICATORS`.
+- Kept INGEST as an internal technical operation inside UNDERSTAND for file/text intake, extraction/parsing, and `DocumentContent` construction; no ingestion code or backend contract changed.
+- Combined the previous INGEST and UNDERSTAND homepage scenes into one Stage 01 sequence: Medical Document → Document Content → Recognized Identity → MedNexus Document Context.
+- Re-numbered the existing public journey and preserved `/app`, `/understanding`, `/privacy`, capability ordering, scroll behavior, and the accepted Deep Teal visual system.
+- Added a restrained superscript 7 to the existing wordmark with the accessible label “MedNexus Seven.”
+- This is a public UI/product-architecture representation change, not a claim that all seven transformations are implemented.
+- Focused homepage/route verification: **48 passed, 1 warning**. Full regression: **743 passed, 8 warnings, 0 failures**.
+
+---
+
 # Phase 2 Document Context & Journey Foundation — Accepted Checkpoint
 
 **Date:** 15 August 2026
