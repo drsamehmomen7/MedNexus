@@ -53,6 +53,7 @@ class DocumentUnderstandingService:
             UnderstandingRouter.route(classification.document_type, classification.confidence_band),
             dict(metadata or {}),
             tuple(result_warnings),
+            classification.document_nature,
         )
 
     def analyze_document(self, document: DocumentContent) -> DocumentUnderstandingResult:

@@ -16,6 +16,9 @@ _CATEGORY_MAP = {
     Category.SECTION: "section", Category.MODALITY: "modality",
     Category.PROCEDURE: "procedure", Category.AUTHOR_ROLE: "role",
     Category.STRUCTURAL_SIGNAL: "structure",
+    Category.IMAGING_TECHNIQUE: "technique", Category.ACQUISITION: "acquisition",
+    Category.ANATOMY: "anatomy", Category.CONTRAST: "contrast",
+    Category.CLINICAL_PURPOSE: "clinical_purpose",
 }
 
 

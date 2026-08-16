@@ -1,0 +1,60 @@
+{
+  "manifest_version": "1.0",
+  "generated_at": "2026-08-15",
+  "sources": [
+    {
+      "source_id": "LOINC_RSNA_2_82", "source_name": "LOINC/RSNA Radiology Playbook",
+      "authority": "Regenstrief Institute and RSNA", "domain": "Radiology",
+      "reference_family": "LOINC_RSNA_PLAYBOOK", "version": "2.82", "release_date": "2026-02-24",
+      "license_name": "LOINC License 5.8", "license_status": "Official authenticated download; source archive not bundled",
+      "distribution_policy": "EXTERNAL_DOWNLOAD_REQUIRED", "source_location": "https://loinc.org/downloads/",
+      "retrieved_at": null, "last_verified_at": "2026-08-15", "checksum": "MD5:1976936e2232d20cfcef8c9ac528c6f9",
+      "enabled": false, "notes": "Importer target: AccessoryFiles/LoincRsnaRadiologyPlaybook.", "trust_level": "AUTHORITATIVE_STANDARD"
+    },
+    {
+      "source_id": "DICOM_2026_CURRENT", "source_name": "DICOM Standard Current Edition",
+      "authority": "MITA/NEMA DICOM Standards Committee", "domain": "Medical Imaging",
+      "reference_family": "DICOM", "version": "2026c", "release_date": "2026-06-18",
+      "license_name": "NEMA DICOM copyright and implementation terms", "license_status": "Free to download and implement; reproduction remains copyrighted",
+      "distribution_policy": "EXTERNAL_DOWNLOAD_REQUIRED", "source_location": "https://www.dicomstandard.org/current",
+      "retrieved_at": null, "last_verified_at": "2026-08-15", "checksum": null,
+      "enabled": false, "notes": "Controlled importer uses official PS3.6 XML and selects Radiology UNDERSTAND-relevant attributes.", "trust_level": "AUTHORITATIVE_STANDARD"
+    },
+    {
+      "source_id": "DICOM_DCMR_2026C", "source_name": "DICOM PS3.16 Content Mapping Resource",
+      "authority": "MITA/NEMA DICOM Standards Committee", "domain": "Medical Imaging",
+      "reference_family": "DICOM_DCMR", "version": "2026c", "release_date": "2026-06-18",
+      "license_name": "NEMA DICOM copyright and implementation terms", "license_status": "Official structured PS3.16 source; reproduction remains copyrighted",
+      "distribution_policy": "EXTERNAL_DOWNLOAD_REQUIRED", "source_location": "https://dicom.nema.org/medical/dicom/current/source/docbook/part16/part16.xml",
+      "retrieved_at": null, "last_verified_at": "2026-08-15", "checksum": null,
+      "enabled": false, "notes": "Controlled Radiology-relevant DCMR Context Group subset; external code systems remain provenance mappings.", "trust_level": "AUTHORITATIVE_STANDARD"
+    },
+    {
+      "source_id": "RADLEX_CURRENT", "source_name": "Release Version of RadLex Ontology",
+      "authority": "Radiological Society of North America", "domain": "Radiology",
+      "reference_family": "RADLEX", "version": "4.3", "release_date": null,
+      "license_name": "RadLex License 2.1", "license_status": "User-supplied official licensed artifacts; notice and attribution required",
+      "distribution_policy": "EXTERNAL_DOWNLOAD_REQUIRED", "source_location": "https://www.rsna.org/radlex",
+      "retrieved_at": null, "last_verified_at": "2026-08-15", "checksum": null,
+      "enabled": false, "notes": "No RadLex release artifact is bundled in Git.", "trust_level": "AUTHORITATIVE_ONTOLOGY"
+    },
+    {
+      "source_id": "SNOMED_INT_20260701", "source_name": "SNOMED CT International Edition",
+      "authority": "SNOMED International", "domain": "Clinical Terminology",
+      "reference_family": "SNOMED_CT", "version": "20260701", "release_date": "2026-07-01",
+      "license_name": "SNOMED CT Affiliate License", "license_status": "Licensed MLDS/NRC acquisition required; redistribution restricted",
+      "distribution_policy": "LICENSE_RESTRICTED", "source_location": "https://mlds.ihtsdotools.org/",
+      "retrieved_at": null, "last_verified_at": "2026-08-15", "checksum": null,
+      "enabled": false, "notes": "RF2 importer requires a licensed local package and an explicit subset file; no restricted terminology content is committed.", "trust_level": "AUTHORITATIVE_ONTOLOGY"
+    },
+    {
+      "source_id": "MNX_RAD_REF_V1", "source_name": "MedNexus Radiology Canonical Reference Derivative",
+      "authority": "MedNexus", "domain": "Radiology", "reference_family": "MEDNEXUS_REFERENCE_MODEL",
+      "version": "1.0", "release_date": "2026-08-15", "license_name": "MedNexus project governance",
+      "license_status": "Local canonical model; contains no bundled external terminology distribution",
+      "distribution_policy": "LOCAL_CURATED_DERIVATIVE", "source_location": "backend/.../understanding/reference_model/radiology.py",
+      "retrieved_at": "2026-08-15", "last_verified_at": "2026-08-15", "checksum": null,
+      "enabled": true, "notes": "Runtime compatibility fallback; active imported references take precedence without becoming external runtime dependencies.", "trust_level": "LEGACY_COMPATIBILITY"
+    }
+  ]
+}

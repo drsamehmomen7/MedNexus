@@ -21,6 +21,7 @@ class DocumentIdentityContext:
     document_subtype: str | None
     confidence: float
     confidence_band: str
+    document_nature: str = "UNKNOWN"
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +39,10 @@ class ClinicalContext:
     modality: str | None = None
     examination: str | None = None
     body_region: str | None = None
+    body_regions: tuple[str, ...] = ()
     contrast: str | None = None
+    techniques: tuple[str, ...] = ()
+    clinical_purpose: str | None = None
     domain_concepts: tuple[str, ...] = ()
     attributes: dict[str, Any] = field(default_factory=dict)
 

@@ -84,6 +84,9 @@ dist/
 # ------------------------------------------------------------
 # Model / ML caches and large local artifacts
 # ------------------------------------------------------------
+# Licensed/large authoritative reference distributions belong in the
+# workspace-level D:\MedNexus\Reference_Data directory, not this repository.
+Reference_Data/
 huggingface/
 transformers_cache/
 torch_cache/

@@ -31,6 +31,7 @@ class DocumentSubtype(str, Enum):
     CT = "CT"
     MRI = "MRI"
     ULTRASOUND = "ULTRASOUND"
+    DOPPLER = "DOPPLER"
     MAMMOGRAPHY = "MAMMOGRAPHY"
     NUCLEAR_MEDICINE = "NUCLEAR_MEDICINE"
     UNKNOWN = "UNKNOWN"
@@ -47,6 +48,13 @@ class ConfidenceBand(str, Enum):
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
+    UNKNOWN = "UNKNOWN"
+
+
+class DocumentNature(str, Enum):
+    COMPLETED_REPORT = "COMPLETED_REPORT"
+    STRUCTURED_TEMPLATE = "STRUCTURED_TEMPLATE"
+    PARTIAL_REPORT = "PARTIAL_REPORT"
     UNKNOWN = "UNKNOWN"
 
 
@@ -68,6 +76,8 @@ class ClassificationEvidence:
     reference: str | None = None
     concept_id: str | None = None
     reference_systems: tuple[str, ...] = ()
+    external_mappings: tuple[tuple[str, str], ...] = ()
+    relationships: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +104,7 @@ class DocumentUnderstandingResult:
     routing: UnderstandingRoute
     metadata: dict[str, Any] = field(default_factory=dict)
     warnings: tuple[str, ...] = field(default_factory=tuple)
+    document_nature: DocumentNature = DocumentNature.UNKNOWN
 
     def to_dict(self) -> dict[str, Any]:
         return _serialize(asdict(self))

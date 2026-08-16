@@ -60,7 +60,7 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
 - Phase 1 frozen baseline: 681 passed, 8 warnings, 0 failures.
-- Current accepted repository baseline: 742 passed, 8 warnings, 0 failures.
+- Current verified repository baseline: 778 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.
@@ -86,6 +86,10 @@ Documentation synchronization is mandatory at every meaningful implementation ch
 
 Document Recognition knowledge must remain MedNexus-owned, offline, explainable, and domain-modular. External standards and terminologies may inform provenance and interoperability mapping, but must not become authoritative runtime classifiers or silently replace curated multilingual concepts and MedNexus recognition signatures. New domain knowledge should use stable concept identifiers, explicit evidence roles, conservative multi-signal signatures, and traceable reference families.
 
+A real validation failure must be corrected by improving reusable knowledge, normalization, context, or reasoning logic. Never add report-specific rules merely to make one validation document pass.
+
+Validation reports are not knowledge sources. New recognition concepts, aliases, mappings, or relationships require independent justification from an authoritative reference or a reusable MedNexus normalization rule. External terminology licensing, version, provenance, distribution, and activation state must remain explicit; restricted source content must never be committed without verified permission.
+
 `MedNexusDocumentContext` is the shared semantic handoff for one ingested document. UNDERSTAND constructs context; PROTECT applies privacy decisions to the original document informed by context where supported; EXTRACT will later create formal structured clinical data; STANDARDIZE will normalize extracted concepts. Never collapse these stages or duplicate `DocumentContent`, privacy detection, or clinical extraction inside the context layer. Unknown context must remain null/unknown rather than inferred without evidence.
 
 Do not implement future stages merely because they appear in architecture documents. The Phase 2 deterministic Understanding foundation is implemented; its next milestone is Recognition Validation — Round 1. Planned capabilities include expanded Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
@@ -93,6 +97,10 @@ Do not implement future stages merely because they appear in architecture docume
 The public MEDNEXUS⁷ journey is Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. INGEST remains a real internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction; it is not a separate public transformation. This is a target architecture, not a claim that all seven stages are implemented. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey. `MEDNEXUS⁷` is a visual/product signature only; internal code, APIs, packages, routes, and repositories remain `MedNexus`.
 
 Public Health Intelligence is active parallel domain work aligned to the shared journey, but must not be described as production-complete without implementation and validation evidence.
+
+Authoritative terminology distributions and normalized local reference stores belong under `D:\MedNexus\Reference_Data`, outside Git. Acquisition must use official sources and respect authentication, license, attribution, and redistribution constraints. Runtime reference resolution must remain offline, versioned, checksum-verifiable, provenance-preserving, and subordinate to MedNexus-owned canonical IDs and reasoning. Never invent cross-standard mappings or learn production terminology from frozen validation reports.
+
+An external source is ACTIVE only after its real artifact is imported, checksum-verified, normalized and explicitly activated. Referenced identifiers from an inactive terminology (for example SNOMED codes carried by DICOM DCMR) remain provenance mappings, not active terminology concepts. Frozen validation must remain closed until the authorized reference-population set is complete.
 
 The current `/app` and `/privacy` frontend experience is an accepted working baseline, not final brand or visual polish. Do not reopen deferred cosmetic design work unless explicitly requested.
 

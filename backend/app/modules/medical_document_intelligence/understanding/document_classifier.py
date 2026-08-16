@@ -10,9 +10,10 @@ from .models import (
     DocumentDomain,
     DocumentSubtype,
     DocumentType,
+    DocumentNature,
 )
 from .profiles import PROFILES, SECTION_ALIASES, SUBTYPE_SIGNALS, DocumentProfile, WeightedSignal
-from .knowledge.radiology import RADIOLOGY_REPORT_SIGNATURE
+from .knowledge.radiology import RadiologyReasoner
 from .section_detector import SectionDetector
 
 
@@ -24,6 +25,7 @@ class ClassificationOutcome:
     confidence: float
     confidence_band: ConfidenceBand
     evidence: tuple[ClassificationEvidence, ...]
+    document_nature: DocumentNature = DocumentNature.UNKNOWN
 
 
 class DocumentClassifier:
@@ -42,18 +44,30 @@ class DocumentClassifier:
         if not isinstance(text, str):
             raise TypeError("text must be a string.")
         detected_sections = SectionDetector.detect(text) if sections is None else sections
-        scored = [
-            cls._score_profile(text, profile, detected_sections)
-            for profile in PROFILES
-        ]
+        radiology = RadiologyReasoner.assess(text, detected_sections)
+        scored = []
+        for profile in PROFILES:
+            if profile.domain is DocumentDomain.RADIOLOGY:
+                score = radiology.score if radiology.report_satisfied else min(
+                    radiology.score, cls.MINIMUM_ACCEPTED_SCORE - 0.1
+                )
+                scored.append((score, profile, radiology.evidence))
+            else:
+                scored.append(cls._score_profile(text, profile, detected_sections))
+        strongest_conflict = max(
+            (score for score, profile, _ in scored if profile.document_type in {
+                DocumentType.EMERGENCY_REPORT, DocumentType.DISCHARGE_SUMMARY, DocumentType.ADMISSION_NOTE,
+            }), default=0.0,
+        )
+        if strongest_conflict >= 8.0:
+            scored = [
+                (min(score, strongest_conflict - cls.MINIMUM_MARGIN,
+                     strongest_conflict / cls.MINIMUM_MARGIN_RATIO), profile, evidence)
+                if profile.domain is DocumentDomain.RADIOLOGY else (score, profile, evidence)
+                for score, profile, evidence in scored
+            ]
         scored.sort(key=lambda item: item[0], reverse=True)
         best_score, best_profile, best_evidence = scored[0]
-        if best_profile.domain is DocumentDomain.RADIOLOGY:
-            assessment = RADIOLOGY_REPORT_SIGNATURE.assess({
-                item.concept_id for item in best_evidence if item.concept_id
-            })
-            if not assessment.satisfied:
-                best_score = min(best_score, cls.MINIMUM_ACCEPTED_SCORE - 0.1)
         second_score = scored[1][0]
         all_evidence = tuple(
             item for score, _, entries in scored if score > 0 for item in entries
@@ -76,11 +90,7 @@ class DocumentClassifier:
         if band is ConfidenceBand.LOW:
             return cls._unknown(confidence, band, all_evidence)
 
-        subtype = (
-            cls._detect_subtype(text, detected_sections)
-            if best_profile.domain is DocumentDomain.RADIOLOGY
-            else DocumentSubtype.UNKNOWN
-        )
+        subtype = radiology.modality if best_profile.domain is DocumentDomain.RADIOLOGY else DocumentSubtype.UNKNOWN
         return ClassificationOutcome(
             best_profile.domain,
             best_profile.document_type,
@@ -88,7 +98,20 @@ class DocumentClassifier:
             confidence,
             band,
             all_evidence,
+            cls._document_nature(text, detected_sections, radiology) if best_profile.domain is DocumentDomain.RADIOLOGY else DocumentNature.UNKNOWN,
         )
+
+    @staticmethod
+    def _document_nature(text, sections, radiology) -> DocumentNature:
+        section_ids = {item.canonical_name for item in sections}
+        modality_ids = {item.concept_id for item in radiology.frame.modality_signals}
+        if len(modality_ids) > 1 and len(section_ids) >= 3:
+            return DocumentNature.STRUCTURED_TEMPLATE
+        if {"findings", "impression"} <= section_ids:
+            return DocumentNature.COMPLETED_REPORT
+        if radiology.domain_satisfied and section_ids:
+            return DocumentNature.PARTIAL_REPORT
+        return DocumentNature.UNKNOWN
 
     @classmethod
     def _score_profile(

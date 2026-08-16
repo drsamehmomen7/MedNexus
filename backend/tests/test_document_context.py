@@ -28,6 +28,7 @@ def test_document_context_v1_constructs_radiology_semantics():
     assert context.clinical_context.modality == "CT"
     assert context.clinical_context.examination == "CT Chest"
     assert context.clinical_context.body_region == "CHEST"
+    assert context.clinical_context.body_regions == ("CHEST",)
     assert context.clinical_context.contrast == "WITH_CONTRAST"
     assert context.provenance.knowledge_layer_version == "recognition-knowledge-v1"
     assert "RAD_MODALITY_CT" in context.provenance.concept_ids
@@ -36,7 +37,8 @@ def test_document_context_v1_constructs_radiology_semantics():
 def test_document_context_sections_have_semantic_roles_and_exact_boundaries():
     context = _context()
     assert [item.semantic_role for item in context.structure] == [
-        "Examination", "Technique", "Findings", "Impression", "Radiologist / Authentication"
+        "Examination", "Clinical Information", "Technique", "Findings", "Impression",
+        "Radiologist / Authentication"
     ]
     assert all(item.start < item.end for item in context.structure)
 
@@ -49,6 +51,7 @@ def test_unknown_context_does_not_fabricate_clinical_attributes():
     assert context.clinical_context.examination is None
     assert context.clinical_context.body_region is None
     assert context.clinical_context.contrast is None
+    assert context.clinical_context.body_regions == ()
 
 
 def test_understanding_api_serializes_context_and_journey_handoff():
@@ -114,8 +117,9 @@ def test_english_radiology_context_supports_same_journey_contract():
     client = TestClient(app)
     payload = client.post("/api/v1/understanding/analyze-text", json={"text": text}).json()
     assert payload["document_context"]["clinical_context"] == {
-        "modality": "CT", "examination": "CT Chest", "body_region": "CHEST",
-        "contrast": "WITH_CONTRAST", "domain_concepts": payload["document_context"]["clinical_context"]["domain_concepts"],
+        "modality": "CT", "examination": "CT Chest", "body_region": "CHEST", "body_regions": ["CHEST"],
+        "contrast": "WITH_CONTRAST", "techniques": ["Multiplanar imaging"], "clinical_purpose": None,
+        "domain_concepts": payload["document_context"]["clinical_context"]["domain_concepts"],
         "attributes": payload["document_context"]["clinical_context"]["attributes"],
     }
     assert client.get(f"/api/v1/understanding/journeys/{payload['journey']['journey_id']}").status_code == 200

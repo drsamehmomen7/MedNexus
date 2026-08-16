@@ -110,6 +110,13 @@ def test_section_terms_in_prose_are_not_structural_evidence():
     assert not result.evidence
 
 
+def test_title_cased_section_terms_without_a_document_cluster_remain_prose():
+    text = "At review, Findings and Impression were discussed during a routine visit."
+    result = DocumentClassifier.classify(text)
+    assert result.document_type is DocumentType.UNKNOWN
+    assert SectionDetector.detect(text) == ()
+
+
 def test_heading_alias_contributes_structural_evidence():
     text = "EMERGENCY DEPARTMENT\nHPI:\nAcute chest pain\nTRIAGE:\nUrgent"
     result = DocumentClassifier.classify(text)

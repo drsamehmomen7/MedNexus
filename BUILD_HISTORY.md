@@ -1010,6 +1010,31 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 
 ---
 
+# Phase 2 Radiology Intelligence Architecture v2 — 15 Aug 2026 (Pending Review)
+
+- Replaced Radiology flat-profile scoring with a MedNexus-owned `DocumentEvidenceFrame` and compositional reasoner while preserving accepted paths for other domains.
+- Separated Radiology domain coherence from Radiology Report identity; added cross-domain conflict dominance and incidental-imaging safeguards.
+- Added typed modality, technique, acquisition, anatomy, contrast, clinical-purpose, structure, service, and professional-role evidence with exact source offsets and provenance.
+- Added MRI/CT/X-ray/Ultrasound/Doppler/Mammography/Nuclear Medicine modality reasoning, modality-plus-anatomy examination composition, multiple broad body regions, pre/post contrast, MRI technique context, and broad clinical-purpose context.
+- Upgraded section detection for line, inline, and flattened colon-delimited template headings without treating prose mentions as boundaries.
+- Validation Failure R-001 now resolves as Radiology / Radiology Report / MRI, MRI Abdomen & Pelvis, abdomen and pelvis, pre/post contrast, Oncologic Staging, expected MRI techniques and six sections, HIGH confidence.
+- Focused Radiology/Understanding suite: **77 passed, 1 warning**. Full regression: **758 passed, 8 warnings, 0 failures**.
+- Architecture is pending human review; no checkpoint commit has been created.
+
+---
+
+# Phase 2 Reference Model Foundation v1 — 15 Aug 2026 (Pending Review)
+
+- Added a typed Reference Source Registry and machine-readable manifest with explicit version, license, distribution, acquisition, checksum, verification, and activation metadata.
+- Added stable MedNexus canonical concepts, cross-standard external mappings, typed semantic relationships, deterministic normalization/resolution, configuration snapshots, version comparison, and controlled offline importer boundaries.
+- Registered official-source metadata for LOINC/RSNA 2.82, DICOM 2026 current edition, RadLex controlled download, and SNOMED CT International 20260701 without bundling external or restricted distributions.
+- Integrated canonical reference resolution and relationship/mapping provenance into Radiology `DocumentEvidenceFrame` signals while preserving compatible legacy and multilingual resolution.
+- Added document nature and verified that strong Radiology/report evidence survives conflicting modality options with modality UNKNOWN and STRUCTURED_TEMPLATE context.
+- Frozen liver/LI-RADS validation could not be executed because no source artifact was present; no knowledge was added from its description. R-001 and negative controls were re-run without post-validation tuning.
+- Focused suite: **83 passed, 1 warning**. Full regression: **764 passed, 8 warnings, 0 failures**.
+
+---
+
 # MEDNEXUS⁷ Seven Transformations Product Architecture — 15 Aug 2026
 
 - Adopted the public signature `MEDNEXUS⁷ — One document. Seven intelligent transformations.` without renaming internal `MedNexus` code, packages, APIs, routes, or repositories.
@@ -1134,3 +1159,57 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 - Confirmed direct and fresh live-runtime parity on `MNX-01-03_Radiology_Arabic.txt`: Radiology / Radiology Report / CT / Arabic, confidence 1.0 HIGH, five detected sections.
 - Focused knowledge/Understanding suite: **50 passed, 1 warning**. Full regression: **731 passed, 8 warnings, 0 failures**.
 - Blueprint v1.6 records the Recognition Knowledge Layer as a material implemented architecture addition.
+# 2026-08-15 — Authoritative Reference Data Population v1 (Pending Review)
+
+- Added real offline importers for official LOINC/RSNA Playbook CSV, DICOM PS3.6 DocBook XML, RadLex OWL/RDF, and licensed SNOMED CT RF2 Snapshot subsets.
+- Added deterministic SHA-256 receipts, normalized external store, activation/version replacement, verification/status CLI, conservative deduplication, trust levels, and active runtime loading.
+- Downloaded from the official DICOM site and activated a controlled 2026c PS3.6 subset: 41 concepts and 41 mappings; no external distribution was added to Git.
+- LOINC/RSNA, RadLex, and SNOMED remain user-acquisition gates under their respective account/license terms; import capability is implemented without fabricated terminology.
+- Frozen validation was run only after activation and production knowledge was not tuned from its results. Focused tests: **28 passed**. Full regression: **771 passed, 8 warnings, 0 failures**.
+
+## 2026-08-15 — RadLex 4.3 and DICOM DCMR Population (Partial / Not Ready)
+
+- Consumed the official user-supplied RadLex 4.3 OWL/CSV pair and activated 24,092 reconciled ontology concepts.
+- Acquired official DICOM PS3.16 2026c XML and activated a controlled Radiology-focused DCMR subset: 43 Context Groups and 680 stored concepts/1,317 mappings before combined-model deduplication.
+- Added indexed offline text resolution, ambiguity preservation, imported Evidence Frame provenance and bounded relationship-coherence scoring while retaining strong cross-domain precedence.
+- The stated LOINC 2.82 ZIP was absent, so LOINC/RSNA population and Playbook crosswalk activation did not occur. Frozen validation remained closed.
+- Focused verification: **39 passed, 1 warning**. Full regression: **774 passed, 8 warnings, 0 failures**.
+
+## 2026-08-15 — RadLex 4.3 and DICOM DCMR Population (Partial / Not Ready)
+
+- Consumed the official user-supplied RadLex 4.3 OWL/CSV pair and activated 24,092 reconciled ontology concepts.
+- Acquired official DICOM PS3.16 2026c XML and activated a controlled Radiology-focused DCMR subset: 43 Context Groups and 680 stored concepts/1,317 mappings before combined-model deduplication.
+- Added indexed offline text resolution, ambiguity preservation, imported Evidence Frame provenance and bounded relationship-coherence scoring while retaining strong cross-domain precedence.
+- The stated LOINC 2.82 ZIP was absent, so LOINC/RSNA population and Playbook crosswalk activation did not occur. Frozen validation remained closed.
+- Focused verification: **39 passed, 1 warning**. Full regression: **774 passed, 8 warnings, 0 failures**.
+# 2026-08-15 — Authoritative Reference Data Population v1 (Pending Review)
+
+- Added real offline importers for official LOINC/RSNA Playbook CSV, DICOM PS3.6 DocBook XML, RadLex OWL/RDF, and licensed SNOMED CT RF2 Snapshot subsets.
+- Added deterministic SHA-256 receipts, normalized external store, activation/version replacement, verification/status CLI, conservative deduplication, trust levels, and active runtime loading.
+- Downloaded from the official DICOM site and activated a controlled 2026c PS3.6 subset: 41 concepts and 41 mappings; no external distribution was added to Git.
+- LOINC/RSNA, RadLex, and SNOMED remain user-acquisition gates under their respective account/license terms; import capability is implemented without fabricated terminology.
+- Frozen validation was run only after activation and production knowledge was not tuned from its results. Focused tests: 28 passed. Full regression pending final execution.
+
+## 2026-08-15 — LOINC 2.82 + RadLex + DICOM Authoritative Population (Pending Review)
+
+- Corrected the earlier missing-artifact conclusion and reconciled the official 83,924,362-byte LOINC ZIP to the canonical local path `Reference_Data\LOINC\2.82\Loinc_2.82.zip`; SHA-256 `6844c04ee57cb9b77050df54f4b0a5b82cd6be520cad9245e8de54db0638dd62`.
+- Completed the official LOINC 2.82 Radiology/Document import: 19,230 stored concepts and 71,155 mappings across Playbook procedures, Parts, ordered composition, RID/RPID and Part-related RadLex crosswalks, Document Ontology, and Imaging Documents.
+- Activated and checksum-verified LOINC 2.82 alongside RadLex 4.3, DICOM PS3.6 2026c, and the controlled DICOM DCMR 2026c subset. The reconciled runtime contains 43,811 canonical concepts, 96,528 mappings, and 88,325 relationships.
+- Prevented imported lexical ambiguity from double-counting confidence: same-span reference evidence now enriches provenance/relationships, and report components remain structural only when detected as headings.
+- Opened the frozen firewall only after focused gates passed. Three Radiology TXT reports classified as Radiology/Radiology Report/CT/HIGH; 57 non-Radiology TXT controls produced zero Radiology false positives. No report-derived production tuning occurred.
+- Focused verification: **88 passed, 1 warning**. Full regression: **775 passed, 8 warnings, 0 failures**.
+
+## 2026-08-15 — Failed Blind Radiology Validation Forensic Correction (Pending Review)
+
+- Reproduced the failed report through the production UNDERSTAND path and located the first causal loss at flattened-text section detection; active LOINC/RadLex/DICOM matching and compositional MRI/anatomy evidence were already present.
+- Added conservative clustered-heading recovery using existing governed section aliases, requiring at least three distinct headings near the document front and preserving exact source offsets. Isolated prose terms remain non-structural.
+- Preserved broad body-region/examination compatibility while carrying the nearest runtime-resolved authoritative anatomy into Radiology context.
+- The failed case now resolves as Radiology / Radiology Report / MRI / English / HIGH with five detected sections and `MRI Spine & Neck` context. No production vocabulary or scoring special case was derived from the report.
+- Focused reference/Radiology/context/understanding verification: **91 passed, 1 warning**. The last full verified baseline remains **775 passed, 8 warnings, 0 failures**; the current host's missing Python 3.10 base interpreter prevents its installed OpenMed Torch/Transformers binaries from loading under the fallback Python 3.12 runtime.
+
+## 2026-08-16 — Python 3.10 Environment Recovery and Preservation Gate
+
+- Recovered a workspace-local standalone official CPython 3.10.11 runtime and preserved the retained `.venv` and its ABI-compatible site-packages without rebuilding or upgrading dependencies.
+- Verified Torch 2.13.0+cpu, Transformers 5.13.1, Tokenizers 0.22.2, Regex 2026.7.10, Pydantic 2.13.4, OpenMed 1.9.1, pytest 9.1.1, the MedNexus OpenMed adapter, and `DeidentificationService` imports.
+- OpenMed-dependent gate: **28 passed, 8 warnings, 0 failures**. Complete unchanged regression: **778 passed, 8 warnings, 0 failures**.
+- Environment recovery changed no production code or dependency versions. Human Blind Radiology Validation #2 remains unopened and unrun.

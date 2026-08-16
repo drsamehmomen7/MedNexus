@@ -2,11 +2,87 @@
 
 **Authoritative date:** 15 August 2026
 
+## Failed Blind Radiology Validation — Forensic Correction Pending Review
+
+The first failed human-blind Radiology report exposed a general flattened-text structure gap, not missing reference knowledge. The active LOINC 2.82, RadLex 4.3, DICOM PS3.6 2026c, and DICOM PS3.16/DCMR 2026c runtime produced substantial MRI, acquisition, anatomy, and clinical-imaging evidence, but `SectionDetector` required line or colon boundaries. With no structural sections, the Radiology reasoner correctly withheld report classification.
+
+`SectionDetector` now conservatively recovers clusters of at least three already-governed section aliases near the front of flattened documents while preserving exact offsets; isolated prose occurrences remain non-structural. Context construction also preserves the established broad region/examination contract while exposing the nearest authoritative anatomy as provenance-backed context. The failed report now resolves as Radiology / Radiology Report / MRI / English / HIGH with Procedure Information, Clinical Information, Comparison, Findings, and Impression sections and an `MRI Spine & Neck` context. No production vocabulary, aliases, signatures, or scoring rules were derived from the report.
+
+Focused reference-model, Radiology-intelligence, document-context, and document-understanding verification is **91 passed, 1 warning**. Environment recovery uses a workspace-local standalone CPython 3.10.11 runtime with the retained `.venv` site-packages; no production code or dependency was changed. The OpenMed gate is **28 passed, 8 warnings**, and the complete verified working-tree regression is **778 passed, 8 warnings, 0 failures**. Human Blind Radiology Validation #2 has not been opened or run.
+
 ## Current Platform State
 
 MedNexus is an Enterprise Medical Document Intelligence Platform. Its public MEDNEXUS⁷ journey is Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. Capabilities are modular, independently usable, and connected through shared platform contracts.
 
 Public product signature: **MEDNEXUS⁷ — One document. Seven intelligent transformations.** The homepage presents seven public transformations and treats INGEST as internal file/text intake, extraction/parsing, and `DocumentContent` construction inside UNDERSTAND. Internal identifiers and backend architecture remain `MedNexus`. Latest verification for this UI/product-architecture update: focused homepage suite **48 passed, 1 warning**; full repository regression **743 passed, 8 warnings, 0 failures**.
+
+## Radiology Intelligence Architecture v2 — Pending Review
+
+Radiology now uses a compositional, MedNexus-owned reasoning path: normalized knowledge concepts → exact-offset `DocumentEvidenceFrame` → domain coherence → document-type reasoning → modality and domain-context construction → `MedNexusDocumentContext`. Evidence is grouped by modality, technique, acquisition, anatomy, contrast, structure, clinical purpose, and professional/service context; external standards remain provenance inputs only.
+
+Domain recognition and Radiology Report recognition are separate decisions. Coherent imaging evidence can establish Radiology context without fabricating a report type; Findings/Impression or explicit report identity supports report classification. Strong Emergency, Admission, or Discharge structure remains authoritative over incidental imaging mentions. `SectionDetector` v2 supports line headings, inline heading/content, and colon-delimited flattened templates while preserving exact source offsets.
+
+Radiology context now supports MRI, CT, X-ray, Ultrasound, Doppler, Mammography, and Nuclear Medicine; multiple broad body regions; composed examination names; pre/post contrast; imaging-technique families; and broad clinical purpose. Validation Failure R-001 resolves as Radiology / Radiology Report / MRI, `MRI Abdomen & Pelvis`, abdomen and pelvis, pre/post contrast, Oncologic Staging, the expected MRI technique families and six structural sections, with HIGH confidence. Focused verification: **77 passed, 1 warning**. Full uncommitted regression: **758 passed, 8 warnings, 0 failures**.
+
+## Reference Model Foundation v1 — Pending Review
+
+An explicit governed Reference Model now sits beneath Radiology Intelligence v2: official-source registry and manifest → controlled offline import boundary → stable MedNexus canonical concepts → cross-standard mappings and relationships → canonical resolver → `DocumentEvidenceFrame` → MedNexus reasoning. External standards provide reference knowledge; they do not replace MedNexus normalization, evidence composition, conflicts, decisions, or context construction.
+
+The manifest records LOINC/RSNA 2.82, the DICOM 2026 current rolling edition, RadLex current-at-controlled-download, SNOMED CT International 20260701, and the enabled MedNexus Radiology Reference Derivative v1. External distributions are not bundled. LOINC, DICOM and RadLex require controlled acquisition under their terms; SNOMED content remains license-restricted. Runtime is deterministic and offline.
+
+The model preserves stable MedNexus IDs, external mappings, relationship provenance, source versions, and distribution policy. Domain/type decisions remain valid when modality is unresolved; structured templates with multiple modality options can resolve as Radiology/Radiology Report with modality UNKNOWN and document nature STRUCTURED_TEMPLATE. Validation reports remain firewalled from production knowledge. Focused verification: **83 passed, 1 warning**. Full regression: **764 passed, 8 warnings, 0 failures**.
+
+## Authoritative Reference Data Population v1 — Pending Review
+
+The Reference Model now has executable offline import, checksum verification, activation, health reporting, conservative deduplication, source trust levels, and runtime loading. Official DICOM PS3.6 2026c XML is populated and active from `D:\MedNexus\Reference_Data`: **41 controlled concepts / 41 source mappings**, SHA-256 `ff1dcdfb557d57db96420614fcaf6d739bb76aa74b73eba77f367be9fab0be3e`. LOINC/RSNA 2.82, RadLex, and SNOMED CT International 20260701 have real local importers but remain unpopulated pending their authenticated/licensed official artifacts.
+
+Runtime remains offline and queries the active local Reference Model before the MedNexus curated compatibility fallback. External identifiers never become MedNexus primary keys, and no cross-standard mapping is invented. Frozen available validation after activation remains correct: Arabic CT and English CT resolve as Radiology/Radiology Report/CT/HIGH; Discharge and Emergency controls retain their stronger domains. MRI R-001 remains covered by the frozen test; the unseen liver artifact is unavailable and was not reconstructed or used for tuning. Focused verification: **28 passed**. Full regression: **771 passed, 8 warnings, 0 failures**.
+
+## Radiology Authoritative Knowledge Population — Complete / Pending Checkpoint Review
+
+Official LOINC 2.82, RadLex 4.3, DICOM PS3.6 2026c, and the controlled Radiology-focused DICOM PS3.16/DCMR 2026c subset are populated, checksum-valid, active, and consumed by the offline runtime. The LOINC artifact at the canonical path `D:\MedNexus\Reference_Data\LOINC\2.82\Loinc_2.82.zip` is 83,924,362 bytes with SHA-256 `6844c04ee57cb9b77050df54f4b0a5b82cd6be520cad9245e8de54db0638dd62`.
+
+LOINC contributes 19,230 stored concepts and 71,155 mappings across 7,010 Playbook procedures, 1,492 relevant Parts, ordered `PartSequenceOrder` composition, official RID/RPID and Part-related RadLex mappings, 3,660 Document Ontology records, and 7,043 Imaging Documents. RadLex contributes 24,092 concepts; DCMR contributes 43 controlled Context Groups, 680 stored concepts and 1,317 mappings; PS3.6 contributes 41 controlled attributes. After conservative reconciliation, the runtime contains **43,811 canonical concepts, 96,528 external mappings, and 88,325 relationships**.
+
+Imported reference matches enrich exact-offset MedNexus evidence with provenance and relationship coherence without becoming independent duplicate confidence votes. Structural evidence still requires detected headings, cross-domain precedence remains intact, and external standards remain subordinate to MedNexus-owned reasoning. Frozen validation opened only after focused gates passed: all three Radiology TXT reports resolved as Radiology / Radiology Report / CT / HIGH, and 57 non-Radiology TXT controls produced zero Radiology false positives. No report-derived production vocabulary or rules were added. Focused verification: **88 passed, 1 warning**. Full regression: **775 passed, 8 warnings, 0 failures**.
+
+## Superseded Pre-LOINC Population Snapshot
+
+Official RadLex 4.3 OWL plus CSV and official DICOM PS3.16 2026c are now populated and active outside Git. RadLex contributes 24,092 reconciled ontology concepts with preferred labels, permitted synonyms, definitions, hierarchy and relationship properties. The controlled DCMR subset contributes 43 Context Groups and 637 imported group-member relationships before conservative canonical deduplication; PS3.6 remains active with 41 attributes. The combined offline runtime currently contains **24,609 canonical concepts, 25,402 external mappings and 24,739 relationships**.
+
+Runtime performs indexed candidate generation, preserves ambiguity, feeds imported canonical concepts and provenance into `DocumentEvidenceFrame`, and uses matched relationships as a bounded coherence contribution. Cold initialization measured 2.2103 seconds; warm recognition measured 0.0107 seconds for a representative short report. SNOMED remains configured but inactive; DCMR SNOMED identifiers are provenance mappings only.
+
+This snapshot preceded canonical path reconciliation and is retained only as chronology. Its missing-artifact conclusion is superseded by the complete active population above.
+
+## Superseded Pre-LOINC Population Snapshot (Duplicate Historical Draft)
+
+Official RadLex 4.3 OWL plus CSV and official DICOM PS3.16 2026c are now populated and active outside Git. RadLex contributes 24,092 reconciled ontology concepts with preferred labels, permitted synonyms, definitions, hierarchy and relationship properties. The controlled DCMR subset contributes 43 Context Groups and 637 imported group-member relationships before conservative canonical deduplication; PS3.6 remains active with 41 attributes. The combined offline runtime currently contains **24,609 canonical concepts, 25,402 external mappings and 24,739 relationships**.
+
+Runtime performs indexed candidate generation, preserves ambiguity, feeds imported canonical concepts and provenance into `DocumentEvidenceFrame`, and uses matched relationships as a bounded coherence contribution. Cold initialization measured 2.2103 seconds; warm recognition measured 0.0107 seconds for a representative short report. SNOMED remains configured but inactive; DCMR SNOMED identifiers are provenance mappings only.
+
+This duplicate draft also predates canonical path reconciliation. Its missing-artifact conclusion is superseded by the complete active population above.
+
+## Authoritative Reference Data Population v1 — Pending Review
+
+The Reference Model now has executable offline import, checksum verification, activation, health reporting, conservative deduplication, source trust levels, and runtime loading. Official DICOM PS3.6 2026c XML is populated and active from `D:\MedNexus\Reference_Data`: **41 controlled concepts / 41 source mappings**, SHA-256 `ff1dcdfb557d57db96420614fcaf6d739bb76aa74b73eba77f367be9fab0be3e`. LOINC/RSNA 2.82, RadLex, and SNOMED CT International 20260701 have real local importers but remain unpopulated pending their authenticated/licensed official artifacts.
+
+Runtime remains offline and queries the active local Reference Model before the MedNexus curated compatibility fallback. External identifiers never become MedNexus primary keys, and no cross-standard mapping is invented. Frozen available validation after activation remains correct: Arabic CT and English CT resolve as Radiology/Radiology Report/CT/HIGH; Discharge and Emergency controls retain their stronger domains. MRI R-001 remains covered by the frozen test; the unseen liver artifact is unavailable and was not reconstructed or used for tuning. Focused verification: **28 passed**. Full regression: **pending this batch's final run**.
+
+## Reference Model Foundation v1 — Pending Review
+
+An explicit governed Reference Model now sits beneath Radiology Intelligence v2: official-source registry and manifest → controlled offline import boundary → stable MedNexus canonical concepts → cross-standard mappings and relationships → canonical resolver → `DocumentEvidenceFrame` → MedNexus reasoning. External standards provide reference knowledge; they do not replace MedNexus normalization, evidence composition, conflicts, decisions, or context construction.
+
+The manifest records LOINC/RSNA 2.82, the DICOM 2026 current rolling edition, RadLex current-at-controlled-download, SNOMED CT International 20260701, and the enabled MedNexus Radiology Reference Derivative v1. External distributions are not bundled. LOINC, DICOM and RadLex require controlled acquisition under their terms; SNOMED content remains license-restricted. Runtime is deterministic and offline.
+
+The model preserves stable MedNexus IDs, external mappings, relationship provenance, source versions, and distribution policy. Domain/type decisions remain valid when modality is unresolved; structured templates with multiple modality options can resolve as Radiology/Radiology Report with modality UNKNOWN and document nature STRUCTURED_TEMPLATE. Validation reports remain firewalled from production knowledge. Focused verification: **83 passed, 1 warning**. Full regression: **764 passed, 8 warnings, 0 failures**.
+
+## Radiology Intelligence Architecture v2 — Pending Review
+
+Radiology now uses a compositional, MedNexus-owned reasoning path: normalized knowledge concepts → exact-offset `DocumentEvidenceFrame` → domain coherence → document-type reasoning → modality and domain-context construction → `MedNexusDocumentContext`. Evidence is grouped by modality, technique, acquisition, anatomy, contrast, structure, clinical purpose, and professional/service context; external standards remain provenance inputs only.
+
+Domain recognition and Radiology Report recognition are separate decisions. Coherent imaging evidence can establish Radiology context without fabricating a report type; Findings/Impression or explicit report identity supports report classification. Strong Emergency, Admission, or Discharge structure remains authoritative over incidental imaging mentions. `SectionDetector` v2 supports line headings, inline heading/content, and colon-delimited flattened templates while preserving exact source offsets.
+
+Radiology context now supports MRI, CT, X-ray, Ultrasound, Doppler, Mammography, and Nuclear Medicine; multiple broad body regions; composed examination names; pre/post contrast; imaging-technique families; and broad clinical purpose. Validation Failure R-001 resolves as Radiology / Radiology Report / MRI, `MRI Abdomen & Pelvis`, abdomen and pelvis, pre/post contrast, Oncologic Staging, the expected MRI technique families and six structural sections, with HIGH confidence. Focused verification: **77 passed, 1 warning**. Full uncommitted regression: **758 passed, 8 warnings, 0 failures**.
 
 Public product signature: **MEDNEXUS⁷ — One document. Seven intelligent transformations.** The homepage presents seven public transformations and treats INGEST as internal file/text intake, extraction/parsing, and `DocumentContent` construction inside UNDERSTAND. Internal identifiers and backend architecture remain `MedNexus`. Latest verification for this UI/product-architecture update: focused homepage suite **48 passed, 1 warning**; full repository regression **743 passed, 8 warnings, 0 failures**.
 
