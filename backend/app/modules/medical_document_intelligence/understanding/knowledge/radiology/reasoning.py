@@ -50,8 +50,18 @@ class RadiologyReasoner:
             modality_ids or frame.professional_role_signals
         )
         domain_satisfied = imaging_coherence or explicit_context or structural_cluster
+        explicit_findings_report = {
+            "RAD_SECTION_FINDINGS", "RAD_SECTION_IMPRESSION"
+        } <= structure_ids
+        implied_findings_report = (
+            "RAD_SECTION_IMPRESSION" in structure_ids
+            and bool(frame.professional_role_signals)
+            and bool(modality_ids)
+            and len(technique_ids | acquisition_ids) >= 2
+        )
         report_satisfied = domain_satisfied and (
-            {"RAD_SECTION_FINDINGS", "RAD_SECTION_IMPRESSION"} <= structure_ids
+            explicit_findings_report
+            or implied_findings_report
             or "RAD_DOC_REPORT" in domain_ids
         )
         modality = cls._modality(modality_ids, technique_ids, acquisition_ids)

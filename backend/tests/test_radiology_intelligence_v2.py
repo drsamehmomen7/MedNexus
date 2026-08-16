@@ -66,6 +66,28 @@ def test_domain_and_report_decisions_are_separate():
     assert DocumentClassifier.classify(text).document_type is DocumentType.UNKNOWN
 
 
+def test_unlabeled_findings_body_can_form_a_report_from_strong_composition():
+    text = """DIAGNOSTIC IMAGING STUDY
+MODALITY: MRI
+HISTORY: Headache.
+SEQUENCES: Sagittal FLAIR and coronal T2-weighted images supplemented by axial T1 and T2 images.
+The ventricles and brainstem are unremarkable. No focal lesion is identified.
+IMPRESSION: No acute intracranial abnormality.
+Electronically signed by: RADIOLOGIST"""
+    result = DocumentUnderstandingService().analyze_text(text)
+    assert (result.domain, result.document_type, result.document_subtype) == (
+        DocumentDomain.RADIOLOGY, DocumentType.RADIOLOGY_REPORT, DocumentSubtype.MRI,
+    )
+    assert result.confidence_band is ConfidenceBand.HIGH
+
+
+def test_impression_without_strong_report_composition_remains_unknown():
+    text = "Clinical note: prior MRI brain reviewed. IMPRESSION: Stable symptoms."
+    assessment = RadiologyReasoner.assess(text, SectionDetector.detect(text))
+    assert assessment.report_satisfied is False
+    assert DocumentClassifier.classify(text).document_type is DocumentType.UNKNOWN
+
+
 def test_section_detector_v2_handles_flattened_inline_template():
     text = "Procedure Information: MRI pelvis Technique: T1 and T2 Comparison: None Findings: Normal Impression: Normal"
     sections = SectionDetector.detect(text)
