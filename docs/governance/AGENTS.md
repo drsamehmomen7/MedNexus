@@ -60,7 +60,7 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
 - Phase 1 frozen baseline: 681 passed, 8 warnings, 0 failures.
-- Current verified repository baseline: 778 passed, 8 warnings, 0 failures.
+- Current verified repository baseline: 780 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.
@@ -95,6 +95,14 @@ Validation reports are not knowledge sources. New recognition concepts, aliases,
 Do not implement future stages merely because they appear in architecture documents. The Phase 2 deterministic Understanding foundation is implemented; its next milestone is Recognition Validation — Round 1. Planned capabilities include expanded Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
 
 The public MEDNEXUS⁷ journey is Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. INGEST remains a real internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction; it is not a separate public transformation. This is a target architecture, not a claim that all seven stages are implemented. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey. `MEDNEXUS⁷` is a visual/product signature only; internal code, APIs, packages, routes, and repositories remain `MedNexus`.
+
+The approved cross-domain context direction is a generic typed `MedNexusClinicalContext` core with backward-compatible typed domain extensions. Untyped attributes are a controlled escape hatch, not the primary contract. UNDERSTAND describes document identity and semantic/clinical contexts; it must not perform field-level EXTRACT. EXTRACT produces terminology-independent facts with per-field provenance/confidence, and STANDARDIZE owns terminology mapping. Mapping failure must never change extraction recognition or confidence.
+
+Document domains describe source-document semantics, not consuming applications. Public Health as a vertical is not equivalent to `DocumentDomain.PUBLIC_HEALTH`: patient laboratory reports remain `LABORATORY`, immunization records use independent `IMMUNIZATION`, and notifiable-disease/surveillance documents may use `PUBLIC_HEALTH`.
+
+PROTECT is a policy/governance boundary, not unconditional destructive redaction before EXTRACT. The future Protected Execution Envelope and semantic date-role privacy model are planned contracts, not implemented capabilities. `MEDNEXUS_ANALYTICS_PUBLIC_HEALTH` must not be represented as approved for real production Public Health use until semantic date handling is resolved.
+
+Core and Domain Intelligence workspaces remain operationally separate. Temporary domain detection is bootstrap logic and must not become a competing classifier. An Integrated Domain Checkpoint requires canonical-contract conformance, including `MedNexusDocumentContext` where applicable. Create a Cross-Track Sync Brief when shared architecture/contracts change, either track reaches a stable checkpoint, cross-track dependencies or impacts arise, or before integration; routine internal changes without shared-contract impact do not require one.
 
 Public Health Intelligence is active parallel domain work aligned to the shared journey, but must not be described as production-complete without implementation and validation evidence.
 

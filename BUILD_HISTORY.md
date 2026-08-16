@@ -1213,3 +1213,13 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 - Verified Torch 2.13.0+cpu, Transformers 5.13.1, Tokenizers 0.22.2, Regex 2026.7.10, Pydantic 2.13.4, OpenMed 1.9.1, pytest 9.1.1, the MedNexus OpenMed adapter, and `DeidentificationService` imports.
 - OpenMed-dependent gate: **28 passed, 8 warnings, 0 failures**. Complete unchanged regression: **778 passed, 8 warnings, 0 failures**.
 - Environment recovery changed no production code or dependency versions. Human Blind Radiology Validation #2 remains unopened and unrun.
+
+## 2026-08-16 — Cross-Domain Architecture Contract Baseline (Documentation Review)
+
+- Recorded the approved MedNexus Cross-Domain Architecture Contract Baseline: Architecture Crosswalk v1.1, Clinical Semantic Context Contract v0.1, and Clinical Extraction Contract v0.1. These are design baselines; source artifacts are not locally available and implementation remains incremental.
+- Confirmed the authoritative seven-stage journey: UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS, with INGEST internal to UNDERSTAND.
+- Defined the target `MedNexusClinicalContext` as a generic typed semantic core with backward-compatible domain extensions, while preserving the hard boundary between semantic context and field-level extraction.
+- Clarified document-domain taxonomy: Public Health workflow consumption does not change Laboratory documents into `PUBLIC_HEALTH`, and `IMMUNIZATION` is independent.
+- Recorded the future Protected Execution Envelope, semantic date-role requirement, terminology-independent EXTRACT boundary, and STANDARDIZE ownership. No implementation claim or breaking field rename was made.
+- Established parallel Core and Domain Intelligence tracks, two checkpoint levels for domain work, and the standing bidirectional Cross-Track Synchronization Policy.
+- Recorded Core checkpoint `53a988cafd23e514b31d85e240688a6d0c3b1b31` and verified baseline **780 passed, 8 warnings, 0 failures**.

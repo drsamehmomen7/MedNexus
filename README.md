@@ -21,6 +21,20 @@ Public signature: **MEDNEXUS⁷ — One document. Seven intelligent transformati
 
 The current implemented capabilities are **Clinical Privacy Policy Engine / De-identification** and the accepted foundation of **Medical Document Understanding & Recognition**. Phase 2 implements the MedNexus-owned UNDERSTAND stage after existing ingestion; Phase 1 remains frozen at its accepted POC checkpoint.
 
+## Cross-Domain Architecture Direction
+
+The current architecture blueprint is **MedNexus Enterprise Architecture & Engineering Blueprint v1.9**. It records the approved **MedNexus Cross-Domain Architecture Contract Baseline**, dated 16 August 2026. The authoritative design artifacts are [Architecture Crosswalk v1.1](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v1.1.md), [Clinical Semantic Context Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.1.md), and [Clinical Extraction Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.1.md). These are architecture-contract baselines, not claims of completed implementation.
+
+- UNDERSTAND evolves toward a typed `MedNexusClinicalContext` core with backward-compatible domain extensions while remaining separate from field-level EXTRACT.
+- Phase 1 remains the accepted and frozen PROTECT foundation. PROTECT is a policy/governance boundary rather than unconditional destructive redaction before EXTRACT; a Protected Execution Envelope is planned, not implemented.
+- EXTRACT produces terminology-independent clinical facts with per-field provenance and confidence. STANDARDIZE owns terminology/code mapping.
+- Document domains describe the source document, not the consuming application: Laboratory remains `LABORATORY` in Public Health workflows, and `IMMUNIZATION` is independent.
+- MedNexus Core and the separate Domain Intelligence workspace develop in parallel. Core owns rich UNDERSTAND, PROTECT, generic EXTRACT/STANDARDIZE foundations, and shared contracts; Domain Intelligence focuses on domain implementations of EXTRACT, STANDARDIZE, ANALYZE, VISUALIZE, and INDICATORS.
+- A standing Cross-Track Synchronization Policy requires a concise Cross-Track Sync Brief when shared architecture or contracts change, either track reaches a stable checkpoint, a cross-track dependency or impact appears, or before integration. Routine internal changes with no shared-contract impact do not require a brief.
+- The current Core regression baseline is **780 passed, 8 warnings, 0 failures** at Radiology composition checkpoint `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
+
+Radiology remains the first rich UNDERSTAND reference domain. Its current compositional reasoning and active offline LOINC/RadLex/DICOM reference foundation preserve the separation between document/domain understanding and future field-level extraction. The latest correction supports strongly composed Radiology reports whose findings narrative lacks an explicit `FINDINGS` heading without introducing report-specific production rules, vocabulary, mappings, or threshold changes.
+
 The Clinical Privacy Policy Engine combines:
 
 - AI-based candidate entity detection

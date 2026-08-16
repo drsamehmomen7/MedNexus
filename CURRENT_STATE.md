@@ -1,14 +1,36 @@
 # MedNexus Current State
 
-**Authoritative date:** 15 August 2026
+**Authoritative date:** 16 August 2026
 
-## Failed Blind Radiology Validation — Forensic Correction Pending Review
+## Cross-Domain Architecture Contract Baseline
 
-The first failed human-blind Radiology report exposed a general flattened-text structure gap, not missing reference knowledge. The active LOINC 2.82, RadLex 4.3, DICOM PS3.6 2026c, and DICOM PS3.16/DCMR 2026c runtime produced substantial MRI, acquisition, anatomy, and clinical-imaging evidence, but `SectionDetector` required line or colon boundaries. With no structural sections, the Radiology reasoner correctly withheld report classification.
+**Status:** Approved architecture-contract baseline; implementation remains controlled and incremental. **Date:** 16 August 2026.
 
-`SectionDetector` now conservatively recovers clusters of at least three already-governed section aliases near the front of flattened documents while preserving exact offsets; isolated prose occurrences remain non-structural. Context construction also preserves the established broad region/examination contract while exposing the nearest authoritative anatomy as provenance-backed context. The failed report now resolves as Radiology / Radiology Report / MRI / English / HIGH with Procedure Information, Clinical Information, Comparison, Findings, and Impression sections and an `MRI Spine & Neck` context. No production vocabulary, aliases, signatures, or scoring rules were derived from the report.
+The authoritative baseline artifacts are [MedNexus Architecture Crosswalk v1.1](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v1.1.md), [MedNexus Clinical Semantic Context Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.1.md), and [MedNexus Clinical Extraction Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.1.md). They are architecture-contract baselines; implementation remains controlled and incremental.
 
-Focused reference-model, Radiology-intelligence, document-context, and document-understanding verification is **91 passed, 1 warning**. Environment recovery uses a workspace-local standalone CPython 3.10.11 runtime with the retained `.venv` site-packages; no production code or dependency was changed. The OpenMed gate is **28 passed, 8 warnings**, and the complete verified working-tree regression is **778 passed, 8 warnings, 0 failures**. Human Blind Radiology Validation #2 has not been opened or run.
+The authoritative MEDNEXUS⁷ journey is `01 UNDERSTAND → 02 PROTECT → 03 EXTRACT → 04 STANDARDIZE → 05 ANALYZE → 06 VISUALIZE → 07 INDICATORS`. INGEST is an internal operation within UNDERSTAND, not an independent transformation.
+
+UNDERSTAND will progressively produce a rich typed `MedNexusClinicalContext`: a generic semantic core with backward-compatible typed domain extensions such as `RadiologyClinicalContext`, `LaboratoryClinicalContext`, `PublicHealthClinicalContext`, and `ImmunizationClinicalContext`. It describes document identity and semantic/clinical contexts; it must not become field-level EXTRACT. Untyped attributes remain only a controlled compatibility escape hatch.
+
+Document-domain taxonomy is independent of the consuming application vertical. Notifiable-disease and epidemiological-surveillance documents may be `PUBLIC_HEALTH`; patient laboratory reports remain `LABORATORY`; immunization records use the independent `IMMUNIZATION` domain. A laboratory document consumed by a Public Health workflow remains Laboratory.
+
+PROTECT remains the frozen Phase 1 policy/governance boundary. A future `ProtectionContext` / Protected Execution Envelope may govern protected text, raw-text access (`ALLOWED`, `DENIED`, or `RESTRICTED`), policy identity, transformations, permissions, and provenance; this full envelope is not implemented. Dates require future semantic privacy roles such as event, report, specimen collection, result, administration, and birth. Consequently, `MEDNEXUS_ANALYTICS_PUBLIC_HEALTH` is not approved for real production Public Health use until date semantics are resolved.
+
+EXTRACT produces terminology-independent clinical facts, entities, and observations with per-field confidence/provenance. Mapping failure must not alter extraction recognition or confidence. Future contract terminology is `document_review_required` and `extraction_review_required`; current implementation names remain supported until a backward-compatible migration. STANDARDIZE exclusively owns terminology/code mapping, including ICD, LOINC, SNOMED CT, RadLex, CVX, and UCUM where appropriate.
+
+Development proceeds in parallel: Track A (MedNexus Core) owns rich UNDERSTAND, PROTECT, and generic EXTRACT/STANDARDIZE foundations; Track B (the separate Domain Intelligence workspace) owns domain implementations of EXTRACT, STANDARDIZE, ANALYZE, VISUALIZE, and INDICATORS. Radiology remains the first rich UNDERSTAND reference domain. Public Health Stable Scope Checkpoint v0.1.0 is a scope checkpoint, not a production-readiness claim; Laboratory follows as the next domain vertical using Public Health assets as seeds rather than a complete Laboratory specification, followed by Pathology and later downstream Radiology intelligence.
+
+Current Core regression baseline: **780 passed, 8 warnings, 0 failures**. Latest Radiology composition checkpoint: `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
+
+The two repositories, runtimes, frontends, and deployment workflows remain operationally separate. GitHub is source-code authority; Render may be used for synthetic/development deployment but is not mandatory platform architecture, and real PHI must not enter it without appropriate protection and infrastructure governance.
+
+A standing bidirectional Cross-Track Synchronization Policy requires a concise Cross-Track Sync Brief when shared architecture/contracts change, either track reaches a stable checkpoint, a cross-track dependency or impact appears, or before integration/convergence. Routine internal changes with no shared-contract effect do not require a brief. Domain Development Checkpoints may use synthetic/local bootstrap detection; a MedNexus Integrated Domain Checkpoint requires conformance with canonical contracts, including `MedNexusDocumentContext` where applicable.
+
+## Radiology Validation and Composition Checkpoint
+
+The Radiology forensic sequence confirmed two reusable architecture corrections. First, conservative clustered-heading recovery handles flattened reports using governed headings and exact offsets. Second, when PDF extraction preserves a strongly composed report whose findings narrative lacks an explicit `FINDINGS` heading, the report gate may use the combination of explicit Impression, radiologist attribution, modality, and multiple technique/acquisition concepts. Extraction, normalization, terminology, mappings, and confidence thresholds remain unchanged.
+
+Checkpoint `53a988cafd23e514b31d85e240688a6d0c3b1b31` records the generic composition correction. No filename, vendor template, blind-report phrase, production vocabulary, alias, mapping, or report-specific rule was introduced. Current complete regression: **780 passed, 8 warnings, 0 failures**.
 
 ## Current Platform State
 
