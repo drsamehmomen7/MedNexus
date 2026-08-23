@@ -1,24 +1,42 @@
 # MedNexus Current State
 
-**Authoritative date:** 16 August 2026
+**Authoritative date:** 23 August 2026
 
-## Cross-Domain Architecture Contract Baseline
+## UNDERSTAND Domain Matrix v1.0 — Frozen Architecture Authority
 
-**Status:** Approved architecture-contract baseline; implementation remains controlled and incremental. **Date:** 16 August 2026.
+UNDERSTAND is the first MedNexus processing stage after upload or pasted-text intake; INGEST remains its internal intake/parsing operation. Its bounded responsibility is `Document → Domain → Subdomain/Modality (or OTHER) → small high-value routing context → semantic document structure and relationships → provenance/confidence → readiness for PROTECT and EXTRACT`. UNDERSTAND is not a mini-extractor.
 
-The authoritative baseline artifacts are [MedNexus Architecture Crosswalk v1.1](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v1.1.md), [MedNexus Clinical Semantic Context Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.1.md), and [MedNexus Clinical Extraction Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.1.md). They are architecture-contract baselines; implementation remains controlled and incremental.
+The **FROZEN UNDERSTAND v1 Architecture Authority**, human-approved on 23 August 2026, is [MedNexus UNDERSTAND Domain Matrix v1.0](docs/architecture/MedNexus_UNDERSTAND_Domain_Matrix_v1.0.md), the current [Blueprint v2.0](docs/architecture/MedNexus_Enterprise_Architecture_and_Engineering_Blueprint_v2.0.docx), [Architecture Crosswalk v2.0](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v2.0.md), [Clinical Semantic Context Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.2.md), and [Clinical Extraction Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.2.md). Architecture authority does not imply implementation completion.
+
+The approved target domain catalog is `RADIOLOGY`, `PUBLIC_HEALTH`, `LABORATORY`, `ADMISSION`, `DISCHARGE`, `ICU`, and `EMERGENCY`. `PATHOLOGY` is planned/future. Radiology and Public Health are the current full implementation priorities; the remaining approved domains are architecture scope rather than claims of complete implementation. Every implemented domain must resolve a supported subdomain or `OTHER`, never guess an unsupported subtype.
+
+The current code has not yet been migrated to that complete catalog: it still exposes compatibility-era `PATHOLOGY` and combined `ADMISSION_DISCHARGE`, has no independent `ICU`, and does not yet provide `OTHER` consistently across domains. Those are implementation differences, not authority for the future taxonomy.
+
+UNDERSTAND v1 may expose only three or four reliable, high-value context items per subdomain when they help PROTECT, EXTRACT, or routing. Its conceptual output is Document Identity, Light Context Metadata, Semantic Structure, Semantic Relationships, Provenance/Review Requirement, and Routing readiness. It may identify document-level context such as modality, body region, contrast, semantic regions, recommendation presence, or measurement-bearing content. It must not emit lesion sizes, diagnoses, numeric measurements, extracted disease entities, recommendation text, vaccine lot/dose/manufacturer, or analyte results; those are EXTRACT responsibilities.
+
+Frozen human decisions: native immunization/vaccination documents use `PUBLIC_HEALTH / IMMUNIZATION`; Nuclear Medicine uses `PLANAR`, `SPECT`, `PET`, `SPECT_CT`, `PET_CT`, and `OTHER` study families beneath `NUCLEAR_MEDICINE`; diagnostic fluoroscopic reports use `RADIOLOGY / FLUOROSCOPY`, while image-guided intervention remains `RADIOLOGY / OTHER` until a future family is designed; and Laboratory-derived Surveillance requires native Public Health surveillance/reporting identity plus laboratory-derived context.
+
+MedNexus Main/Codex owns UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics. Claude/Claude Code Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS. Public Health remains the downstream reference vertical; future Radiology extraction may consume the stabilized UNDERSTAND contract without moving extraction into UNDERSTAND.
+
+Latest verified accumulated uncommitted regression: **818 passed, 8 warnings, 0 failures**. This documents verification state, not an accepted checkpoint or commit.
+
+## UNDERSTAND v1 Successor Contract Baseline
+
+**Status:** FROZEN ARCHITECTURE AUTHORITY; implementation remains controlled and incremental. **Date:** 23 August 2026.
+
+The successor artifacts are [MedNexus Architecture Crosswalk v2.0](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v2.0.md), [MedNexus Clinical Semantic Context Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.2.md), and [MedNexus Clinical Extraction Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.2.md). Crosswalk v1.1 and the v0.1 contracts remain preserved as the 16 August 2026 historical baseline.
 
 The authoritative MEDNEXUS⁷ journey is `01 UNDERSTAND → 02 PROTECT → 03 EXTRACT → 04 STANDARDIZE → 05 ANALYZE → 06 VISUALIZE → 07 INDICATORS`. INGEST is an internal operation within UNDERSTAND, not an independent transformation.
 
-UNDERSTAND will progressively produce a rich typed `MedNexusClinicalContext`: a generic semantic core with backward-compatible typed domain extensions such as `RadiologyClinicalContext`, `LaboratoryClinicalContext`, `PublicHealthClinicalContext`, and `ImmunizationClinicalContext`. It describes document identity and semantic/clinical contexts; it must not become field-level EXTRACT. Untyped attributes remain only a controlled compatibility escape hatch.
+UNDERSTAND will progressively produce a bounded typed `MedNexusClinicalContext`: a generic semantic core with backward-compatible domain extensions. It describes document identity, small routing context, and semantic regions/relationships; it must not become field-level EXTRACT. Untyped attributes remain only a controlled compatibility escape hatch.
 
-Document-domain taxonomy is independent of the consuming application vertical. Notifiable-disease and epidemiological-surveillance documents may be `PUBLIC_HEALTH`; patient laboratory reports remain `LABORATORY`; immunization records use the independent `IMMUNIZATION` domain. A laboratory document consumed by a Public Health workflow remains Laboratory.
+Document-domain taxonomy is independent of the consuming application vertical. Frozen `PUBLIC_HEALTH` families are Notifiable Disease, Immunization, Surveillance, Syndromic Surveillance, Outbreak/Cluster, Laboratory-derived Surveillance, and `OTHER`. Native patient laboratory reports remain `LABORATORY`; consumption by a Public Health workflow does not change their source-document identity. Laboratory-derived Surveillance requires both native Public Health surveillance/reporting identity and laboratory-derived context.
 
 PROTECT remains the frozen Phase 1 policy/governance boundary. A future `ProtectionContext` / Protected Execution Envelope may govern protected text, raw-text access (`ALLOWED`, `DENIED`, or `RESTRICTED`), policy identity, transformations, permissions, and provenance; this full envelope is not implemented. Dates require future semantic privacy roles such as event, report, specimen collection, result, administration, and birth. Consequently, `MEDNEXUS_ANALYTICS_PUBLIC_HEALTH` is not approved for real production Public Health use until date semantics are resolved.
 
 EXTRACT produces terminology-independent clinical facts, entities, and observations with per-field confidence/provenance. Mapping failure must not alter extraction recognition or confidence. Future contract terminology is `document_review_required` and `extraction_review_required`; current implementation names remain supported until a backward-compatible migration. STANDARDIZE exclusively owns terminology/code mapping, including ICD, LOINC, SNOMED CT, RadLex, CVX, and UCUM where appropriate.
 
-Development proceeds in parallel: Track A (MedNexus Core) owns rich UNDERSTAND, PROTECT, and generic EXTRACT/STANDARDIZE foundations; Track B (the separate Domain Intelligence workspace) owns domain implementations of EXTRACT, STANDARDIZE, ANALYZE, VISUALIZE, and INDICATORS. Radiology remains the first rich UNDERSTAND reference domain. Public Health Stable Scope Checkpoint v0.1.0 is a scope checkpoint, not a production-readiness claim; Laboratory follows as the next domain vertical using Public Health assets as seeds rather than a complete Laboratory specification, followed by Pathology and later downstream Radiology intelligence.
+Development proceeds in parallel: Track A (MedNexus Main/Core) owns bounded UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics; Track B (Claude/Claude Code Domain Intelligence) owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS. Radiology and Public Health are the current UNDERSTAND implementation priorities. Public Health remains the downstream reference vertical, and no scope statement is a production-readiness claim.
 
 Current Core regression baseline: **780 passed, 8 warnings, 0 failures**. Latest Radiology composition checkpoint: `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
 
@@ -147,7 +165,7 @@ Contextual and deterministic MedNexus detection plus OpenMed candidates converge
 
 The implemented boundary is `Source File / Text → existing ExtractorFactory → existing DocumentContent → Language Detection → Structural Section Detection → Evidence-Based Classification → Confidence/Evidence → Symbolic Routing`. UNDERSTAND is independently usable and does not depend on privacy internals. Text and file APIs are exposed at `/api/v1/understanding/analyze-text` and `/api/v1/understanding/analyze-file`.
 
-Initial domains are Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, Public Health, and Unknown. Results include type/subtype, language, major section ranges, confidence, explainable evidence, symbolic routing, metadata, and warnings. `UNKNOWN` and low confidence are intentionally valid.
+The implemented compatibility classifier currently exposes Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, Public Health, and Unknown. This historical implementation statement is qualified by the approved target catalog above. Results include type/subtype, language, major section ranges, confidence, explainable evidence, symbolic routing, metadata, and warnings. `UNKNOWN` and low confidence are intentionally valid.
 
 ## Phase 2 Accepted Document Context & Journey Foundation Checkpoint
 

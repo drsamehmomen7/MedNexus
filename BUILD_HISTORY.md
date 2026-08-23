@@ -1223,3 +1223,27 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 - Recorded the future Protected Execution Envelope, semantic date-role requirement, terminology-independent EXTRACT boundary, and STANDARDIZE ownership. No implementation claim or breaking field rename was made.
 - Established parallel Core and Domain Intelligence tracks, two checkpoint levels for domain work, and the standing bidirectional Cross-Track Synchronization Policy.
 - Recorded Core checkpoint `53a988cafd23e514b31d85e240688a6d0c3b1b31` and verified baseline **780 passed, 8 warnings, 0 failures**.
+
+## 2026-08-23 — UNDERSTAND Scope Reset and Documentation Baseline (Pending Review)
+
+- Approved UNDERSTAND as the first stage after document upload/paste and bounded it to document identity, supported subdomain/modality or `OTHER`, a small set of reliable routing metadata, semantic regions/relationships, provenance/confidence, review requirement, and readiness for PROTECT/EXTRACT. Reaffirmed that UNDERSTAND is not a mini-extractor.
+- Approved the target domain catalog: Radiology, Public Health, Laboratory, Admission, Discharge, ICU, and Emergency; Pathology is future. Radiology and Public Health are the current full implementation priorities. Recorded current implementation differences without rewriting historical behavior.
+- Defined Public Health candidate subdomains as Notifiable Disease, Immunization/Vaccination, Public Health Laboratory Workflow, Surveillance, Syndromic Surveillance, Outbreak/Cluster, and `OTHER`; native Laboratory identity remains independent of consuming workflow.
+- Reaffirmed the firewall against detailed clinical facts and assigned MedNexus Main/Codex ownership of UNDERSTAND, PROTECT, core contracts/foundations, and shared semantics; Claude/Claude Code Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS.
+- Latest verified accumulated uncommitted regression remains **818 passed, 8 warnings, 0 failures**. No application, test, frontend, or runtime behavior changed in this documentation task.
+
+## 2026-08-23 — UNDERSTAND Domain Matrix v1.0 Freeze and Successor Architecture Package (Freeze Review)
+
+- Froze `MedNexus_UNDERSTAND_Domain_Matrix_v1.0.md` as the architecture authority for the seven-domain target catalog, bounded 3–4-field light context, generic semantic regions, and `OTHER`/`UNKNOWN` safety semantics.
+- Recorded the human-approved decisions: `PUBLIC_HEALTH / IMMUNIZATION` for native immunization/vaccination documents; `NUCLEAR_MEDICINE` families `PLANAR`, `SPECT`, `PET`, `SPECT_CT`, `PET_CT`, and `OTHER`; diagnostic Fluoroscopy separated from image-guided intervention; and the two-signal requirement for Laboratory-derived Surveillance.
+- Created Blueprint v2.0 and successor Crosswalk v2.0, Clinical Semantic Context Contract v0.2, and Clinical Extraction Contract v0.2. Blueprint v1.9 and the v1.1/v0.1 contracts remain unchanged as architecture history.
+- Reaffirmed MEDNEXUS7, the Reference-Driven Document Context Layer boundary, terminology-independent EXTRACT, STANDARDIZE terminology ownership, and the Main/Codex versus Claude/Domain Intelligence ownership model.
+- Recorded pending implementation migrations without changing production code: domain-catalog alignment, consistent `OTHER`, ICU addition, Admission/Discharge split, Pathology demotion, bounded Radiology context, typed Public Health context, legacy aliases, and compatibility `DOPPLER` behavior.
+- Latest verified accumulated working-tree regression remains **818 passed, 8 warnings, 0 failures**. No tests were rerun for this documentation-only task.
+
+## 2026-08-23 — UNDERSTAND v1 Architecture Authority Final Freeze
+
+- Human review approved the architecture content and froze the current authority package: UNDERSTAND Domain Matrix v1.0, Blueprint v2.0, Architecture Crosswalk v2.0, Clinical Semantic Context Contract v0.2, and Clinical Extraction Contract v0.2.
+- Corrected Blueprint v2.0 Section 3 numbering to restart at 1–5, finalized its document-control status as `FROZEN ARCHITECTURE AUTHORITY`, and removed conditional post-approval wording.
+- Preserved Blueprint v1.9 and the v1.1/v0.1 contracts unchanged as architecture history.
+- Reaffirmed that the implementation has not yet migrated to the frozen target architecture. No production code, tests, frontend, runtime behavior, reference data, or validation reports changed in this documentation-only finalization.

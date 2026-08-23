@@ -21,19 +21,31 @@ Public signature: **MEDNEXUS⁷ — One document. Seven intelligent transformati
 
 The current implemented capabilities are **Clinical Privacy Policy Engine / De-identification** and the accepted foundation of **Medical Document Understanding & Recognition**. Phase 2 implements the MedNexus-owned UNDERSTAND stage after existing ingestion; Phase 1 remains frozen at its accepted POC checkpoint.
 
-## Cross-Domain Architecture Direction
+## UNDERSTAND v1 Architecture Package
 
-The current architecture blueprint is **MedNexus Enterprise Architecture & Engineering Blueprint v1.9**. It records the approved **MedNexus Cross-Domain Architecture Contract Baseline**, dated 16 August 2026. The authoritative design artifacts are [Architecture Crosswalk v1.1](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v1.1.md), [Clinical Semantic Context Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.1.md), and [Clinical Extraction Contract v0.1](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.1.md). These are architecture-contract baselines, not claims of completed implementation.
+The **FROZEN UNDERSTAND v1 Architecture Authority** consists of [MedNexus UNDERSTAND Domain Matrix v1.0](docs/architecture/MedNexus_UNDERSTAND_Domain_Matrix_v1.0.md), the current [MedNexus Enterprise Architecture & Engineering Blueprint v2.0](docs/architecture/MedNexus_Enterprise_Architecture_and_Engineering_Blueprint_v2.0.docx), [Architecture Crosswalk v2.0](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v2.0.md), [Clinical Semantic Context Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.2.md), and [Clinical Extraction Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.2.md). Blueprint v1.9 and the v1.1/v0.1 contracts remain preserved architecture history. Architecture authority is not a claim of completed implementation.
 
-- UNDERSTAND evolves toward a typed `MedNexusClinicalContext` core with backward-compatible domain extensions while remaining separate from field-level EXTRACT.
+- UNDERSTAND is the first stage after upload/paste and evolves toward a bounded typed `MedNexusClinicalContext`: document identity, supported subdomain/modality or `OTHER`, a small amount of reliable routing context, semantic regions/relationships, provenance/confidence, and readiness for PROTECT/EXTRACT. It remains separate from field-level EXTRACT.
 - Phase 1 remains the accepted and frozen PROTECT foundation. PROTECT is a policy/governance boundary rather than unconditional destructive redaction before EXTRACT; a Protected Execution Envelope is planned, not implemented.
 - EXTRACT produces terminology-independent clinical facts with per-field provenance and confidence. STANDARDIZE owns terminology/code mapping.
-- Document domains describe the source document, not the consuming application: Laboratory remains `LABORATORY` in Public Health workflows, and `IMMUNIZATION` is independent.
-- MedNexus Core and the separate Domain Intelligence workspace develop in parallel. Core owns rich UNDERSTAND, PROTECT, generic EXTRACT/STANDARDIZE foundations, and shared contracts; Domain Intelligence focuses on domain implementations of EXTRACT, STANDARDIZE, ANALYZE, VISUALIZE, and INDICATORS.
+- The frozen target catalog is Radiology, Public Health, Laboratory, Admission, Discharge, ICU, and Emergency; Pathology is future. Radiology and Public Health are the full implementation priorities. Native immunization/vaccination documents use `PUBLIC_HEALTH / IMMUNIZATION` in the current product scope. `PUBLIC_HEALTH / LABORATORY_DERIVED_SURVEILLANCE` requires native Public Health surveillance identity plus laboratory-derived context; native Laboratory documents remain Laboratory even when used by Public Health workflows.
+- Nuclear Medicine remains one Radiology subdomain with `PLANAR`, `SPECT`, `PET`, `SPECT_CT`, `PET_CT`, and `OTHER` study families. Diagnostic Fluoroscopy is distinct from image-guided intervention, which remains `RADIOLOGY / OTHER` until a future family is approved.
+- MedNexus Main/Core and Claude/Claude Code Domain Intelligence develop in parallel. Main/Core owns UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics; Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS.
 - A standing Cross-Track Synchronization Policy requires a concise Cross-Track Sync Brief when shared architecture or contracts change, either track reaches a stable checkpoint, a cross-track dependency or impact appears, or before integration. Routine internal changes with no shared-contract impact do not require a brief.
-- The current Core regression baseline is **780 passed, 8 warnings, 0 failures** at Radiology composition checkpoint `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
+- The latest verified accumulated uncommitted regression is **818 passed, 8 warnings, 0 failures**. The latest accepted Core checkpoint baseline remains **780 passed, 8 warnings, 0 failures** at `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
 
 Radiology remains the first rich UNDERSTAND reference domain. Its current compositional reasoning and active offline LOINC/RadLex/DICOM reference foundation preserve the separation between document/domain understanding and future field-level extraction. The latest correction supports strongly composed Radiology reports whose findings narrative lacks an explicit `FINDINGS` heading without introducing report-specific production rules, vocabulary, mappings, or threshold changes.
+
+## Local Development Startup
+
+Start MedNexus Main from the repository root using the verified recovered Python 3.10.11 runtime and retained site-packages:
+
+```powershell
+cd D:\MedNexus\07_Source_Code
+.\start_backend.ps1
+```
+
+Open `http://127.0.0.1:8001`. Local development port convention: MedNexus Main uses `127.0.0.1:8001`; the separate MedNexus Public Health workspace reserves `127.0.0.1:8002`.
 
 The Clinical Privacy Policy Engine combines:
 
@@ -111,7 +123,7 @@ Source File / Text
   → Symbolic Downstream Routing
 ```
 
-The deterministic, explainable POC recognizes Radiology, Pathology, Laboratory, Emergency, Admission/Discharge, Public Health, and Unknown. Supported types are `RADIOLOGY_REPORT`, `PATHOLOGY_REPORT`, `LABORATORY_REPORT`, `EMERGENCY_REPORT`, `ADMISSION_NOTE`, `DISCHARGE_SUMMARY`, `PUBLIC_HEALTH_DOCUMENT`, and `UNKNOWN`. Radiology may resolve `X_RAY`, `CT`, `MRI`, `ULTRASOUND`, `DOPPLER`, `MAMMOGRAPHY`, or `NUCLEAR_MEDICINE` when evidence is adequate. Language results are `ENGLISH`, `ARABIC`, `MIXED`, or `UNKNOWN`.
+The current deterministic POC still recognizes compatibility-era Radiology, Pathology, Laboratory, Emergency, combined Admission/Discharge, Public Health, and Unknown types. This is implemented behavior, not the approved target catalog. The target catalog separates Admission and Discharge, adds ICU, makes Pathology future, and requires each implemented domain to resolve a supported subdomain or `OTHER`. Radiology and Public Health are the current full implementation priorities.
 
 The result includes domain, type, optional subtype, language, complete non-overlapping major-section ranges, confidence/band, explainable evidence, symbolic routing, metadata, and warnings. `UNKNOWN` and low confidence are intentional safe outcomes. Routing recommends future profiles only; it does not claim that extraction or terminology engines exist.
 
@@ -123,7 +135,7 @@ The result workspace uses progressive disclosure for a broad audience: a dominan
 
 Radiology recognition is backed by an offline MedNexus-owned compositional knowledge and reasoning package. Typed concepts with stable IDs feed an exact-offset `DocumentEvidenceFrame`; MedNexus evaluates evidence-family diversity, imaging coherence, structure, incidental-mention risk, and conflicting document signatures before making separate domain and report-type decisions. LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 are reference/provenance families only; they do not supply runtime decisions.
 
-The primary UNDERSTAND output is `MedNexusDocumentContext`, not classification alone. Radiology v2 derives modality, composed examination, one or more broad body regions, contrast context, imaging-technique families, broad clinical purpose, structure, and radiologist/authentication context without claiming lesion, disease, measurement, or staging extraction.
+The primary UNDERSTAND output is `MedNexusDocumentContext`, not classification alone. UNDERSTAND is intentionally bounded to document identity, small high-value context, semantic structure/relationships, provenance/confidence, review requirements, and routing. Radiology currently derives document-level modality, study anatomy/examination, contrast, selected technique or view context, and semantic composition without claiming lesion, diagnosis, exact measurement, recommendation-text, or other clinical-fact extraction.
 
 The Reference Model Foundation separates authoritative source governance from runtime intelligence. A machine-readable manifest records official version, license/distribution policy, acquisition location, verification date, checksum where published, and enabled state for LOINC/RSNA, DICOM, RadLex, SNOMED CT, and the local MedNexus derivative. Stable MedNexus concept IDs normalize cross-standard mappings and relationships; the application consumes only the deterministic offline canonical model. External standards are reference inputs, not runtime decision engines, and validation reports are never knowledge sources.
 

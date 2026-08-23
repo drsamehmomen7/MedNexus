@@ -22,7 +22,7 @@ MedNexus is an existing, continuing enterprise healthcare AI project. Never trea
 Use this precedence:
 
 1. Implemented behavior: current source code and tests.
-2. Architecture principles and roadmap: latest Enterprise Architecture & Engineering Blueprint, qualified by current code for implementation status.
+2. Architecture principles and roadmap: the frozen UNDERSTAND v1 package — Blueprint v2.0, `MedNexus_UNDERSTAND_Domain_Matrix_v1.0.md`, Architecture Crosswalk v2.0, Clinical Semantic Context Contract v0.2, and Clinical Extraction Contract v0.2 — qualified by current code for implementation status.
 3. Current implementation summary: `07_Source_Code/README.md`.
 4. Engineering chronology/current milestone: latest current-state section of `07_Source_Code/BUILD_HISTORY.md`.
 5. Technical debt: `07_Source_Code/backend/TECH_DEBT.md`.
@@ -60,7 +60,7 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
 - Phase 1 frozen baseline: 681 passed, 8 warnings, 0 failures.
-- Current verified repository baseline: 780 passed, 8 warnings, 0 failures.
+- Latest verified accumulated working-tree baseline: 818 passed, 8 warnings, 0 failures. The latest accepted checkpoint baseline remains 780 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.
@@ -98,11 +98,19 @@ The public MEDNEXUS⁷ journey is Understand → Protect → Extract → Standar
 
 The approved cross-domain context direction is a generic typed `MedNexusClinicalContext` core with backward-compatible typed domain extensions. Untyped attributes are a controlled escape hatch, not the primary contract. UNDERSTAND describes document identity and semantic/clinical contexts; it must not perform field-level EXTRACT. EXTRACT produces terminology-independent facts with per-field provenance/confidence, and STANDARDIZE owns terminology mapping. Mapping failure must never change extraction recognition or confidence.
 
-Document domains describe source-document semantics, not consuming applications. Public Health as a vertical is not equivalent to `DocumentDomain.PUBLIC_HEALTH`: patient laboratory reports remain `LABORATORY`, immunization records use independent `IMMUNIZATION`, and notifiable-disease/surveillance documents may use `PUBLIC_HEALTH`.
+UNDERSTAND is the first processing stage after upload/pasted text, with INGEST as its internal intake/parsing operation. It is not a mini-extractor. Its bounded output is document identity, supported subdomain/modality or `OTHER`, no more than a small set of reliable routing/context items, semantic regions and document-level relationships, provenance/confidence/review requirement, and readiness for PROTECT and EXTRACT. Detailed clinical facts, exact values, diagnoses, measurements, entities, and recommendation text belong to EXTRACT.
+
+The approved target domain catalog is `RADIOLOGY`, `PUBLIC_HEALTH`, `LABORATORY`, `ADMISSION`, `DISCHARGE`, `ICU`, and `EMERGENCY`; `PATHOLOGY` is future. Radiology and Public Health are the current full implementation priorities. Every implemented domain must resolve a supported subdomain or `OTHER`, never guess. Current compatibility enums and classifiers do not override this target catalog.
+
+The frozen UNDERSTAND Domain Matrix v1.0 is the authority for domain/subdomain families, bounded light-context metadata, semantic regions, and `OTHER`/`UNKNOWN` safety behavior. Do not broaden an implemented context beyond approximately three or four matrix-approved fields per subtype without a successor architecture review.
+
+Document domains describe source-document semantics, not consuming applications. Frozen Public Health families are Notifiable Disease, Immunization, Surveillance, Syndromic Surveillance, Outbreak/Cluster, Laboratory-derived Surveillance, and `OTHER`. Native immunization/vaccination documents use `PUBLIC_HEALTH / IMMUNIZATION` in the current product scope. Native patient laboratory reports remain `LABORATORY` even when consumed by a Public Health workflow. Laboratory-derived Surveillance requires native Public Health surveillance/reporting identity plus laboratory-derived context; laboratory results alone are insufficient.
+
+Radiology `NUCLEAR_MEDICINE` study families are `PLANAR`, `SPECT`, `PET`, `SPECT_CT`, `PET_CT`, and `OTHER`; PET and SPECT are not top-level subdomains. Diagnostic fluoroscopic imaging reports use `RADIOLOGY / FLUOROSCOPY`. Image-guided interventional procedure documentation remains `RADIOLOGY / OTHER` until a future Interventional Radiology family is formally approved.
 
 PROTECT is a policy/governance boundary, not unconditional destructive redaction before EXTRACT. The future Protected Execution Envelope and semantic date-role privacy model are planned contracts, not implemented capabilities. `MEDNEXUS_ANALYTICS_PUBLIC_HEALTH` must not be represented as approved for real production Public Health use until semantic date handling is resolved.
 
-Core and Domain Intelligence workspaces remain operationally separate. Temporary domain detection is bootstrap logic and must not become a competing classifier. An Integrated Domain Checkpoint requires canonical-contract conformance, including `MedNexusDocumentContext` where applicable. Create a Cross-Track Sync Brief when shared architecture/contracts change, either track reaches a stable checkpoint, cross-track dependencies or impacts arise, or before integration; routine internal changes without shared-contract impact do not require one.
+MedNexus Main/Codex and Claude/Claude Code Domain Intelligence workspaces remain operationally separate. Main/Core owns UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics. Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS. Temporary domain detection is bootstrap logic and must not become a competing classifier. An Integrated Domain Checkpoint requires canonical-contract conformance, including `MedNexusDocumentContext` where applicable. Create a Cross-Track Sync Brief when shared architecture/contracts change, either track reaches a stable checkpoint, cross-track dependencies or impacts arise, or before integration; routine internal changes without shared-contract impact do not require one.
 
 Public Health Intelligence is active parallel domain work aligned to the shared journey, but must not be described as production-complete without implementation and validation evidence.
 
