@@ -210,6 +210,7 @@ def test_service_returns_sections_routing_and_serializable_contract():
     assert payload["routing"]["extraction_profile"] == "radiology_extraction"
     assert payload["routing"]["manual_review_required"] is False
     assert "impression" in [section["canonical_name"] for section in payload["sections"]]
+    assert payload["recognition_explanations"]
 
 
 def test_unknown_routes_to_manual_review():
@@ -301,7 +302,8 @@ def test_understanding_frontend_route_and_assets_are_available():
     assert "/api/v1/understanding/analyze-text" in script.text
     assert "/api/v1/understanding/analyze-file" in script.text
     assert "Recognized sections" in page.text
-    assert "CLINICAL CONTEXT IDENTIFIED" in page.text
+    assert "Clinical Semantic Context" in page.text
+    assert "Why MedNexus recognized this document" in page.text
     assert "READY FOR MEDNEXUS" in page.text
     assert "Continue to Privacy Protection" in page.text
     assert "Technical details" in page.text

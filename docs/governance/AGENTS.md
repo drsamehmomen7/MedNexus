@@ -8,6 +8,7 @@ MedNexus is an existing, continuing enterprise healthcare AI project. Never trea
 - Current functional modules: Clinical Privacy Policy Engine / De-identification and Medical Document Understanding & Recognition
 - Current Phase 1 status: Accepted POC Checkpoint / Paused; synthetic baseline frozen at 681 passed, 8 warnings, 0 failures
 - Current Phase 2 status: Accepted Document Context & Journey Foundation Checkpoint at `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`; baseline 742 passed, 8 warnings, 0 failures
+- Current Radiology UNDERSTAND v1 status: Core Migration Milestones 1–4 accepted; architecture frozen, implementation partially migrated; verified baseline 872 passed, 8 warnings, 0 failures
 
 ## 2. Workspace and Git Boundary
 
@@ -60,7 +61,7 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
 - Phase 1 frozen baseline: 681 passed, 8 warnings, 0 failures.
-- Latest verified accumulated working-tree baseline: 818 passed, 8 warnings, 0 failures. The latest accepted checkpoint baseline remains 780 passed, 8 warnings, 0 failures.
+- Latest verified Radiology UNDERSTAND v1 Core Migration baseline: 872 passed, 8 warnings, 0 failures. The previous accepted Core checkpoint baseline remains 780 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.
@@ -92,7 +93,7 @@ Validation reports are not knowledge sources. New recognition concepts, aliases,
 
 `MedNexusDocumentContext` is the shared semantic handoff for one ingested document. UNDERSTAND constructs context; PROTECT applies privacy decisions to the original document informed by context where supported; EXTRACT will later create formal structured clinical data; STANDARDIZE will normalize extracted concepts. Never collapse these stages or duplicate `DocumentContent`, privacy detection, or clinical extraction inside the context layer. Unknown context must remain null/unknown rather than inferred without evidence.
 
-Do not implement future stages merely because they appear in architecture documents. The Phase 2 deterministic Understanding foundation is implemented; its next milestone is Recognition Validation — Round 1. Planned capabilities include expanded Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
+Do not implement future stages merely because they appear in architecture documents. The Phase 2 deterministic Understanding foundation and Radiology UNDERSTAND v1 Core Migration Milestones 1–4 are implemented. Remaining Radiology migration includes Mammography, Nuclear Medicine, Fluoroscopy, full `RADIOLOGY / OTHER`, frontend canonical-contract migration, and the final validation matrix; proceed only under an authorized milestone. Planned capabilities include expanded Document Understanding, Clinical Extraction, Terminology Services, Structured Data, Analytics, OCR, interoperability, and enterprise infrastructure.
 
 The public MEDNEXUS⁷ journey is Understand → Protect → Extract → Standardize → Analyze → Visualize → Indicators. INGEST remains a real internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction; it is not a separate public transformation. This is a target architecture, not a claim that all seven stages are implemented. Capabilities must remain modular and independently usable while sharing contracts that allow participation in the full journey. `MEDNEXUS⁷` is a visual/product signature only; internal code, APIs, packages, routes, and repositories remain `MedNexus`.
 
@@ -103,6 +104,8 @@ UNDERSTAND is the first processing stage after upload/pasted text, with INGEST a
 The approved target domain catalog is `RADIOLOGY`, `PUBLIC_HEALTH`, `LABORATORY`, `ADMISSION`, `DISCHARGE`, `ICU`, and `EMERGENCY`; `PATHOLOGY` is future. Radiology and Public Health are the current full implementation priorities. Every implemented domain must resolve a supported subdomain or `OTHER`, never guess. Current compatibility enums and classifiers do not override this target catalog.
 
 The frozen UNDERSTAND Domain Matrix v1.0 is the authority for domain/subdomain families, bounded light-context metadata, semantic regions, and `OTHER`/`UNKNOWN` safety behavior. Do not broaden an implemented context beyond approximately three or four matrix-approved fields per subtype without a successor architecture review.
+
+Radiology UNDERSTAND has one authoritative `RadiologyUnderstandingDecision`. `RadiologyReasoner` executes once per UNDERSTAND operation; `DocumentClassifier` performs cross-domain arbitration without independent Radiology family reasoning; and `DocumentContextBuilder` serializes the selected decision without semantic reconstruction. Current-study context and confidence support must remain semantic-role/eligibility-qualified. Recommendation, comparison, history, findings-only secondary context, and unresolved evidence may remain detected for provenance but must not inflate performed-study identity support. The currently conformed canonical families are `CT`, `MRI`, `X_RAY`, and `ULTRASOUND`; CTA, MRA/MRV, Doppler, and CR/DX/XR remain bounded family or compatibility projections rather than new canonical subdomains.
 
 Document domains describe source-document semantics, not consuming applications. Frozen Public Health families are Notifiable Disease, Immunization, Surveillance, Syndromic Surveillance, Outbreak/Cluster, Laboratory-derived Surveillance, and `OTHER`. Native immunization/vaccination documents use `PUBLIC_HEALTH / IMMUNIZATION` in the current product scope. Native patient laboratory reports remain `LABORATORY` even when consumed by a Public Health workflow. Laboratory-derived Surveillance requires native Public Health surveillance/reporting identity plus laboratory-derived context; laboratory results alone are insufficient.
 

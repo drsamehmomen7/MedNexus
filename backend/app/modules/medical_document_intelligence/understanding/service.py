@@ -11,6 +11,7 @@ from .document_classifier import DocumentClassifier
 from .context_builder import DocumentContextBuilder
 from .context_models import MedNexusDocumentContext
 from .language_detector import LanguageDetector
+from .knowledge.radiology import RadiologyReasoner
 from .models import DocumentUnderstandingResult
 from .routing import UnderstandingRouter
 from .section_detector import SectionDetector
@@ -37,7 +38,10 @@ class DocumentUnderstandingService:
         if metadata is not None and not isinstance(metadata, dict):
             raise TypeError("metadata must be a dictionary or None.")
         sections = SectionDetector.detect(text)
-        classification = DocumentClassifier.classify(text, sections)
+        radiology_decision = RadiologyReasoner.assess(text, sections)
+        classification = DocumentClassifier.classify(
+            text, sections, radiology_decision=radiology_decision
+        )
         result_warnings = list(warnings)
         if not text.strip():
             result_warnings.append("Document contains no meaningful text for understanding.")
@@ -54,6 +58,8 @@ class DocumentUnderstandingService:
             dict(metadata or {}),
             tuple(result_warnings),
             classification.document_nature,
+            classification.explanations,
+            classification.radiology_decision,
         )
 
     def analyze_document(self, document: DocumentContent) -> DocumentUnderstandingResult:

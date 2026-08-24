@@ -1247,3 +1247,13 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 - Corrected Blueprint v2.0 Section 3 numbering to restart at 1–5, finalized its document-control status as `FROZEN ARCHITECTURE AUTHORITY`, and removed conditional post-approval wording.
 - Preserved Blueprint v1.9 and the v1.1/v0.1 contracts unchanged as architecture history.
 - Reaffirmed that the implementation has not yet migrated to the frozen target architecture. No production code, tests, frontend, runtime behavior, reference data, or validation reports changed in this documentation-only finalization.
+
+## 2026-08-24 — Radiology UNDERSTAND v1 Core Migration Checkpoint
+
+- Accepted Milestones 1–4: canonical Radiology contracts and generic semantic roles; one authoritative `RadiologyUnderstandingDecision`; frozen-matrix conformance for CT, MRI, X-ray, and Ultrasound; and role/eligibility-qualified reasoning and confidence.
+- Preserved one `RadiologyReasoner` execution per UNDERSTAND operation, cross-domain arbitration in `DocumentClassifier`, and serialization-only behavior in `DocumentContextBuilder`.
+- Added bounded family normalization and compatibility projections: CTA to CT, MRA/MRV to MRI, Doppler to Ultrasound, and CR/DX/XR to X-ray.
+- Preserved recommendation, comparison, history, and findings-only evidence for provenance while excluding it from current-study identity support, semantic diversity, and relationship bonuses.
+- Kept UNDERSTAND outside EXTRACT: no diagnoses, lesions, exact measurements, recommendation text, terminology expansion, reference-data change, or validation-derived rule was introduced.
+- Architecture remains frozen at Blueprint v2.0 and the UNDERSTAND v1 contract package; implementation remains partial. Mammography, Nuclear Medicine, Fluoroscopy, full `RADIOLOGY / OTHER`, frontend canonical-contract migration, and the final validation matrix remain pending.
+- Focused Radiology/UNDERSTAND conformance: **180 passed, 1 warning**. Full regression: **872 passed, 8 warnings, 0 failures**.

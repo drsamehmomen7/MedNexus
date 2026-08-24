@@ -56,9 +56,22 @@
       <article class="overview-card"><small>DOCUMENT OVERVIEW</small><h3>What MedNexus understands</h3><dl id="overviewList"></dl></article>
       </div>
 
+      <article class="semantic-card" id="semanticCard" hidden>
+        <header><div><small>UNDERSTAND CONTEXT</small><h3>Clinical Semantic Context</h3><p>Document-level clinical context recognized by MedNexus.</p></div></header>
+        <div class="semantic-layout">
+          <dl class="semantic-list" id="semanticList"></dl>
+          <section class="modality-context" id="modalityContext" hidden>
+            <small id="modalityContextLabel">MODALITY CONTEXT</small>
+            <h4 id="modalityContextTitle">—</h4>
+            <dl id="modalityContextList"></dl>
+          </section>
+        </div>
+        <p class="semantic-note" id="semanticNote" hidden>Finding-bearing means the report contains a findings narrative. It does not indicate an abnormal result.</p>
+      </article>
+
       <div class="audience-grid">
         <article class="audience-card structure-card"><header><div><small>DOCUMENT STRUCTURE</small><h3>Recognized sections</h3></div></header><div class="structure-list" id="sectionList"></div></article>
-        <article class="audience-card explanation-card"><header><div><small>CLINICAL CONTEXT IDENTIFIED</small><h3>Reusable document context</h3></div></header><div class="context-tags" id="clinicalContextList"></div></article>
+        <article class="audience-card explanation-card"><header><div><small>DECISION EXPLANATION</small><h3>Why MedNexus recognized this document</h3></div></header><div class="simple-list" id="recognitionReasons"></div></article>
       </div>
 
       <section class="journey-card"><div><small>READY FOR MEDNEXUS</small><h3 id="journeyTitle">Document context established.</h3><p id="routeNote"></p></div><button class="continue-btn" id="continueBtn" type="button">Continue to Privacy Protection →</button></section>

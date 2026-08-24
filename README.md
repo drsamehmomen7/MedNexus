@@ -32,9 +32,15 @@ The **FROZEN UNDERSTAND v1 Architecture Authority** consists of [MedNexus UNDERS
 - Nuclear Medicine remains one Radiology subdomain with `PLANAR`, `SPECT`, `PET`, `SPECT_CT`, `PET_CT`, and `OTHER` study families. Diagnostic Fluoroscopy is distinct from image-guided intervention, which remains `RADIOLOGY / OTHER` until a future family is approved.
 - MedNexus Main/Core and Claude/Claude Code Domain Intelligence develop in parallel. Main/Core owns UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics; Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS.
 - A standing Cross-Track Synchronization Policy requires a concise Cross-Track Sync Brief when shared architecture or contracts change, either track reaches a stable checkpoint, a cross-track dependency or impact appears, or before integration. Routine internal changes with no shared-contract impact do not require a brief.
-- The latest verified accumulated uncommitted regression is **818 passed, 8 warnings, 0 failures**. The latest accepted Core checkpoint baseline remains **780 passed, 8 warnings, 0 failures** at `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
+- The Radiology UNDERSTAND v1 Core Migration checkpoint is verified at **872 passed, 8 warnings, 0 failures**. The previous accepted Core checkpoint remains **780 passed, 8 warnings, 0 failures** at `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
 
 Radiology remains the first rich UNDERSTAND reference domain. Its current compositional reasoning and active offline LOINC/RadLex/DICOM reference foundation preserve the separation between document/domain understanding and future field-level extraction. The latest correction supports strongly composed Radiology reports whose findings narrative lacks an explicit `FINDINGS` heading without introducing report-specific production rules, vocabulary, mappings, or threshold changes.
+
+### Radiology UNDERSTAND v1 Core Migration
+
+**Architecture status: FROZEN. Implementation status: PARTIALLY MIGRATED.** Milestones 1–4 are accepted for this checkpoint: canonical contracts and semantic roles, one authoritative `RadiologyUnderstandingDecision`, bounded frozen-matrix context for the existing families, and semantic-role/eligibility-qualified reasoning and confidence. `RadiologyReasoner` executes once, `DocumentClassifier` performs cross-domain arbitration, and `DocumentContextBuilder` serializes the selected decision without independent Radiology reasoning.
+
+The canonical Radiology taxonomy is `CT`, `MRI`, `X_RAY`, `ULTRASOUND`, `MAMMOGRAPHY`, `NUCLEAR_MEDICINE`, `FLUOROSCOPY`, and `OTHER`. The currently conformed families are `CT`, `MRI`, `X_RAY`, and `ULTRASOUND`, including `CTA → CT`, `MRA/MRV → MRI`, `Doppler → ULTRASOUND`, and `CR/DX/XR → X_RAY` compatibility normalization. Remaining migration work is Mammography, Nuclear Medicine, Fluoroscopy, the complete `RADIOLOGY / OTHER` policy, frontend canonical-contract migration, and the final validation matrix. UNDERSTAND remains bounded and does not emit EXTRACT-level clinical facts.
 
 ## Local Development Startup
 
@@ -133,7 +139,7 @@ The active POC product page is `/understanding`, supporting pasted text and TXT/
 
 The result workspace uses progressive disclosure for a broad audience: a dominant human-readable recognition summary comes first, followed by detected structure, plain-language evidence, and the recommended journey. Raw enums, offsets, evidence weights/matches, and routing identifiers remain available in collapsed technical details. Primary-language detection favors the dominant clinical content rather than short second-script labels or technical footers.
 
-Radiology recognition is backed by an offline MedNexus-owned compositional knowledge and reasoning package. Typed concepts with stable IDs feed an exact-offset `DocumentEvidenceFrame`; MedNexus evaluates evidence-family diversity, imaging coherence, structure, incidental-mention risk, and conflicting document signatures before making separate domain and report-type decisions. LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 are reference/provenance families only; they do not supply runtime decisions.
+Radiology recognition is backed by an offline MedNexus-owned compositional knowledge and reasoning package. Typed concepts with stable IDs feed an exact-offset `DocumentEvidenceFrame`; semantic roles and explicit eligibility determine which evidence supports current identity, report composition, context only, or no authoritative score. Recommendation, comparison, history, and findings-only secondary context remains preserved for provenance without inflating current-study identity. LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 are reference/provenance families only; they do not supply runtime decisions.
 
 The primary UNDERSTAND output is `MedNexusDocumentContext`, not classification alone. UNDERSTAND is intentionally bounded to document identity, small high-value context, semantic structure/relationships, provenance/confidence, review requirements, and routing. Radiology currently derives document-level modality, study anatomy/examination, contrast, selected technique or view context, and semantic composition without claiming lesion, diagnosis, exact measurement, recommendation-text, or other clinical-fact extraction.
 
@@ -194,6 +200,7 @@ Accepted checkpoint baselines:
 - MEDNEXUS⁷ seven-transformation UI/product-architecture update: **743 passed, 8 warnings, 0 failures**; focused homepage suite: **48 passed, 1 warning**.
 - Radiology Intelligence Architecture v2 (uncommitted review state): **758 passed, 8 warnings, 0 failures**; focused Radiology/Understanding suite: **77 passed, 1 warning**. Validation Failure R-001 resolves compositionally as MRI Abdomen & Pelvis with pre/post contrast, Oncologic Staging, MRI technique context, and HIGH confidence.
 - Reference Model Foundation v1 (uncommitted review state): **764 passed, 8 warnings, 0 failures**; focused reference/Radiology/Understanding suite: **83 passed, 1 warning**.
+- Radiology UNDERSTAND v1 Core Migration — Milestones 1–4 accepted: **872 passed, 8 warnings, 0 failures**; focused Radiology/UNDERSTAND conformance suite: **180 passed, 1 warning**.
 
 Earlier controlled and synthetic validation provides evidence across samples from:
 
@@ -211,7 +218,7 @@ Earlier controlled and synthetic validation provides evidence across samples fro
 
 The current synthetic POC acceptance checkpoint is complete. Broader real medical-document validation is intentionally deferred and is expected to reveal additional cases. This checkpoint does not establish clinical or production certification.
 
-After architectural review, the next intended activity is an **unseen Radiology validation round**, followed by broader Phase 2 Recognition Validation. OCR, scanned-document recognition, layout vision, tables, ML/transformer/LLM classification, external classifiers, embeddings, advanced clinical extraction, FHIR/HL7, dashboard integration, and broad synthetic classifier tuning remain deliberately deferred. Known technical debt is tracked in `backend/TECH_DEBT.md`.
+The next Radiology migration work remains the pending canonical families and policies—Mammography, Nuclear Medicine, Fluoroscopy, and full `RADIOLOGY / OTHER`—followed by frontend canonical-contract migration and the final validation matrix under explicit authorization. OCR, scanned-document recognition, layout vision, tables, ML/transformer/LLM classification, external classifiers, embeddings, advanced clinical extraction, FHIR/HL7, dashboard integration, and broad synthetic classifier tuning remain deliberately deferred. Known technical debt is tracked in `backend/TECH_DEBT.md`.
 
 ## Latest Privacy Handoff Correction
 

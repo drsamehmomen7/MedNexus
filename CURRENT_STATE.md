@@ -1,6 +1,6 @@
 # MedNexus Current State
 
-**Authoritative date:** 23 August 2026
+**Authoritative date:** 24 August 2026
 
 ## UNDERSTAND Domain Matrix v1.0 — Frozen Architecture Authority
 
@@ -18,7 +18,17 @@ Frozen human decisions: native immunization/vaccination documents use `PUBLIC_HE
 
 MedNexus Main/Codex owns UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics. Claude/Claude Code Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS. Public Health remains the downstream reference vertical; future Radiology extraction may consume the stabilized UNDERSTAND contract without moving extraction into UNDERSTAND.
 
-Latest verified accumulated uncommitted regression: **818 passed, 8 warnings, 0 failures**. This documents verification state, not an accepted checkpoint or commit.
+Latest verified Radiology UNDERSTAND v1 Core Migration regression: **872 passed, 8 warnings, 0 failures**.
+
+## Radiology UNDERSTAND v1 Core Migration Checkpoint
+
+**Status:** MILESTONES 1–4 ACCEPTED. **Architecture:** FROZEN. **Implementation:** PARTIALLY MIGRATED.
+
+The migrated core has one authoritative `RadiologyUnderstandingDecision`. `RadiologyReasoner` executes once per UNDERSTAND operation; `DocumentClassifier` consumes that decision for cross-domain arbitration; and `DocumentContextBuilder` performs mechanical serialization only. Current-study context is semantic-role-qualified, and confidence uses explicit eligibility categories for current identity, document composition, context-only evidence, and unresolved/non-authoritative evidence. Recommendation, comparison, history, and findings-only secondary context remains preserved without inflating performed-study identity support.
+
+The canonical Radiology taxonomy is `CT`, `MRI`, `X_RAY`, `ULTRASOUND`, `MAMMOGRAPHY`, `NUCLEAR_MEDICINE`, `FLUOROSCOPY`, and `OTHER`. Implemented/conformed families are currently `CT`, `MRI`, `X_RAY`, and `ULTRASOUND`, with compatibility normalization `CTA → CT`, `MRA/MRV → MRI`, `Doppler → ULTRASOUND`, and `CR/DX/XR → X_RAY`. Context remains bounded to frozen-matrix document metadata and does not emit diagnoses, lesions, exact measurements, recommendation text, or other EXTRACT-level facts.
+
+Pending implementation migration: Mammography, Nuclear Medicine, Fluoroscopy, the complete `RADIOLOGY / OTHER` policy, frontend canonical-contract migration, and the final validation matrix. Blueprint v2.0 and the frozen UNDERSTAND v1 contracts remain the architecture authority and were not revised by this implementation checkpoint.
 
 ## UNDERSTAND v1 Successor Contract Baseline
 

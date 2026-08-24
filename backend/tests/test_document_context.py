@@ -3,6 +3,9 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.modules.medical_document_intelligence.contracts.document_content import DocumentContent
 from backend.app.modules.medical_document_intelligence.understanding.context_builder import DocumentContextBuilder
+from backend.app.modules.medical_document_intelligence.understanding.context_models import (
+    CTClinicalContext, RadiologyClinicalContext,
+)
 from backend.app.modules.medical_document_intelligence.understanding.service import DocumentUnderstandingService
 
 
@@ -30,6 +33,16 @@ def test_document_context_v1_constructs_radiology_semantics():
     assert context.clinical_context.body_region == "CHEST"
     assert context.clinical_context.body_regions == ("CHEST",)
     assert context.clinical_context.contrast == "WITH_CONTRAST"
+    radiology = context.clinical_context.domain_extension
+    assert isinstance(radiology, RadiologyClinicalContext)
+    assert isinstance(radiology.modality_context, CTClinicalContext)
+    assert radiology.finding_bearing is True
+    assert (radiology.modality, radiology.examination, radiology.body_regions, radiology.contrast) == (
+        context.clinical_context.modality,
+        context.clinical_context.examination,
+        context.clinical_context.body_regions,
+        context.clinical_context.contrast,
+    )
     assert context.provenance.knowledge_layer_version == "recognition-knowledge-v1"
     assert "RAD_MODALITY_CT" in context.provenance.concept_ids
 
@@ -52,6 +65,7 @@ def test_unknown_context_does_not_fabricate_clinical_attributes():
     assert context.clinical_context.body_region is None
     assert context.clinical_context.contrast is None
     assert context.clinical_context.body_regions == ()
+    assert context.clinical_context.domain_extension is None
 
 
 def test_understanding_api_serializes_context_and_journey_handoff():
@@ -116,10 +130,14 @@ def test_english_radiology_context_supports_same_journey_contract():
     text = "RADIOLOGY REPORT\nEXAMINATION: Chest imaging\nTECHNIQUE:\nCT chest with contrast, axial images\nFINDINGS:\nClear lungs\nIMPRESSION:\nNormal"
     client = TestClient(app)
     payload = client.post("/api/v1/understanding/analyze-text", json={"text": text}).json()
-    assert payload["document_context"]["clinical_context"] == {
-        "modality": "CT", "examination": "CT Chest", "body_region": "CHEST", "body_regions": ["CHEST"],
-        "contrast": "WITH_CONTRAST", "techniques": ["Multiplanar imaging"], "clinical_purpose": None,
-        "domain_concepts": payload["document_context"]["clinical_context"]["domain_concepts"],
-        "attributes": payload["document_context"]["clinical_context"]["attributes"],
+    clinical = payload["document_context"]["clinical_context"]
+    assert {key: clinical[key] for key in (
+        "modality", "examination", "body_region", "body_regions", "contrast", "techniques",
+    )} == {
+        "modality": "CT", "examination": "CT Chest", "body_region": "CHEST",
+        "body_regions": ["CHEST"], "contrast": "WITH_CONTRAST",
+        "techniques": ["Multiplanar imaging"],
     }
+    assert clinical["domain_extension"]["modality"] == clinical["modality"]
+    assert clinical["domain_extension"]["recognized_sections"] == clinical["attributes"]["recognized_sections"]
     assert client.get(f"/api/v1/understanding/journeys/{payload['journey']['journey_id']}").status_code == 200

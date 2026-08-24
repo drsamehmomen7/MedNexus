@@ -11,9 +11,10 @@ from .models import (
     DocumentSubtype,
     DocumentType,
     DocumentNature,
+    RecognitionExplanation,
 )
 from .profiles import PROFILES, SECTION_ALIASES, SUBTYPE_SIGNALS, DocumentProfile, WeightedSignal
-from .knowledge.radiology import RadiologyReasoner
+from .knowledge.radiology import RadiologyReasoner, RadiologyUnderstandingDecision
 from .section_detector import SectionDetector
 
 
@@ -26,6 +27,8 @@ class ClassificationOutcome:
     confidence_band: ConfidenceBand
     evidence: tuple[ClassificationEvidence, ...]
     document_nature: DocumentNature = DocumentNature.UNKNOWN
+    explanations: tuple[RecognitionExplanation, ...] = ()
+    radiology_decision: RadiologyUnderstandingDecision | None = None
 
 
 class DocumentClassifier:
@@ -40,11 +43,13 @@ class DocumentClassifier:
         cls,
         text: str,
         sections: tuple[DetectedSection, ...] | None = None,
+        *,
+        radiology_decision: RadiologyUnderstandingDecision | None = None,
     ) -> ClassificationOutcome:
         if not isinstance(text, str):
             raise TypeError("text must be a string.")
         detected_sections = SectionDetector.detect(text) if sections is None else sections
-        radiology = RadiologyReasoner.assess(text, detected_sections)
+        radiology = radiology_decision or RadiologyReasoner.assess(text, detected_sections)
         scored = []
         for profile in PROFILES:
             if profile.domain is DocumentDomain.RADIOLOGY:
@@ -77,7 +82,11 @@ class DocumentClassifier:
 
         margin = best_score - second_score
         ratio = best_score / second_score if second_score else float("inf")
-        diversity = len({entry.category for entry in best_evidence})
+        diversity = (
+            radiology.eligible_support_dimension_count
+            if best_profile.domain is DocumentDomain.RADIOLOGY
+            else len({entry.category for entry in best_evidence})
+        )
         confidence = cls._confidence(best_score, margin, diversity)
         if (
             best_score < cls.MINIMUM_ACCEPTED_SCORE
@@ -90,7 +99,11 @@ class DocumentClassifier:
         if band is ConfidenceBand.LOW:
             return cls._unknown(confidence, band, all_evidence)
 
-        subtype = radiology.modality if best_profile.domain is DocumentDomain.RADIOLOGY else DocumentSubtype.UNKNOWN
+        subtype = (
+            radiology.compatibility_subtype
+            if best_profile.domain is DocumentDomain.RADIOLOGY
+            else DocumentSubtype.UNKNOWN
+        )
         return ClassificationOutcome(
             best_profile.domain,
             best_profile.document_type,
@@ -98,20 +111,10 @@ class DocumentClassifier:
             confidence,
             band,
             all_evidence,
-            cls._document_nature(text, detected_sections, radiology) if best_profile.domain is DocumentDomain.RADIOLOGY else DocumentNature.UNKNOWN,
+            radiology.document_nature if best_profile.domain is DocumentDomain.RADIOLOGY else DocumentNature.UNKNOWN,
+            radiology.explanations if best_profile.domain is DocumentDomain.RADIOLOGY else (),
+            radiology if best_profile.domain is DocumentDomain.RADIOLOGY else None,
         )
-
-    @staticmethod
-    def _document_nature(text, sections, radiology) -> DocumentNature:
-        section_ids = {item.canonical_name for item in sections}
-        modality_ids = {item.concept_id for item in radiology.frame.modality_signals}
-        if len(modality_ids) > 1 and len(section_ids) >= 3:
-            return DocumentNature.STRUCTURED_TEMPLATE
-        if {"findings", "impression"} <= section_ids:
-            return DocumentNature.COMPLETED_REPORT
-        if radiology.domain_satisfied and section_ids:
-            return DocumentNature.PARTIAL_REPORT
-        return DocumentNature.UNKNOWN
 
     @classmethod
     def _score_profile(

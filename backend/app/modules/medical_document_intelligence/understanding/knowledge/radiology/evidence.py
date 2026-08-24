@@ -22,6 +22,7 @@ class EvidenceSignal:
     context: str
     external_mappings: tuple[tuple[str, str], ...] = ()
     relationships: tuple[tuple[str, str], ...] = ()
+    attributes: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +36,11 @@ class DocumentEvidenceFrame:
     contrast_signals: tuple[EvidenceSignal, ...] = ()
     structure_signals: tuple[EvidenceSignal, ...] = ()
     clinical_purpose_signals: tuple[EvidenceSignal, ...] = ()
+    observation_signals: tuple[EvidenceSignal, ...] = ()
+    laterality_signals: tuple[EvidenceSignal, ...] = ()
+    study_extent_signals: tuple[EvidenceSignal, ...] = ()
+    view_signals: tuple[EvidenceSignal, ...] = ()
+    view_count_signals: tuple[EvidenceSignal, ...] = ()
     professional_role_signals: tuple[EvidenceSignal, ...] = ()
     conflicting_signals: tuple[EvidenceSignal, ...] = ()
 
@@ -74,18 +80,33 @@ _REFERENCE_FAMILY_FIELD = {
     ConceptFamily.CLINICAL_PURPOSE: "clinical_purpose_signals",
     ConceptFamily.REASON_FOR_EXAM: "clinical_purpose_signals",
     ConceptFamily.PROFESSIONAL_ROLE: "professional_role_signals",
-    ConceptFamily.IMAGING_OBSERVATION: "clinical_purpose_signals",
-    ConceptFamily.CLINICAL_FINDING: "clinical_purpose_signals",
+    ConceptFamily.IMAGING_OBSERVATION: "observation_signals",
+    ConceptFamily.CLINICAL_FINDING: "observation_signals",
+    ConceptFamily.LATERALITY: "laterality_signals",
 }
 
 
 class RadiologyEvidenceFrameBuilder:
     """Normalize Radiology concepts into exact, traceable source-coordinate signals."""
 
+    _SHORT_RADIOGRAPHY_CODE = re.compile(r"(?<!\w)(CR|DX|XR)(?!\w)", re.IGNORECASE)
+    _SHORT_VIEW_CODE = re.compile(r"(?<!\w)(PA|AP)(?!\w)", re.IGNORECASE)
+    _STUDY_CONTEXT = re.compile(
+        r"\b(?:exam(?:ination)?|modality|procedure|radiograph(?:y|ic)?|x[- ]?ray|study|views?)\b",
+        re.IGNORECASE,
+    )
+    _VIEW_CONTEXT = re.compile(r"\b(?:view|views|projection|projections)\b", re.IGNORECASE)
+    _VIEW_COUNT = re.compile(
+        r"(?<!\w)(?P<count>\d{1,2})\s+(?P<qualifier>or\s+more\s+)?views?\b",
+        re.IGNORECASE,
+    )
+
     @classmethod
     def build(cls, text: str, sections: tuple[DetectedSection, ...]) -> DocumentEvidenceFrame:
         reference_model = build_active_reference_registry()
-        buckets: dict[str, list[EvidenceSignal]] = {name: [] for name in _FAMILY_FIELD.values()}
+        buckets: dict[str, list[EvidenceSignal]] = {
+            name: [] for name in DocumentEvidenceFrame.__dataclass_fields__
+        }
         section_by_concept = cls._section_concepts(sections)
         seen: set[tuple[str, int, int]] = set()
         for concept in RADIOLOGY_CONCEPTS:
@@ -110,18 +131,25 @@ class RadiologyEvidenceFrameBuilder:
                     tuple((item.source_id, item.external_id) for item in canonical.external_mappings) if canonical else (),
                     tuple((item.relationship_type.value, item.target_concept_id)
                           for item in canonical.relationships) if canonical else (),
+                    canonical.attributes if canonical else (),
                 )
                 field_name = _FAMILY_FIELD.get(concept.category)
                 if field_name:
                     buckets[field_name].append(signal)
+        cls._add_governed_radiography_codes(text, reference_model, buckets, seen)
         # Authoritative imported terms add candidates to the same Evidence Frame. Lexical
         # ambiguity is retained; downstream coherence, structure and relationships decide meaning.
         for span in reference_model.resolve_text(text):
             if len(span.normalized_term) < 3:
                 continue
             for canonical in span.concepts[:8]:
-                field_name = _REFERENCE_FAMILY_FIELD.get(canonical.concept_family)
+                field_name = cls._reference_field(canonical)
                 if not field_name or canonical.provenance == ("MNX_RAD_REF_V1",):
+                    continue
+                if field_name == "view_signals" and not cls._governed_view_context(text, span.start, span.end):
+                    continue
+                if field_name == "laterality_signals" \
+                        and cls._directional_view_laterality(text, span.start, span.end):
                     continue
                 key = (canonical.mednexus_concept_id, span.start, span.end)
                 if key in seen:
@@ -138,6 +166,7 @@ class RadiologyEvidenceFrameBuilder:
                             *((item.source_id, item.external_id) for item in canonical.external_mappings)))),
                         relationships=tuple(dict.fromkeys((*existing.relationships,
                             *((item.relationship_type.value, item.target_concept_id) for item in canonical.relationships)))),
+                        attributes=tuple(dict.fromkeys((*existing.attributes, *canonical.attributes))),
                     )
                     continue
                 buckets[field_name].append(EvidenceSignal(
@@ -146,8 +175,118 @@ class RadiologyEvidenceFrameBuilder:
                     cls._context(text, span.start, span.end),
                     tuple((item.source_id, item.external_id) for item in canonical.external_mappings),
                     tuple((item.relationship_type.value, item.target_concept_id) for item in canonical.relationships),
+                    canonical.attributes,
                 ))
+        cls._add_governed_short_views(text, reference_model, buckets, seen)
+        cls._add_governed_view_counts(text, buckets, seen)
         return DocumentEvidenceFrame(**{key: tuple(value) for key, value in buckets.items()})
+
+    @classmethod
+    def _add_governed_radiography_codes(cls, text, registry, buckets, seen) -> None:
+        canonical = registry.concept("RAD_MODALITY_XRAY")
+        by_code = {
+            code: next((concept for concept in registry.concepts
+                        if concept.concept_family is ConceptFamily.IMAGING_MODALITY
+                        and any(mapping.external_id.casefold() == code.casefold()
+                                for mapping in concept.external_mappings)), None)
+            for code in ("CR", "DX")
+        }
+        for match in cls._SHORT_RADIOGRAPHY_CODE.finditer(text):
+            line = cls._context(text, match.start(), match.end())
+            if not (cls._title_like(line) or cls._STUDY_CONTEXT.search(line)):
+                continue
+            source = by_code.get(match.group(0).upper())
+            provenance = tuple(dict.fromkeys((*canonical.provenance, *(source.provenance if source else ()))))
+            mappings = tuple(dict.fromkeys(
+                tuple((item.source_id, item.external_id) for item in canonical.external_mappings)
+                + (tuple((item.source_id, item.external_id) for item in source.external_mappings)
+                   if source else ())
+            ))
+            key = (canonical.mednexus_concept_id, match.start(), match.end())
+            if key in seen:
+                continue
+            seen.add(key)
+            buckets["modality_signals"].append(EvidenceSignal(
+                canonical.mednexus_concept_id, canonical.concept_family.value,
+                match.group(0), match.start(), match.end(), 2.0, provenance, line, mappings,
+                tuple((item.relationship_type.value, item.target_concept_id)
+                      for item in canonical.relationships),
+                canonical.attributes,
+            ))
+
+    @classmethod
+    def _add_governed_short_views(cls, text, registry, buckets, seen) -> None:
+        for match in cls._SHORT_VIEW_CODE.finditer(text):
+            if not cls._governed_view_context(text, match.start(), match.end()):
+                continue
+            canonical = next((item.concept for item in registry.resolve(match.group(0))
+                              if cls._reference_field(item.concept) == "view_signals"), None)
+            if canonical is None:
+                continue
+            key = (canonical.mednexus_concept_id, match.start(), match.end())
+            if key in seen:
+                continue
+            seen.add(key)
+            buckets["view_signals"].append(EvidenceSignal(
+                canonical.mednexus_concept_id, canonical.concept_family.value,
+                match.group(0), match.start(), match.end(), 0.75, canonical.provenance,
+                cls._context(text, match.start(), match.end()),
+                tuple((item.source_id, item.external_id) for item in canonical.external_mappings),
+                tuple((item.relationship_type.value, item.target_concept_id)
+                      for item in canonical.relationships),
+                canonical.attributes,
+            ))
+
+    @classmethod
+    def _add_governed_view_counts(cls, text, buckets, seen) -> None:
+        for match in cls._VIEW_COUNT.finditer(text):
+            count = int(match.group("count"))
+            if count < 1 or count > 12:
+                continue
+            line = cls._context(text, match.start(), match.end())
+            if not (cls._title_like(line) or cls._STUDY_CONTEXT.search(line)):
+                continue
+            key = ("RAD_XRAY_VIEW_COUNT", match.start(), match.end())
+            if key in seen:
+                continue
+            seen.add(key)
+            qualifier = "OR_MORE" if match.group("qualifier") else "EXACT"
+            buckets["view_count_signals"].append(EvidenceSignal(
+                "RAD_XRAY_VIEW_COUNT", "VIEW_COUNT", match.group(0),
+                match.start(), match.end(), 0.75, ("MNX_RAD_REF_V1",), line,
+                attributes=(("count", str(count)), ("qualifier", qualifier)),
+            ))
+
+    @staticmethod
+    def _reference_field(concept) -> str | None:
+        attributes = dict(concept.attributes)
+        if concept.concept_family is ConceptFamily.PROCEDURE_ATTRIBUTE:
+            if attributes.get("part_type") == "RAD_VIEW_VIEW_TYPE":
+                return "view_signals"
+            if attributes.get("part_type") == "RAD_ANATOMIC_LOCATION_LATERALITY":
+                return "laterality_signals"
+            if attributes.get("part_type") == "RAD_VIEW_AGGREGATION" \
+                    and concept.canonical_name.casefold() in {"complete", "limited"}:
+                return "study_extent_signals"
+        if concept.concept_family is ConceptFamily.BODY_REGION \
+                and attributes.get("cid") == "2":
+            return "laterality_signals"
+        return _REFERENCE_FAMILY_FIELD.get(concept.concept_family)
+
+    @classmethod
+    def _governed_view_context(cls, text: str, start: int, end: int) -> bool:
+        line = cls._context(text, start, end)
+        return bool(cls._VIEW_CONTEXT.search(line) or cls._STUDY_CONTEXT.search(line))
+
+    @staticmethod
+    def _directional_view_laterality(text: str, start: int, end: int) -> bool:
+        following = text[end:end + 20]
+        return bool(re.match(r"\s+(?:lateral|oblique)\b", following, re.IGNORECASE))
+
+    @staticmethod
+    def _title_like(line: str) -> bool:
+        letters = [item for item in line if item.isalpha()]
+        return bool(letters) and len(line.split()) <= 14 and line == line.upper()
 
     @staticmethod
     def _matches(text: str, concept: RecognitionConcept):
