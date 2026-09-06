@@ -301,16 +301,48 @@ def test_understanding_frontend_route_and_assets_are_available():
     assert "Understanding Workspace." in page.text
     assert "/api/v1/understanding/analyze-text" in script.text
     assert "/api/v1/understanding/analyze-file" in script.text
-    assert "Recognized sections" in page.text
-    assert "Clinical Semantic Context" in page.text
+    assert "Recognized Structure" in page.text
+    assert "DOCUMENT CONTEXT" in page.text
     assert "Why MedNexus recognized this document" in page.text
-    assert "READY FOR MEDNEXUS" in page.text
+    assert "PROCESSING READINESS" in page.text
     assert "Continue to Privacy Protection" in page.text
     assert "Technical details" in page.text
     assert "<details class=\"technical-details\">" in page.text
     assert "Radiology Report" in script.text
-    assert "result-primary" in page.text
-    assert "MEDNEXUS DOCUMENT CONTEXT" in page.text
+    assert "DOCUMENT RECOGNITION" in page.text
+
+
+def test_understanding_frontend_uses_canonical_backend_authority_and_bounded_context():
+    page = client.get("/understanding").text
+    script = client.get("/understanding.js").text
+
+    assert "context.light_context" in script
+    assert "context.semantic_regions" in script
+    assert "payload.recognition_explanations" in script
+    assert "Detailed recognition explanation is unavailable." in script
+    assert "function recognitionReasons" not in script
+    assert "clinical.modality" not in script
+    assert "payload.document_subtype" in script  # Technical compatibility display only.
+    assert "RADIOLOGY_CONTEXT_RENDERERS" in script
+    for subdomain in (
+        "CT", "MRI", "X_RAY", "ULTRASOUND", "MAMMOGRAPHY",
+        "NUCLEAR_MEDICINE", "FLUOROSCOPY", "OTHER",
+    ):
+        assert f"{subdomain}:" in script
+
+    forbidden_product_fields = (
+        "birads_category", "density_category", "tracer_name", "tracer_dose",
+        "suv_value", "exact_measurement", "recommendation_text",
+    )
+    assert all(field not in script.casefold() for field in forbidden_product_fields)
+    assert "01 UNDERSTAND" in page
+    assert "02 PROTECT" in page
+    assert "03 EXTRACT" in page
+    assert "01 INGEST" not in page
+    assert "02 UNDERSTAND" not in page
+    assert "pathology" not in page.casefold()
+    assert '<details class="technical-details">' in page
+    assert '<details class="technical-details" open>' not in page
 
 
 def test_progressive_result_reveal_is_frontend_only_and_preserves_authoritative_output():

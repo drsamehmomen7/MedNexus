@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,7 @@ from .context_builder import DocumentContextBuilder
 from .context_models import MedNexusDocumentContext
 from .language_detector import LanguageDetector
 from .knowledge.radiology import RadiologyReasoner
-from .models import DocumentUnderstandingResult
+from .models import DocumentUnderstandingResult, RadiologySubdomain
 from .routing import UnderstandingRouter
 from .section_detector import SectionDetector
 
@@ -45,6 +46,14 @@ class DocumentUnderstandingService:
         result_warnings = list(warnings)
         if not text.strip():
             result_warnings.append("Document contains no meaningful text for understanding.")
+        routing = UnderstandingRouter.route(
+            classification.document_type, classification.confidence_band
+        )
+        if (
+            classification.radiology_decision is not None
+            and classification.radiology_decision.subdomain is RadiologySubdomain.OTHER
+        ):
+            routing = replace(routing, manual_review_required=True)
         return DocumentUnderstandingResult(
             classification.domain,
             classification.document_type,
@@ -54,7 +63,7 @@ class DocumentUnderstandingService:
             classification.confidence,
             classification.confidence_band,
             classification.evidence,
-            UnderstandingRouter.route(classification.document_type, classification.confidence_band),
+            routing,
             dict(metadata or {}),
             tuple(result_warnings),
             classification.document_nature,

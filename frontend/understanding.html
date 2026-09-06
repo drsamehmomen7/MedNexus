@@ -17,11 +17,11 @@
 <main>
   <section class="hero shell">
     <div>
-      <p class="eyebrow">02 UNDERSTAND · LIVE POC</p>
+      <p class="eyebrow">01 UNDERSTAND · LIVE POC</p>
       <h1>Medical Document<br><span>Understanding Workspace.</span></h1>
-      <p class="lead">Turn one ingested medical document into reusable MedNexus context for privacy, extraction and later clinical intelligence.</p>
+      <p class="lead">Understand a medical document before privacy protection, extraction and later clinical intelligence.</p>
     </div>
-    <div class="journey" aria-label="MedNexus journey"><i>01 INGEST</i><b>→</b><i class="current">02 UNDERSTAND</i><b>→</b><i>03 PROTECT</i></div>
+    <div class="journey" aria-label="MedNexus Seven journey"><i class="current">01 UNDERSTAND</i><b>→</b><i>02 PROTECT</i><b>→</b><i>03 EXTRACT</i></div>
   </section>
 
   <section class="workspace shell" id="workspace">
@@ -32,7 +32,7 @@
     <div class="input-panel">
       <div id="textMode">
         <label for="textInput">Medical document text</label>
-        <textarea id="textInput" placeholder="Paste a radiology, pathology, laboratory, emergency, admission, discharge or public-health document…"></textarea>
+        <textarea id="textInput" placeholder="Paste a radiology, laboratory, emergency, admission, discharge or public-health document…"></textarea>
       </div>
       <label class="upload" id="fileMode" for="fileInput">
         <span class="upload-icon">↑</span><b>Choose a supported medical document</b>
@@ -47,41 +47,33 @@
     <div class="shell">
       <header class="results-head"><p class="eyebrow">DOCUMENT UNDERSTANDING</p><button id="anotherBtn" type="button">Analyze another</button></header>
 
-      <div class="result-primary">
       <article class="recognition-summary" id="recognitionSummary">
-        <div class="domain-result"><small>MEDNEXUS DOCUMENT CONTEXT</small><strong id="domainValue">—</strong><p id="documentSummary">—</p></div>
-        <div class="confidence-line"><span id="languageValue">—</span><b id="confidenceBand">—</b><small id="confidenceNote"></small></div>
+        <div class="domain-result"><small>DOCUMENT RECOGNITION</small><strong id="domainValue">—</strong><p id="documentSummary">—</p></div>
+        <dl class="identity-facts" id="identityFacts"></dl>
+        <div class="confidence-line"><strong id="confidenceValue">—</strong><b id="confidenceBand">—</b><small id="confidenceNote"></small></div>
       </article>
 
-      <article class="overview-card"><small>DOCUMENT OVERVIEW</small><h3>What MedNexus understands</h3><dl id="overviewList"></dl></article>
-      </div>
-
       <article class="semantic-card" id="semanticCard" hidden>
-        <header><div><small>UNDERSTAND CONTEXT</small><h3>Clinical Semantic Context</h3><p>Document-level clinical context recognized by MedNexus.</p></div></header>
+        <header><div><small>DOCUMENT CONTEXT</small><h3 id="contextTitle">Recognized Radiology context</h3><p id="contextDescription">Bounded document-level context for the next MedNexus stages.</p></div></header>
         <div class="semantic-layout">
           <dl class="semantic-list" id="semanticList"></dl>
-          <section class="modality-context" id="modalityContext" hidden>
-            <small id="modalityContextLabel">MODALITY CONTEXT</small>
-            <h4 id="modalityContextTitle">—</h4>
-            <dl id="modalityContextList"></dl>
-          </section>
         </div>
-        <p class="semantic-note" id="semanticNote" hidden>Finding-bearing means the report contains a findings narrative. It does not indicate an abnormal result.</p>
+        <p class="semantic-note" id="semanticNote" hidden></p>
       </article>
 
       <div class="audience-grid">
-        <article class="audience-card structure-card"><header><div><small>DOCUMENT STRUCTURE</small><h3>Recognized sections</h3></div></header><div class="structure-list" id="sectionList"></div></article>
+        <article class="audience-card structure-card"><header><div><small>DOCUMENT STRUCTURE</small><h3>Recognized Structure</h3></div></header><div class="structure-list" id="sectionList"></div></article>
         <article class="audience-card explanation-card"><header><div><small>DECISION EXPLANATION</small><h3>Why MedNexus recognized this document</h3></div></header><div class="simple-list" id="recognitionReasons"></div></article>
       </div>
 
-      <section class="journey-card"><div><small>READY FOR MEDNEXUS</small><h3 id="journeyTitle">Document context established.</h3><p id="routeNote"></p></div><button class="continue-btn" id="continueBtn" type="button">Continue to Privacy Protection →</button></section>
+      <section class="journey-card"><div><small>PROCESSING READINESS</small><h3 id="journeyTitle">Document context established.</h3><div class="readiness-list" id="readinessList"></div><p id="routeNote"></p></div><button class="continue-btn" id="continueBtn" type="button">Continue to Privacy Protection →</button></section>
       <aside class="warnings" id="warnings"></aside>
 
       <details class="technical-details">
         <summary><span>Technical details</span><small>Enums, offsets, evidence weights and routing identifiers</small></summary>
         <div class="technical-grid">
-          <section><h4>Machine-readable context</h4><pre id="machineDetails"></pre></section>
-          <section><h4>Section offsets</h4><div id="technicalSections"></div></section>
+          <section><h4>Canonical and compatibility context</h4><pre id="machineDetails"></pre></section>
+          <section><h4>Semantic regions and offsets</h4><div id="technicalSections"></div></section>
           <section><h4>Knowledge evidence</h4><div id="technicalEvidence"></div></section>
           <section><h4>Symbolic routing</h4><pre id="technicalRouting"></pre></section>
         </div>

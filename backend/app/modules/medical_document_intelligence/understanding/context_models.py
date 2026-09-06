@@ -27,6 +27,10 @@ class DocumentIdentityContext:
     document_nature: str = "UNKNOWN"
     subdomain_or_family: str | None = None
     document_review_required: bool = False
+    # Canonical UNDERSTAND v1 identity fields. ``healthcare_domain`` and
+    # ``document_subtype`` remain as compatibility projections.
+    domain: str | None = None
+    language: str = "UNKNOWN"
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +110,38 @@ class VascularContext(str, Enum):
     MIXED = "MIXED"
 
 
+class MammographyStudyPurpose(str, Enum):
+    SCREENING = "SCREENING"
+    DIAGNOSTIC = "DIAGNOSTIC"
+
+
+class MammographyAcquisitionContext(str, Enum):
+    STANDARD_VIEWS = "STANDARD_VIEWS"
+    TOMOSYNTHESIS = "TOMOSYNTHESIS"
+
+
+class NuclearMedicineStudyFamily(str, Enum):
+    PLANAR = "PLANAR"
+    SPECT = "SPECT"
+    PET = "PET"
+    SPECT_CT = "SPECT_CT"
+    PET_CT = "PET_CT"
+    OTHER = "OTHER"
+
+
+class FluoroscopyStudyFamily(str, Enum):
+    GENERAL_DIAGNOSTIC = "GENERAL_DIAGNOSTIC"
+    CONTRAST_STUDY = "CONTRAST_STUDY"
+    DYNAMIC_FUNCTIONAL_STUDY = "DYNAMIC_FUNCTIONAL_STUDY"
+
+
+class RadiologyOtherReason(str, Enum):
+    UNSUPPORTED_FAMILY = "UNSUPPORTED_FAMILY"
+    CONFLICTING_CURRENT_FAMILY = "CONFLICTING_CURRENT_FAMILY"
+    INSUFFICIENT_FAMILY_EVIDENCE = "INSUFFICIENT_FAMILY_EVIDENCE"
+    INTERVENTIONAL_PROCEDURE = "INTERVENTIONAL_PROCEDURE"
+
+
 @dataclass(frozen=True, slots=True)
 class CTClinicalContext:
     study_family: CTStudyFamily = CTStudyFamily.CT
@@ -144,9 +180,145 @@ class UltrasoundClinicalContext:
     imaging_modes: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True, slots=True)
+class MammographyClinicalContext:
+    study_purpose: MammographyStudyPurpose | None = None
+    laterality: StudyLaterality | None = None
+    acquisition_context: tuple[MammographyAcquisitionContext, ...] = ()
+    birads_assessment_present: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class NuclearMedicineClinicalContext:
+    study_family: NuclearMedicineStudyFamily = NuclearMedicineStudyFamily.OTHER
+    radiopharmaceutical_context_present: bool | None = None
+    quantitative_uptake_context_present: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class FluoroscopyClinicalContext:
+    study_family: FluoroscopyStudyFamily = FluoroscopyStudyFamily.GENERAL_DIAGNOSTIC
+    body_system: str | None = None
+    contrast_study_present: bool | None = None
+    dynamic_functional_present: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class OtherRadiologyClinicalContext:
+    resolution_reason: RadiologyOtherReason
+    family_specific_context_available: bool = False
+
+
 RadiologyModalityContext = (
     CTClinicalContext | MRIClinicalContext | XRayClinicalContext | UltrasoundClinicalContext
+    | MammographyClinicalContext | NuclearMedicineClinicalContext
+    | FluoroscopyClinicalContext | OtherRadiologyClinicalContext
 )
+
+
+@dataclass(frozen=True, slots=True)
+class CTRadiologyLightContext:
+    subdomain: str
+    body_region: str | None = None
+    contrast: str | None = None
+    study_family: CTStudyFamily = CTStudyFamily.CT
+    acquisition_summary: tuple[CTAcquisitionFeature, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class MRIRadiologyLightContext:
+    subdomain: str
+    body_region: str | None = None
+    contrast: str | None = None
+    study_family: MRIStudyFamily = MRIStudyFamily.MRI
+    sequence_context: tuple[MRISequenceFamily, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class XRayRadiologyLightContext:
+    subdomain: str
+    body_region: str | None = None
+    laterality: StudyLaterality | None = None
+    views: tuple[str, ...] = ()
+    view_count: int | None = None
+    view_count_qualifier: str | None = None
+    source_type: XRaySourceType | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UltrasoundRadiologyLightContext:
+    subdomain: str
+    body_region: str | None = None
+    study_extent: UltrasoundStudyExtent | None = None
+    vascular_context: VascularContext | None = None
+    specialization: UltrasoundSpecialization = UltrasoundSpecialization.GENERAL
+    measurement_bearing_present: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class MammographyRadiologyLightContext:
+    subdomain: str
+    study_purpose: MammographyStudyPurpose | None = None
+    laterality: StudyLaterality | None = None
+    acquisition_context: tuple[MammographyAcquisitionContext, ...] = ()
+    birads_assessment_present: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class NuclearMedicineRadiologyLightContext:
+    subdomain: str
+    study_family: NuclearMedicineStudyFamily = NuclearMedicineStudyFamily.OTHER
+    body_region: str | None = None
+    radiopharmaceutical_context_present: bool | None = None
+    quantitative_uptake_context_present: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class FluoroscopyRadiologyLightContext:
+    subdomain: str
+    study_family: FluoroscopyStudyFamily = FluoroscopyStudyFamily.GENERAL_DIAGNOSTIC
+    body_system: str | None = None
+    contrast_study_present: bool | None = None
+    dynamic_functional_present: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class OtherRadiologyLightContext:
+    subdomain: str
+    review_reason: RadiologyOtherReason
+
+
+RadiologyLightContext = (
+    CTRadiologyLightContext | MRIRadiologyLightContext | XRayRadiologyLightContext
+    | UltrasoundRadiologyLightContext | MammographyRadiologyLightContext
+    | NuclearMedicineRadiologyLightContext | FluoroscopyRadiologyLightContext
+    | OtherRadiologyLightContext
+)
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalLightContext:
+    domain_type: str | None = None
+    family_context: RadiologyLightContext | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalSemanticRegion:
+    region_id: str
+    role: SemanticRegionRole | None
+    start: int
+    end: int
+    confidence: float
+    provenance: tuple[str, ...] = ()
+    qualifiers: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticRelationship:
+    source_region_id: str
+    relationship: str
+    target_region_id: str
+    provenance: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -206,6 +378,9 @@ class ProcessingContext:
     terminology_profile: str
     recommended_capabilities: tuple[str, ...]
     manual_review_required: bool
+    protect_ready: bool = False
+    extract_ready: bool = False
+    document_review_required: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -225,6 +400,9 @@ class MedNexusDocumentContext:
     privacy_context: PrivacyContext
     processing_context: ProcessingContext
     provenance: ContextProvenance
+    light_context: CanonicalLightContext
+    semantic_regions: tuple[CanonicalSemanticRegion, ...]
+    semantic_relationships: tuple[SemanticRelationship, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

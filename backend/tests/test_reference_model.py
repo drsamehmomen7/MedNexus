@@ -5,8 +5,8 @@ from backend.app.modules.medical_document_intelligence.understanding.models impo
     DocumentDomain, DocumentNature, DocumentSubtype, DocumentType,
 )
 from backend.app.modules.medical_document_intelligence.understanding.reference_model import (
-    ConceptFamily, DistributionPolicy, RADIOLOGY_REFERENCE_MODEL, RelationshipType,
-    build_default_reference_registry,
+    CanonicalConcept, ConceptFamily, DistributionPolicy, ExternalMapping,
+    RADIOLOGY_REFERENCE_MODEL, RelationshipType, build_default_reference_registry,
 )
 from backend.app.modules.medical_document_intelligence.understanding.reference_model.normalization import normalize_reference_term
 from backend.app.modules.medical_document_intelligence.understanding.reference_model.provenance import configuration_snapshot
@@ -38,6 +38,32 @@ def test_reference_normalization_and_resolution_are_deterministic():
     assert normalize_reference_term("  T1–WEIGHTED  ") == "t1 weighted"
     resolved = RADIOLOGY_REFERENCE_MODEL.resolve("Magnetic Resonance")
     assert resolved[0].concept.mednexus_concept_id == "RAD_MODALITY_MRI"
+
+
+def test_composition_equivalence_excludes_association_mapping_types():
+    concepts = tuple(
+        CanonicalConcept(
+            concept_id,
+            name,
+            ConceptFamily.PROCEDURE_ATTRIBUTE,
+            "RADIOLOGY",
+            (name,),
+            external_mappings=(
+                ExternalMapping("RADLEX_CURRENT", "RID-SHARED", name, mapping_type),
+            ),
+        )
+        for concept_id, name, mapping_type in (
+            ("TEST_EQ_A", "Equivalent A", "EQUIVALENT"),
+            ("TEST_EQ_B", "Equivalent B", "equivalent"),
+            ("TEST_ASSOC", "Associated Procedure", "AUTHORITATIVE_PLAYBOOK"),
+        )
+    )
+    registry = build_default_reference_registry(concepts)
+
+    assert registry.equivalent_concept_ids("TEST_EQ_A") == {
+        "TEST_EQ_A", "TEST_EQ_B",
+    }
+    assert registry.equivalent_concept_ids("TEST_ASSOC") == {"TEST_ASSOC"}
 
 
 def test_relationships_support_modality_technique_coherence():

@@ -23,6 +23,7 @@ class EvidenceSignal:
     external_mappings: tuple[tuple[str, str], ...] = ()
     relationships: tuple[tuple[str, str], ...] = ()
     attributes: tuple[tuple[str, str], ...] = ()
+    composition_equivalent_mappings: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,11 +96,41 @@ class RadiologyEvidenceFrameBuilder:
         r"\b(?:exam(?:ination)?|modality|procedure|radiograph(?:y|ic)?|x[- ]?ray|study|views?)\b",
         re.IGNORECASE,
     )
+    _CURRENT_STUDY_STATEMENT = re.compile(
+        r"\b(?:performed|obtained|acquired|completed|exam(?:ination)?|study)\b",
+        re.IGNORECASE,
+    )
     _VIEW_CONTEXT = re.compile(r"\b(?:view|views|projection|projections)\b", re.IGNORECASE)
     _VIEW_COUNT = re.compile(
         r"(?<!\w)(?P<count>\d{1,2})\s+(?P<qualifier>or\s+more\s+)?views?\b",
         re.IGNORECASE,
     )
+    _CONTRAST_NEGATION_BEFORE = re.compile(
+        r"\b(?:without|no|non[- ]?|w\s*/?\s*o)\b(?:[\s-]+[^\W_]+){0,4}[\s-]*$",
+        re.IGNORECASE,
+    )
+    _CONTRAST_NEGATION_AFTER = re.compile(
+        r"^\s*(?:[^\W_]+\s+){0,4}(?:not\s+(?:administered|given|used)|"
+        r"(?:was\s+)?omitted|absent)\b",
+        re.IGNORECASE,
+    )
+    _CONTRAST_POSITIVE_BEFORE = re.compile(
+        r"\b(?:with|after|post|administered|given|enhanced|w)\b"
+        r"(?:[\s-]+[^\W_]+){0,4}[\s-]*$",
+        re.IGNORECASE,
+    )
+    _CONTRAST_POSITIVE_AFTER = re.compile(
+        r"^\s*(?:[^\W_]+\s+){0,4}(?:was\s+)?(?:administered|given|used)\b",
+        re.IGNORECASE,
+    )
+
+    @staticmethod
+    def _equivalent_mapping_pairs(concept) -> tuple[tuple[str, str], ...]:
+        return tuple(
+            (item.source_id, item.external_id)
+            for item in concept.external_mappings
+            if item.mapping_type.casefold() == "equivalent"
+        )
 
     @classmethod
     def build(cls, text: str, sections: tuple[DetectedSection, ...]) -> DocumentEvidenceFrame:
@@ -132,6 +163,7 @@ class RadiologyEvidenceFrameBuilder:
                     tuple((item.relationship_type.value, item.target_concept_id)
                           for item in canonical.relationships) if canonical else (),
                     canonical.attributes if canonical else (),
+                    cls._equivalent_mapping_pairs(canonical) if canonical else (),
                 )
                 field_name = _FAMILY_FIELD.get(concept.category)
                 if field_name:
@@ -140,11 +172,14 @@ class RadiologyEvidenceFrameBuilder:
         # Authoritative imported terms add candidates to the same Evidence Frame. Lexical
         # ambiguity is retained; downstream coherence, structure and relationships decide meaning.
         for span in reference_model.resolve_text(text):
-            if len(span.normalized_term) < 3:
-                continue
             for canonical in span.concepts[:8]:
                 field_name = cls._reference_field(canonical)
                 if not field_name or canonical.provenance == ("MNX_RAD_REF_V1",):
+                    continue
+                if len(span.normalized_term) < 3 and not (
+                    field_name == "modality_signals"
+                    and cls._governed_short_modality_context(text, span.start, span.end)
+                ):
                     continue
                 if field_name == "view_signals" and not cls._governed_view_context(text, span.start, span.end):
                     continue
@@ -156,7 +191,14 @@ class RadiologyEvidenceFrameBuilder:
                     continue
                 seen.add(key)
                 existing_index = next((index for index, signal in enumerate(buckets[field_name])
-                                       if signal.start == span.start and signal.end == span.end), None)
+                                       if signal.start == span.start and signal.end == span.end
+                                       and not (
+                                           signal.concept_family == "PROCEDURE_ATTRIBUTE"
+                                           and canonical.concept_family
+                                           is ConceptFamily.PROCEDURE_ATTRIBUTE
+                                           and signal.concept_id
+                                           != canonical.mednexus_concept_id
+                                       )), None)
                 if existing_index is not None:
                     existing = buckets[field_name][existing_index]
                     buckets[field_name][existing_index] = replace(
@@ -167,6 +209,10 @@ class RadiologyEvidenceFrameBuilder:
                         relationships=tuple(dict.fromkeys((*existing.relationships,
                             *((item.relationship_type.value, item.target_concept_id) for item in canonical.relationships)))),
                         attributes=tuple(dict.fromkeys((*existing.attributes, *canonical.attributes))),
+                        composition_equivalent_mappings=tuple(dict.fromkeys((
+                            *existing.composition_equivalent_mappings,
+                            *cls._equivalent_mapping_pairs(canonical),
+                        ))),
                     )
                     continue
                 buckets[field_name].append(EvidenceSignal(
@@ -176,10 +222,157 @@ class RadiologyEvidenceFrameBuilder:
                     tuple((item.source_id, item.external_id) for item in canonical.external_mappings),
                     tuple((item.relationship_type.value, item.target_concept_id) for item in canonical.relationships),
                     canonical.attributes,
+                    cls._equivalent_mapping_pairs(canonical),
                 ))
         cls._add_governed_short_views(text, reference_model, buckets, seen)
         cls._add_governed_view_counts(text, buckets, seen)
+        cls._add_governed_study_title_structure(text, sections, buckets, seen)
+        cls._qualify_contrast_polarity(text, buckets)
         return DocumentEvidenceFrame(**{key: tuple(value) for key, value in buckets.items()})
+
+    @classmethod
+    def _qualify_contrast_polarity(cls, text: str, buckets) -> None:
+        """Attach bounded polarity to governed contrast evidence in its clause."""
+
+        qualified = []
+        for signal in buckets["contrast_signals"]:
+            polarity = cls._contrast_polarity(text, signal)
+            attributes = tuple(
+                item for item in signal.attributes if item[0] != "contrast_polarity"
+            )
+            if polarity is not None:
+                attributes = (*attributes, ("contrast_polarity", polarity))
+            qualified.append(replace(signal, attributes=attributes))
+        buckets["contrast_signals"] = qualified
+
+    @classmethod
+    def _contrast_polarity(cls, text: str, signal: EvidenceSignal) -> str | None:
+        clause = cls._contrast_clause(text, signal.start, signal.end)
+        relative_start = signal.start - clause[0]
+        relative_end = signal.end - clause[0]
+        through_signal = clause[1][:relative_end]
+        tokens = {item.casefold() for item in re.findall(r"[^\W_]+", through_signal)}
+        if (
+            "both" in tokens
+            and tokens & {"with", "after", "post"}
+            and tokens & {"without", "no"}
+        ):
+            return "PRE_AND_POST"
+        if signal.concept_id == "RAD_CONTRAST_PRE_POST":
+            return "PRE_AND_POST"
+        if signal.concept_id == "RAD_CONTRAST_WITHOUT":
+            return "WITHOUT"
+        if signal.concept_id == "RAD_CONTRAST_WITH":
+            return "WITH"
+
+        before = clause[1][:relative_start]
+        after = clause[1][relative_end:]
+        if (
+            cls._CONTRAST_NEGATION_BEFORE.search(before)
+            or cls._CONTRAST_NEGATION_AFTER.search(after)
+        ):
+            return "WITHOUT"
+        if (
+            cls._CONTRAST_POSITIVE_BEFORE.search(before)
+            or cls._CONTRAST_POSITIVE_AFTER.search(after)
+        ):
+            return "WITH"
+        return None
+
+    @staticmethod
+    def _contrast_clause(text: str, start: int, end: int) -> tuple[int, str]:
+        left = max(text.rfind(mark, 0, start) for mark in ("\n", ".", ";", "?", "!")) + 1
+        right_candidates = [
+            position
+            for mark in ("\n", ".", ";", "?", "!")
+            if (position := text.find(mark, end)) >= 0
+        ]
+        right = min(right_candidates) if right_candidates else len(text)
+        return left, text[left:right]
+
+    @classmethod
+    def _add_governed_study_title_structure(
+        cls, text, sections, buckets, seen
+    ) -> None:
+        excluded_sections = {
+            "clinical_information", "clinical_history", "follow_up",
+            "comparison", "findings", "results", "impression", "recommendation",
+        }
+        first = cls._first_nonempty_line(text)
+        first_start = first[1] if first is not None else None
+        for matched_text, start, end in cls._study_identity_candidates(text):
+            section = next(
+                (item for item in sections if item.start <= start < item.end), None
+            )
+            if section is not None and section.canonical_name in excluded_sections:
+                continue
+            modality_signals = tuple(
+                item for item in buckets["modality_signals"]
+                if start <= item.start and item.end <= end
+            )
+            has_modality = bool(modality_signals)
+            has_anatomy = any(
+                start <= item.start and item.end <= end
+                for item in buckets["anatomy_signals"]
+            )
+            strong_label = (
+                cls._title_like(matched_text)
+                or cls._predominantly_uppercase_label(matched_text)
+                or cls._CURRENT_STUDY_STATEMENT.search(matched_text) is not None
+            )
+            if has_modality and has_anatomy and start == first_start and not strong_label:
+                modality_start = min(item.start for item in modality_signals)
+                prefix = text[start:modality_start].strip()
+                nominal_study = text[modality_start:end]
+                if prefix:
+                    if re.search(r"\bof\b", nominal_study, re.IGNORECASE) is None:
+                        continue
+                    start = modality_start
+                    matched_text = nominal_study
+            key = ("RAD_STRUCTURE_STUDY_TITLE", start, end)
+            if not (has_modality and has_anatomy) or key in seen:
+                continue
+            seen.add(key)
+            buckets["structure_signals"].append(EvidenceSignal(
+                "RAD_STRUCTURE_STUDY_TITLE",
+                "RADIOLOGY_STRUCTURE",
+                matched_text,
+                start,
+                end,
+                2.0,
+                ("MEDNEXUS_STRUCTURAL_REASONING",),
+                matched_text,
+                attributes=(("structure_type", "STUDY_TITLE"),),
+            ))
+            return
+
+    @classmethod
+    def _study_identity_candidates(cls, text: str):
+        first = cls._first_nonempty_line(text)
+        first_start = first[1] if first is not None else None
+        offset = 0
+        for line in text.splitlines(keepends=True):
+            content = line.rstrip("\r\n")
+            stripped = content.strip()
+            if not stripped:
+                offset += len(line)
+                continue
+            leading = len(content) - len(content.lstrip())
+            start = offset + leading
+            candidate = stripped
+            sentence = re.match(r".*?[.!?](?=\s|$)", candidate)
+            if sentence is not None and len(candidate.split()) > 14:
+                candidate = sentence.group(0).strip()
+            end = start + len(candidate)
+            is_first = start == first_start
+            if (
+                (is_first and len(candidate.split()) <= 14)
+                or cls._title_like(candidate)
+                or cls._CURRENT_STUDY_STATEMENT.search(candidate)
+                or cls._predominantly_uppercase_label(candidate)
+            ):
+                yield candidate, start, end
+            offset += len(line)
 
     @classmethod
     def _add_governed_radiography_codes(cls, text, registry, buckets, seen) -> None:
@@ -202,6 +395,10 @@ class RadiologyEvidenceFrameBuilder:
                 + (tuple((item.source_id, item.external_id) for item in source.external_mappings)
                    if source else ())
             ))
+            equivalent_mappings = tuple(dict.fromkeys(
+                cls._equivalent_mapping_pairs(canonical)
+                + (cls._equivalent_mapping_pairs(source) if source else ())
+            ))
             key = (canonical.mednexus_concept_id, match.start(), match.end())
             if key in seen:
                 continue
@@ -212,6 +409,7 @@ class RadiologyEvidenceFrameBuilder:
                 tuple((item.relationship_type.value, item.target_concept_id)
                       for item in canonical.relationships),
                 canonical.attributes,
+                equivalent_mappings,
             ))
 
     @classmethod
@@ -235,6 +433,7 @@ class RadiologyEvidenceFrameBuilder:
                 tuple((item.relationship_type.value, item.target_concept_id)
                       for item in canonical.relationships),
                 canonical.attributes,
+                cls._equivalent_mapping_pairs(canonical),
             ))
 
     @classmethod
@@ -261,6 +460,16 @@ class RadiologyEvidenceFrameBuilder:
     def _reference_field(concept) -> str | None:
         attributes = dict(concept.attributes)
         if concept.concept_family is ConceptFamily.PROCEDURE_ATTRIBUTE:
+            if attributes.get("part_type") in {
+                "RAD_MODALITY_MODALITY_TYPE",
+                "RAD_MODALITY_MODALITY_SUBTYPE",
+            }:
+                return "modality_signals"
+            if attributes.get("part_type") in {
+                "RAD_GUIDANCE_FOR_OBJECT",
+                "RAD_PHARMACEUTICAL_SUBSTANCE_GIVEN",
+            } and "contrast" in concept.canonical_name.casefold():
+                return "contrast_signals"
             if attributes.get("part_type") == "RAD_VIEW_VIEW_TYPE":
                 return "view_signals"
             if attributes.get("part_type") == "RAD_ANATOMIC_LOCATION_LATERALITY":
@@ -268,10 +477,17 @@ class RadiologyEvidenceFrameBuilder:
             if attributes.get("part_type") == "RAD_VIEW_AGGREGATION" \
                     and concept.canonical_name.casefold() in {"complete", "limited"}:
                 return "study_extent_signals"
+            if attributes.get("part_type") == "RAD_VIEW_AGGREGATION":
+                return "view_signals"
         if concept.concept_family is ConceptFamily.BODY_REGION \
                 and attributes.get("cid") == "2":
             return "laterality_signals"
         return _REFERENCE_FAMILY_FIELD.get(concept.concept_family)
+
+    @classmethod
+    def _governed_short_modality_context(cls, text: str, start: int, end: int) -> bool:
+        line = cls._context(text, start, end)
+        return bool(cls._title_like(line) or cls._STUDY_CONTEXT.search(line))
 
     @classmethod
     def _governed_view_context(cls, text: str, start: int, end: int) -> bool:
@@ -289,6 +505,27 @@ class RadiologyEvidenceFrameBuilder:
         return bool(letters) and len(line.split()) <= 14 and line == line.upper()
 
     @staticmethod
+    def _predominantly_uppercase_label(line: str) -> bool:
+        letters = [item for item in line if item.isalpha()]
+        if not letters or len(line.split()) > 14:
+            return False
+        uppercase = sum(item.isupper() for item in letters)
+        return uppercase / len(letters) >= 0.75
+
+    @staticmethod
+    def _first_nonempty_line(text: str) -> tuple[str, int, int] | None:
+        offset = 0
+        for line in text.splitlines(keepends=True):
+            content = line.rstrip("\r\n")
+            stripped = content.strip()
+            if stripped:
+                leading = len(content) - len(content.lstrip())
+                start = offset + leading
+                return stripped, start, start + len(stripped)
+            offset += len(line)
+        return None
+
+    @staticmethod
     def _matches(text: str, concept: RecognitionConcept):
         matches = []
         for alias in sorted(concept.aliases, key=len, reverse=True):
@@ -304,9 +541,18 @@ class RadiologyEvidenceFrameBuilder:
                              if any(alias in concept.aliases for alias in aliases)), None)
             for canonical, aliases in RADIOLOGY_SECTION_ALIASES.items()
         }
+        # The shared UNDERSTAND contract defines a Results region as an
+        # observation narrative.  Adapt the already-detected canonical region;
+        # do not add another heading vocabulary or text-matching path here.
+        semantic_equivalents = {
+            "results": "findings",
+        }
         result: dict[str, list[tuple[str, int, int]]] = {}
         for section in sections:
-            concept_id = by_canonical.get(section.canonical_name)
+            canonical = semantic_equivalents.get(
+                section.canonical_name, section.canonical_name
+            )
+            concept_id = by_canonical.get(canonical)
             if concept_id:
                 result.setdefault(concept_id, []).append(
                     (section.original_heading, section.start, section.start + len(section.original_heading))

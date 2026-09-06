@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from ...context_models import (
     CTAcquisitionFeature, CTClinicalContext, CTStudyFamily, MRIClinicalContext,
-    MRISequenceFamily, MRIStudyFamily, RadiologyModalityContext, StudyLaterality,
-    UltrasoundClinicalContext, UltrasoundSpecialization, UltrasoundStudyExtent,
-    VascularContext, XRayClinicalContext, XRaySourceType,
+    FluoroscopyClinicalContext, FluoroscopyStudyFamily,
+    MammographyAcquisitionContext, MammographyClinicalContext,
+    MammographyStudyPurpose, MRISequenceFamily, MRIStudyFamily,
+    NuclearMedicineClinicalContext, NuclearMedicineStudyFamily,
+    OtherRadiologyClinicalContext, RadiologyModalityContext,
+    RadiologyOtherReason, StudyLaterality, UltrasoundClinicalContext,
+    UltrasoundSpecialization, UltrasoundStudyExtent, VascularContext,
+    XRayClinicalContext, XRaySourceType,
 )
 from ...models import (
     ClassificationEvidence, DetectedSection, DocumentNature, DocumentSubtype,
@@ -15,7 +20,7 @@ from ...models import (
 )
 from ...reference_model.runtime import build_active_reference_registry
 from .concepts import RADIOLOGY_REGISTRY
-from .evidence import DocumentEvidenceFrame, RadiologyEvidenceFrameBuilder
+from .evidence import DocumentEvidenceFrame, EvidenceSignal, RadiologyEvidenceFrameBuilder
 from .semantic_roles import (
     RadiologyEvidenceEligibility, RadiologyEvidenceEligibilityResolution,
     RadiologyEvidenceEligibilityResolver, RadiologyRoleResolution,
@@ -99,6 +104,7 @@ class RadiologyUnderstandingDecision:
     narrative_body_present: bool
     subdomain: RadiologySubdomain | None
     modality_variant: str | None
+    other_reason: RadiologyOtherReason | None
     domain_support: float
     report_support: float
     subdomain_support: float
@@ -162,6 +168,9 @@ class RadiologyReasoner:
     def assess(cls, text: str, sections: tuple[DetectedSection, ...]) -> RadiologyAssessment:
         registry = build_active_reference_registry()
         frame = RadiologyEvidenceFrameBuilder.build(text, sections)
+        frame = cls._with_governed_composite_procedure(
+            text, sections, frame, registry
+        )
         roles = RadiologySemanticRoleResolver.resolve(text, sections, frame)
         eligibility = RadiologyEvidenceEligibilityResolver.resolve(frame, roles)
         current_support = RadiologyEvidenceEligibility.CURRENT_IDENTITY_SUPPORT
@@ -188,18 +197,79 @@ class RadiologyReasoner:
         acquisition_ids = {item.concept_id for item in current_acquisitions}
         structure_ids = {item.concept_id for item in composition_structure}
         domain_ids = {item.concept_id for item in composition_domain}
+        procedure_components = cls._procedure_components(current_procedures, registry)
+        compatibility_subtype = cls._modality(modality_ids, technique_ids, acquisition_ids)
+        if compatibility_subtype is DocumentSubtype.UNKNOWN:
+            compatibility_subtype = cls._component_modality(procedure_components)
+        current_family_identified = (
+            compatibility_subtype is not DocumentSubtype.UNKNOWN
+            or bool(current_modalities or current_procedures)
+        )
+        narrative_body_present = (
+            current_family_identified
+            and cls._narrative_body_present(text, sections, frame)
+        )
+        observation_region_present = cls._observation_region_present(text, sections)
+        title_led_partial_report = (
+            "RAD_STRUCTURE_STUDY_TITLE" in structure_ids
+            and (narrative_body_present or observation_region_present)
+        )
+        inferred_mri_impression_report = (
+            compatibility_subtype is DocumentSubtype.MRI
+            and narrative_body_present
+            and "RAD_SECTION_IMPRESSION" in structure_ids
+        )
+        governed_report_identity = any(
+            item.concept_id == "RAD_DOC_REPORT"
+            or (
+                item.concept_family == "DOCUMENT_REPORT"
+                and any(
+                    item.start <= modality.start
+                    and modality.end <= item.end
+                    for modality in current_modalities
+                )
+            )
+            for item in composition_domain
+        )
+        governed_report_narrative = (
+            governed_report_identity and narrative_body_present
+        )
+        composition_roles = {
+            item.semantic_role
+            for item in eligibility.decisions_for(composition_support)
+        }
+        meaningful_report_composition = bool(
+            {
+                RadiologySemanticRole.FINDINGS_CONTEXT,
+                RadiologySemanticRole.IMPRESSION_CONTEXT,
+            }
+            & composition_roles
+        )
+        reference_composed_partial_report = (
+            narrative_body_present
+            and any(
+                dict(item.attributes).get("inference_basis")
+                == "REFERENCE_COMPONENT_COMPOSITION"
+                for item in current_procedures
+            )
+            and meaningful_report_composition
+        )
         contextual_families = sum(bool(items) for items in (
             current_techniques, current_acquisitions, current_anatomy,
             current_contrast, composition_structure, composition_professional,
         ))
-        imaging_coherence = bool(modality_ids) and (
+        imaging_coherence = bool(current_modalities or current_procedures) and (
             len(technique_ids | acquisition_ids) >= 2 or contextual_families >= 3
         )
         explicit_context = bool(domain_ids) and contextual_families >= 1
         structural_cluster = len(structure_ids) >= 3 and bool(
-            modality_ids or composition_professional
+            modality_ids or current_procedures or composition_professional
         )
-        domain_satisfied = imaging_coherence or explicit_context or structural_cluster
+        domain_satisfied = (
+            imaging_coherence or explicit_context or structural_cluster
+            or title_led_partial_report or inferred_mri_impression_report
+            or reference_composed_partial_report
+        )
         explicit_findings_report = {
             "RAD_SECTION_FINDINGS", "RAD_SECTION_IMPRESSION"
         } <= structure_ids
@@ -209,7 +279,6 @@ class RadiologyReasoner:
             and bool(modality_ids)
             and len(technique_ids | acquisition_ids) >= 2
         )
-        narrative_body_present = cls._narrative_body_present(text, sections, frame)
         composition_families = sum(bool(items) for items in (
             current_modalities or current_procedures,
             frame.domain_signals,
@@ -234,21 +303,30 @@ class RadiologyReasoner:
             explicit_findings_report
             or implied_findings_report
             or modality_neutral_narrative_report
-            or "RAD_DOC_REPORT" in domain_ids
+            or title_led_partial_report
+            or inferred_mri_impression_report
+            or governed_report_identity
+            or reference_composed_partial_report
         )
         finding_bearing = domain_satisfied and (
             "RAD_SECTION_FINDINGS" in structure_ids
             or implied_findings_report
             or modality_neutral_narrative_report
+            or title_led_partial_report
+            or inferred_mri_impression_report
+            or governed_report_narrative
+            or reference_composed_partial_report
         )
-        procedure_components = cls._procedure_components(current_procedures, registry)
-        compatibility_subtype = cls._modality(modality_ids, technique_ids, acquisition_ids)
-        if compatibility_subtype is DocumentSubtype.UNKNOWN:
-            compatibility_subtype = cls._component_modality(procedure_components)
-        subdomain, modality_variant = cls._canonical_modality(
-            compatibility_subtype, domain_satisfied
+        subdomain, modality_variant, other_reason = cls._canonical_modality(
+            compatibility_subtype,
+            domain_satisfied,
+            current_modalities,
+            procedure_components,
+            registry,
         )
-        study_family = cls._study_family(compatibility_subtype, procedure_components)
+        study_family = cls._study_family(
+            subdomain, procedure_components, current_modalities, registry
+        )
         score_support = cls._score_support(eligibility)
         evidence = tuple(ClassificationEvidence(
             DocumentType.RADIOLOGY_REPORT, signal.matched_text,
@@ -256,21 +334,24 @@ class RadiologyReasoner:
             signal.concept_id, signal.provenance,
             signal.external_mappings, signal.relationships,
         ) for field in frame.__dataclass_fields__ for signal in getattr(frame, field))
-        explanations = cls._explanations(frame, roles, report_satisfied)
-        semantic_regions = cls._semantic_regions(sections, frame, roles)
+        explanations = cls._explanations(
+            frame, roles, report_satisfied, subdomain
+        )
+        semantic_regions = cls._semantic_regions(text, sections, frame, roles)
         body_regions, authoritative_anatomy = cls._anatomy_context(
-            compatibility_subtype, frame, roles, current_roles,
+            subdomain, frame, roles, current_roles,
             procedure_components,
         )
         contrast = cls._contrast_context(frame, roles, current_roles)
         techniques = cls._techniques(frame, roles, current_roles)
         clinical_purpose = cls._clinical_purpose(frame, roles)
         modality_context = cls._modality_context(
-            compatibility_subtype, study_family, techniques, frame, roles,
-            current_roles, procedure_components, registry,
+            subdomain, modality_variant, other_reason, study_family, techniques,
+            body_regions, frame, roles, current_roles, procedure_components, registry,
         )
         examination = cls._examination(
-            compatibility_subtype, study_family, body_regions, authoritative_anatomy
+            subdomain, modality_variant, study_family, modality_context,
+            body_regions, authoritative_anatomy,
         )
         curated_ids = {item.concept_id for item in RADIOLOGY_REGISTRY.concepts}
         domain_concepts = tuple(dict.fromkeys(
@@ -287,6 +368,7 @@ class RadiologyReasoner:
             narrative_body_present=narrative_body_present,
             subdomain=subdomain,
             modality_variant=modality_variant,
+            other_reason=other_reason,
             domain_support=score_support.domain,
             report_support=score_support.report,
             subdomain_support=score_support.subdomain,
@@ -295,7 +377,18 @@ class RadiologyReasoner:
             score=score_support.total,
             evidence=evidence,
             explanations=explanations,
-            document_nature=cls._document_nature(sections, roles, frame, domain_satisfied),
+            document_nature=cls._document_nature(
+                sections,
+                roles,
+                frame,
+                domain_satisfied,
+                (
+                    title_led_partial_report
+                    or inferred_mri_impression_report
+                    or governed_report_narrative
+                    or reference_composed_partial_report
+                ),
+            ),
             semantic_regions=semantic_regions,
             body_regions=body_regions,
             authoritative_anatomy=authoritative_anatomy,
@@ -311,23 +404,282 @@ class RadiologyReasoner:
             ),
         )
 
+    @classmethod
+    def _with_governed_composite_procedure(
+        cls,
+        text: str,
+        sections: tuple[DetectedSection, ...],
+        frame: DocumentEvidenceFrame,
+        registry,
+    ) -> DocumentEvidenceFrame:
+        """Recover a procedure only from a unique governed component composition.
+
+        The source must contain co-clausal current-study components. Reference
+        terminology supplies the possible procedure; it does not supply semantic
+        role, so contextual sections and future/history clauses are excluded here.
+        """
+
+        excluded_sections = {
+            "clinical_information", "clinical_history", "follow_up", "comparison",
+            "findings", "results", "impression", "recommendation",
+        }
+        source_fields = (
+            "modality_signals", "technique_signals", "acquisition_signals",
+            "anatomy_signals", "contrast_signals", "laterality_signals",
+            "study_extent_signals", "view_signals",
+        )
+        signals = tuple(
+            item for field_name in source_fields for item in getattr(frame, field_name)
+        )
+        if not signals:
+            return frame
+
+        candidates = []
+        for clause_start, clause_end in cls._signal_clause_ranges(text, signals):
+            clause = text[clause_start:clause_end]
+            if (
+                RadiologySemanticRoleResolver._RECOMMENDATION.search(clause)
+                or RadiologySemanticRoleResolver._HISTORICAL.search(clause)
+            ):
+                continue
+            section = next(
+                (item for item in sections if item.start <= clause_start < item.end),
+                None,
+            )
+            if section is not None and section.canonical_name in excluded_sections:
+                continue
+            clause_signals = tuple(
+                item for item in signals
+                if clause_start <= item.start and item.end <= clause_end
+            )
+            if len({(item.start, item.end) for item in clause_signals}) < 2:
+                continue
+            component_ids = {
+                concept_id
+                for signal in clause_signals
+                for concept_id in registry.equivalent_concept_ids(
+                    signal.concept_id, signal.composition_equivalent_mappings
+                )
+            }
+            procedures = registry.composing_procedures(component_ids)
+            for procedure in procedures:
+                components = []
+                matched_signals = []
+                categories = set()
+                eligible_component_ids = set()
+                for relationship in procedure.relationships:
+                    if relationship.relationship_type.value != "CAN_COMPOSE":
+                        continue
+                    try:
+                        component = registry.concept(relationship.target_concept_id)
+                    except KeyError:
+                        continue
+                    category = cls._composition_category(component)
+                    if category is None:
+                        continue
+                    eligible_component_ids.add(component.mednexus_concept_id)
+                    matched = next(
+                        (signal for signal in clause_signals
+                         if cls._signal_matches_component(signal, component, registry)),
+                        None,
+                    )
+                    if matched is None:
+                        continue
+                    components.append(component)
+                    matched_signals.append(matched)
+                    categories.add(category)
+                distinct_components = {
+                    item.mednexus_concept_id for item in components
+                }
+                if (
+                    len(distinct_components) < 3
+                    or not {"ANATOMY", "ACQUISITION"} <= categories
+                ):
+                    continue
+                modalities = set()
+                for relationship in procedure.relationships:
+                    if relationship.relationship_type.value != "CAN_COMPOSE":
+                        continue
+                    try:
+                        component = registry.concept(relationship.target_concept_id)
+                    except KeyError:
+                        continue
+                    if dict(component.attributes).get("part_type") \
+                            == "RAD_MODALITY_MODALITY_TYPE":
+                        modalities.add(component.canonical_name.casefold())
+                if len(modalities) != 1:
+                    continue
+                candidates.append((
+                    len(distinct_components), len(categories),
+                    -(len(eligible_component_ids) - len(distinct_components)),
+                    clause_start, clause_end, procedure,
+                    tuple(dict.fromkeys(matched_signals)),
+                    frozenset(distinct_components), next(iter(modalities)),
+                ))
+
+        if not candidates:
+            return frame
+        best_score = max((item[0], item[1], item[2]) for item in candidates)
+        best = [
+            item for item in candidates
+            if (item[0], item[1], item[2]) == best_score
+        ]
+        if len({item[8] for item in best}) != 1:
+            return frame
+        if len({item[5].mednexus_concept_id for item in best}) != 1:
+            return frame
+        selected = sorted(best, key=lambda item: (
+            item[3], item[4]
+        ))[0]
+        (
+            _, _, _, clause_start, clause_end, procedure, matched,
+            observed_component_ids, _,
+        ) = selected
+        projected_component_ids = set(observed_component_ids)
+        for relationship in procedure.relationships:
+            if relationship.relationship_type.value != "CAN_COMPOSE":
+                continue
+            try:
+                component = registry.concept(relationship.target_concept_id)
+            except KeyError:
+                continue
+            if dict(component.attributes).get("part_type") \
+                    == "RAD_MODALITY_MODALITY_TYPE":
+                projected_component_ids.add(component.mednexus_concept_id)
+        start = min(item.start for item in matched)
+        end = max(item.end for item in matched)
+        composed_strength = round(min(
+            1.0,
+            max(item.strength for item in {id(value): value for value in matched}.values()),
+        ), 2)
+        signal = EvidenceSignal(
+            procedure.mednexus_concept_id,
+            procedure.concept_family.value,
+            text[start:end],
+            start,
+            end,
+            composed_strength,
+            procedure.provenance,
+            text[clause_start:clause_end].strip(),
+            tuple((item.source_id, item.external_id) for item in procedure.external_mappings),
+            tuple((item.relationship_type.value, item.target_concept_id)
+                  for item in procedure.relationships
+                  if item.relationship_type.value == "CAN_COMPOSE"
+                  and item.target_concept_id in projected_component_ids),
+            (("inference_basis", "REFERENCE_COMPONENT_COMPOSITION"),),
+        )
+        if any(
+            item.concept_id == signal.concept_id
+            and item.start == signal.start and item.end == signal.end
+            for item in frame.procedure_signals
+        ):
+            return frame
+        return replace(frame, procedure_signals=(*frame.procedure_signals, signal))
+
+    @staticmethod
+    def _signal_clause_ranges(text: str, signals) -> tuple[tuple[int, int], ...]:
+        ranges = []
+        for signal in signals:
+            left = max(
+                text.rfind(mark, 0, signal.start)
+                for mark in ("\n", ".", ";", "?", "!")
+            ) + 1
+            right_candidates = [
+                position + 1 for mark in ("\n", ".", ";", "?", "!")
+                if (position := text.find(mark, signal.end)) >= 0
+            ]
+            right = min(right_candidates) if right_candidates else len(text)
+            ranges.append((left, right))
+        return tuple(dict.fromkeys(ranges))
+
+    @staticmethod
+    def _composition_category(component) -> str | None:
+        part_type = dict(component.attributes).get("part_type")
+        if part_type in {
+            "RAD_ANATOMIC_LOCATION_REGION_IMAGED",
+            "RAD_ANATOMIC_LOCATION_IMAGING_FOCUS",
+        }:
+            return "ANATOMY"
+        if part_type == "RAD_ANATOMIC_LOCATION_LATERALITY":
+            return "LATERALITY"
+        if part_type in {"RAD_VIEW_VIEW_TYPE", "RAD_VIEW_AGGREGATION"}:
+            return "ACQUISITION"
+        if part_type in {
+            "RAD_MODALITY_MODALITY_TYPE", "RAD_MODALITY_MODALITY_SUBTYPE",
+        }:
+            return "MODALITY"
+        if part_type in {
+            "RAD_GUIDANCE_FOR_OBJECT", "RAD_PHARMACEUTICAL_SUBSTANCE_GIVEN",
+        }:
+            return "CONTRAST"
+        return None
+
+    @staticmethod
+    def _signal_matches_component(signal: EvidenceSignal, component, registry) -> bool:
+        if signal.concept_id == component.mednexus_concept_id:
+            return True
+        return component.mednexus_concept_id in registry.equivalent_concept_ids(
+            signal.concept_id, signal.composition_equivalent_mappings
+        )
+
     @staticmethod
     def _canonical_modality(
-        compatibility_subtype: DocumentSubtype, domain_satisfied: bool
-    ) -> tuple[RadiologySubdomain | None, str | None]:
+        compatibility_subtype: DocumentSubtype,
+        domain_satisfied: bool,
+        current_modalities,
+        procedure_components,
+        registry,
+    ) -> tuple[RadiologySubdomain | None, str | None, RadiologyOtherReason | None]:
         if not domain_satisfied:
-            return None, None
+            return None, None, None
+        if RadiologyReasoner._interventional_procedure(procedure_components):
+            return (
+                RadiologySubdomain.OTHER,
+                None,
+                RadiologyOtherReason.INTERVENTIONAL_PROCEDURE,
+            )
+        hybrid_family = RadiologyReasoner._nuclear_hybrid_family(procedure_components)
+        if hybrid_family is not None:
+            return RadiologySubdomain.NUCLEAR_MEDICINE, None, None
+        subdomains = {
+            item for item in (
+                RadiologyReasoner._signal_subdomain(signal, registry)
+                for signal in current_modalities
+            ) if item is not None
+        }
+        subdomains.update(RadiologyReasoner._component_subdomains(procedure_components))
         if compatibility_subtype is DocumentSubtype.DOPPLER:
-            return RadiologySubdomain.ULTRASOUND, "DOPPLER"
-        return {
-            DocumentSubtype.CT: RadiologySubdomain.CT,
-            DocumentSubtype.MRI: RadiologySubdomain.MRI,
-            DocumentSubtype.X_RAY: RadiologySubdomain.X_RAY,
-            DocumentSubtype.ULTRASOUND: RadiologySubdomain.ULTRASOUND,
-            DocumentSubtype.MAMMOGRAPHY: RadiologySubdomain.MAMMOGRAPHY,
-            DocumentSubtype.NUCLEAR_MEDICINE: RadiologySubdomain.NUCLEAR_MEDICINE,
-            DocumentSubtype.UNKNOWN: RadiologySubdomain.OTHER,
-        }[compatibility_subtype], None
+            subdomains.add(RadiologySubdomain.ULTRASOUND)
+        elif compatibility_subtype is not DocumentSubtype.UNKNOWN:
+            subdomains.add({
+                DocumentSubtype.CT: RadiologySubdomain.CT,
+                DocumentSubtype.MRI: RadiologySubdomain.MRI,
+                DocumentSubtype.X_RAY: RadiologySubdomain.X_RAY,
+                DocumentSubtype.ULTRASOUND: RadiologySubdomain.ULTRASOUND,
+                DocumentSubtype.MAMMOGRAPHY: RadiologySubdomain.MAMMOGRAPHY,
+                DocumentSubtype.NUCLEAR_MEDICINE: RadiologySubdomain.NUCLEAR_MEDICINE,
+            }[compatibility_subtype])
+        if len(subdomains) == 1:
+            selected = next(iter(subdomains))
+            variant = (
+                "DOPPLER"
+                if selected is RadiologySubdomain.ULTRASOUND
+                and compatibility_subtype is DocumentSubtype.DOPPLER
+                else None
+            )
+            return selected, variant, None
+        if len(subdomains) > 1:
+            return (
+                RadiologySubdomain.OTHER,
+                None,
+                RadiologyOtherReason.CONFLICTING_CURRENT_FAMILY,
+            )
+        reason = (
+            RadiologyOtherReason.UNSUPPORTED_FAMILY
+            if current_modalities or procedure_components
+            else RadiologyOtherReason.INSUFFICIENT_FAMILY_EVIDENCE
+        )
+        return RadiologySubdomain.OTHER, None, reason
 
     @staticmethod
     def _document_nature(
@@ -335,6 +687,7 @@ class RadiologyReasoner:
         roles: RadiologyRoleResolution,
         frame: DocumentEvidenceFrame,
         domain_satisfied: bool,
+        title_led_partial_report: bool = False,
     ) -> DocumentNature:
         section_ids = {item.canonical_name for item in sections}
         current_modalities = roles.signals(
@@ -352,12 +705,15 @@ class RadiologyReasoner:
             return DocumentNature.STRUCTURED_TEMPLATE
         if {"findings", "impression"} <= section_ids:
             return DocumentNature.COMPLETED_REPORT
+        if title_led_partial_report:
+            return DocumentNature.PARTIAL_REPORT
         if domain_satisfied and section_ids:
             return DocumentNature.PARTIAL_REPORT
         return DocumentNature.UNKNOWN
 
     @staticmethod
     def _semantic_regions(
+        text: str,
         sections: tuple[DetectedSection, ...],
         frame: DocumentEvidenceFrame,
         roles: RadiologyRoleResolution,
@@ -399,12 +755,37 @@ class RadiologyReasoner:
                     source for value, _ in adapted for source in value.signal.provenance
                 )),
             ))
-        return tuple(decisions)
+        for start, end in RadiologySemanticRoleResolver.unheaded_observation_regions(
+            text, sections, frame
+        ):
+            related = tuple(
+                value for value in roles.evidence
+                if value.section_id
+                == RadiologySemanticRoleResolver._UNHEADED_OBSERVATION_SECTION
+                and start <= value.signal.start < end
+            )
+            decisions.append(RadiologySemanticRegionDecision(
+                section_id=RadiologySemanticRoleResolver._UNHEADED_OBSERVATION_SECTION,
+                original_heading="",
+                start=start,
+                end=end,
+                confidence=0.75,
+                canonical_role=SemanticRegionRole.OBSERVATION_NARRATIVE,
+                qualifiers=("INFERRED_UNHEADED",),
+                evidence_concept_ids=tuple(dict.fromkeys(
+                    value.signal.concept_id for value in related
+                )),
+                provenance=tuple(dict.fromkeys((
+                    "MEDNEXUS_STRUCTURAL_REASONING",
+                    *(source for value in related for source in value.signal.provenance),
+                ))),
+            ))
+        return tuple(sorted(decisions, key=lambda item: (item.start, item.end)))
 
     @classmethod
     def _anatomy_context(
         cls,
-        modality: DocumentSubtype,
+        subdomain: RadiologySubdomain | None,
         frame: DocumentEvidenceFrame,
         roles: RadiologyRoleResolution,
         current_roles: tuple[RadiologySemanticRole, ...],
@@ -415,18 +796,15 @@ class RadiologyReasoner:
         broad_anatomy = [
             item for item in anatomy_signals if item.concept_id in _BODY_REGION_IDS
         ]
+        identity_anatomy = cls._performed_study_anatomy_signals(
+            broad_anatomy, roles
+        )
         if modality_spans:
             broad_anatomy.sort(key=lambda item: (
                 min(max(span.start - item.end, item.start - span.end, 0)
                     for span in modality_spans),
                 item.start,
             ))
-        regions = tuple(dict.fromkeys(
-            _BODY_REGION_IDS[item.concept_id] for item in broad_anatomy
-        ))
-        authoritative_anatomy = cls._authoritative_anatomy(
-            frame, roles, anatomy_signals
-        )
         component_regions = tuple(dict.fromkeys(
             cls._canonical_body_region(item.canonical_name)
             for item in procedure_components
@@ -434,9 +812,17 @@ class RadiologyReasoner:
             == "RAD_ANATOMIC_LOCATION_REGION_IMAGED"
             and cls._canonical_body_region(item.canonical_name) is not None
         ))
-        # A role-qualified authoritative procedure preserves its governed component
-        # order; lower-level lexical anatomy may supplement but never reorder it.
-        regions = tuple(dict.fromkeys((*component_regions, *regions)))
+        # A role-qualified procedure or performed-study title is authoritative.
+        # Technique scan coverage and lower-level narrative anatomy remain evidence,
+        # but cannot broaden or replace the performed-study anatomy set.
+        selected_broad = identity_anatomy or broad_anatomy
+        lexical_regions = tuple(dict.fromkeys(
+            _BODY_REGION_IDS[item.concept_id] for item in selected_broad
+        ))
+        regions = tuple(dict.fromkeys((*component_regions, *lexical_regions)))
+        authoritative_anatomy = cls._authoritative_anatomy(
+            frame, roles, anatomy_signals
+        )
         if authoritative_anatomy is None:
             focuses = tuple(dict.fromkeys(
                 item.canonical_name for item in procedure_components
@@ -447,7 +833,7 @@ class RadiologyReasoner:
                 authoritative_anatomy = focuses[0]
             elif len(component_regions) == 1:
                 authoritative_anatomy = component_regions[0].replace("_", " ").title()
-        if modality is DocumentSubtype.X_RAY and not regions and authoritative_anatomy:
+        if subdomain is RadiologySubdomain.X_RAY and not regions and authoritative_anatomy:
             regions = (authoritative_anatomy,)
         return regions, authoritative_anatomy
 
@@ -463,22 +849,45 @@ class RadiologyReasoner:
         return None
 
     @staticmethod
+    def _performed_study_anatomy_signals(anatomy_signals, roles):
+        qualified = {id(item.signal): item for item in roles.evidence}
+        return [
+            signal for signal in anatomy_signals
+            if (
+                (item := qualified.get(id(signal))) is not None
+                and (
+                    item.section_id in {
+                        "document_title", "radiology_examination", "procedure_information",
+                    }
+                    or (
+                        item.role is RadiologySemanticRole.PERFORMED_STUDY
+                        and RadiologySemanticRoleResolver._title_like(signal.context)
+                    )
+                )
+            )
+        ]
+
+    @staticmethod
     def _contrast_context(
         frame: DocumentEvidenceFrame,
         roles: RadiologyRoleResolution,
         current_roles: tuple[RadiologySemanticRole, ...],
     ) -> str | None:
-        contrast_ids = {
-            item.concept_id
-            for item in roles.signals(frame.contrast_signals, *current_roles)
-        }
-        if "RAD_CONTRAST_PRE_POST" in contrast_ids or {
+        current_contrast = roles.signals(frame.contrast_signals, *current_roles)
+        contrast_ids = {item.concept_id for item in current_contrast}
+        polarities = {
+            dict(item.attributes).get("contrast_polarity")
+            for item in current_contrast
+        } - {None}
+        if "RAD_CONTRAST_PRE_POST" in contrast_ids or "PRE_AND_POST" in polarities:
+            return "PRE_AND_POST_CONTRAST"
+        if {"WITH", "WITHOUT"} <= polarities or {
             "RAD_CONTRAST_WITH", "RAD_CONTRAST_WITHOUT"
         } <= contrast_ids:
-            return "PRE_AND_POST_CONTRAST"
-        if "RAD_CONTRAST_WITH" in contrast_ids:
+            return None
+        if "RAD_CONTRAST_WITH" in contrast_ids or "WITH" in polarities:
             return "WITH_CONTRAST"
-        if "RAD_CONTRAST_WITHOUT" in contrast_ids:
+        if "RAD_CONTRAST_WITHOUT" in contrast_ids or "WITHOUT" in polarities:
             return "WITHOUT_CONTRAST"
         return None
 
@@ -553,15 +962,165 @@ class RadiologyReasoner:
                 DocumentSubtype.DOPPLER
                 if "doppler" in modality_subtypes else DocumentSubtype.ULTRASOUND
             )
+        if modality_types == {"mg"}:
+            return DocumentSubtype.MAMMOGRAPHY
+        if modality_types in ({"nm"}, {"pt"}, {"nm.spect+ct"}, {"pt+ct"}):
+            return DocumentSubtype.NUCLEAR_MEDICINE
         return DocumentSubtype.UNKNOWN
 
     @staticmethod
-    def _study_family(modality: DocumentSubtype, components):
+    def _component_subdomains(components) -> set[RadiologySubdomain]:
+        names = {
+            item.canonical_name.casefold()
+            for item in components
+            if dict(item.attributes).get("part_type") == "RAD_MODALITY_MODALITY_TYPE"
+        }
+        result = set()
+        for name in names:
+            if name == "ct":
+                result.add(RadiologySubdomain.CT)
+            elif name == "mr":
+                result.add(RadiologySubdomain.MRI)
+            elif name in {"xr", "cr", "dx"}:
+                result.add(RadiologySubdomain.X_RAY)
+            elif name == "us":
+                result.add(RadiologySubdomain.ULTRASOUND)
+            elif name == "mg":
+                result.add(RadiologySubdomain.MAMMOGRAPHY)
+            elif name in {"nm", "pt", "nm.spect+ct", "pt+ct"}:
+                result.add(RadiologySubdomain.NUCLEAR_MEDICINE)
+            elif name == "rf":
+                result.add(RadiologySubdomain.FLUOROSCOPY)
+        return result
+
+    @staticmethod
+    def _signal_subdomain(signal, registry) -> RadiologySubdomain | None:
+        curated = {
+            "RAD_MODALITY_CT": RadiologySubdomain.CT,
+            "RAD_MODALITY_MRI": RadiologySubdomain.MRI,
+            "RAD_MODALITY_XRAY": RadiologySubdomain.X_RAY,
+            "RAD_MODALITY_ULTRASOUND": RadiologySubdomain.ULTRASOUND,
+            "RAD_MODALITY_DOPPLER": RadiologySubdomain.ULTRASOUND,
+            "RAD_MODALITY_MAMMOGRAPHY": RadiologySubdomain.MAMMOGRAPHY,
+            "RAD_MODALITY_NUCLEAR_MEDICINE": RadiologySubdomain.NUCLEAR_MEDICINE,
+        }
+        if signal.concept_id in curated:
+            return curated[signal.concept_id]
+        try:
+            concept = registry.concept(signal.concept_id)
+        except KeyError:
+            return None
+        if dict(concept.attributes).get("part_type") == "RAD_MODALITY_MODALITY_TYPE":
+            component_subdomains = RadiologyReasoner._component_subdomains((concept,))
+            return next(iter(component_subdomains), None)
+        dicom_codes = {
+            mapping.external_id.upper()
+            for mapping in concept.external_mappings
+            if mapping.source_id in {"DICOM_2026_CURRENT", "DICOM_DCMR_2026C"}
+        }
+        for codes, subdomain in (
+            ({"CT"}, RadiologySubdomain.CT),
+            ({"MR"}, RadiologySubdomain.MRI),
+            ({"CR", "DX", "XR"}, RadiologySubdomain.X_RAY),
+            ({"US"}, RadiologySubdomain.ULTRASOUND),
+            ({"MG"}, RadiologySubdomain.MAMMOGRAPHY),
+            ({"NM", "PT"}, RadiologySubdomain.NUCLEAR_MEDICINE),
+            ({"RF"}, RadiologySubdomain.FLUOROSCOPY),
+        ):
+            if dicom_codes & codes:
+                return subdomain
+        name = concept.canonical_name.casefold()
+        return {
+            "computed tomography": RadiologySubdomain.CT,
+            "magnetic resonance imaging": RadiologySubdomain.MRI,
+            "radiography": RadiologySubdomain.X_RAY,
+            "computed radiography": RadiologySubdomain.X_RAY,
+            "digital radiography": RadiologySubdomain.X_RAY,
+            "ultrasound": RadiologySubdomain.ULTRASOUND,
+            "doppler ultrasound": RadiologySubdomain.ULTRASOUND,
+            "mammography": RadiologySubdomain.MAMMOGRAPHY,
+            "nuclear medicine": RadiologySubdomain.NUCLEAR_MEDICINE,
+            "scintigraphy": RadiologySubdomain.NUCLEAR_MEDICINE,
+            "positron emission tomography": RadiologySubdomain.NUCLEAR_MEDICINE,
+            "single photon emission computed tomography": RadiologySubdomain.NUCLEAR_MEDICINE,
+            "fluoroscopy": RadiologySubdomain.FLUOROSCOPY,
+        }.get(name)
+
+    @staticmethod
+    def _nuclear_hybrid_family(components) -> NuclearMedicineStudyFamily | None:
+        modality_types = {
+            item.canonical_name.casefold()
+            for item in components
+            if dict(item.attributes).get("part_type") == "RAD_MODALITY_MODALITY_TYPE"
+        }
+        if "pt+ct" in modality_types:
+            return NuclearMedicineStudyFamily.PET_CT
+        if "nm.spect+ct" in modality_types:
+            return NuclearMedicineStudyFamily.SPECT_CT
+        return None
+
+    @staticmethod
+    def _nuclear_study_family(
+        components, current_modalities, registry
+    ) -> NuclearMedicineStudyFamily:
+        hybrid = RadiologyReasoner._nuclear_hybrid_family(components)
+        if hybrid is not None:
+            return hybrid
+        modality_types = {
+            item.canonical_name.casefold()
+            for item in components
+            if dict(item.attributes).get("part_type") == "RAD_MODALITY_MODALITY_TYPE"
+        }
+        modality_subtypes = {
+            item.canonical_name.casefold()
+            for item in components
+            if dict(item.attributes).get("part_type") == "RAD_MODALITY_MODALITY_SUBTYPE"
+        }
+        if "pt" in modality_types:
+            return NuclearMedicineStudyFamily.PET
+        if "nm" in modality_types and "spect" in modality_subtypes:
+            return NuclearMedicineStudyFamily.SPECT
+        if "nm" in modality_types:
+            return NuclearMedicineStudyFamily.PLANAR
+        names = set()
+        for signal in current_modalities:
+            try:
+                names.add(registry.concept(signal.concept_id).canonical_name.casefold())
+            except KeyError:
+                if signal.concept_id == "RAD_MODALITY_NUCLEAR_MEDICINE":
+                    names.add("nuclear medicine")
+        if "positron emission tomography" in names:
+            return NuclearMedicineStudyFamily.PET
+        if "single photon emission computed tomography" in names:
+            return NuclearMedicineStudyFamily.SPECT
+        return NuclearMedicineStudyFamily.OTHER
+
+    @staticmethod
+    def _interventional_procedure(components) -> bool:
+        interventional_parts = {
+            "RAD_GUIDANCE_FOR_ACTION",
+            "RAD_GUIDANCE_FOR_APPROACH",
+            "RAD_GUIDANCE_FOR_PRESENCE",
+        }
+        return any(
+            dict(item.attributes).get("part_type") in interventional_parts
+            for item in components
+        )
+
+    @staticmethod
+    def _study_family(subdomain, components, current_modalities, registry):
         names = {item.canonical_name.casefold() for item in components}
+        for signal in current_modalities:
+            try:
+                concept = registry.concept(signal.concept_id)
+            except KeyError:
+                continue
+            if dict(concept.attributes).get("part_type") == "RAD_MODALITY_MODALITY_SUBTYPE":
+                names.add(concept.canonical_name.casefold())
         angiographic = "angio" in names
-        if modality is DocumentSubtype.CT:
+        if subdomain is RadiologySubdomain.CT:
             return CTStudyFamily.CTA if angiographic else CTStudyFamily.CT
-        if modality is DocumentSubtype.MRI:
+        if subdomain is RadiologySubdomain.MRI:
             if not angiographic:
                 return MRIStudyFamily.MRI
             vascular_names = {
@@ -576,24 +1135,41 @@ class RadiologyReasoner:
 
     @staticmethod
     def _examination(
-        modality: DocumentSubtype,
+        subdomain: RadiologySubdomain | None,
+        modality_variant: str | None,
         study_family,
+        modality_context: RadiologyModalityContext | None,
         regions: tuple[str, ...],
         authoritative_anatomy: str | None,
     ) -> str | None:
-        modality_value = (
-            study_family.value if study_family is not None
-            else None if modality is DocumentSubtype.UNKNOWN else modality.value
-        )
+        if subdomain in {None, RadiologySubdomain.OTHER}:
+            return None
+        modality_value = study_family.value if study_family is not None else subdomain.value
+        if isinstance(modality_context, NuclearMedicineClinicalContext):
+            modality_value = {
+                NuclearMedicineStudyFamily.PLANAR: "Nuclear Medicine",
+                NuclearMedicineStudyFamily.SPECT: "SPECT",
+                NuclearMedicineStudyFamily.PET: "PET",
+                NuclearMedicineStudyFamily.SPECT_CT: "SPECT/CT",
+                NuclearMedicineStudyFamily.PET_CT: "PET/CT",
+                NuclearMedicineStudyFamily.OTHER: "Nuclear Medicine",
+            }[modality_context.study_family]
+        elif subdomain is RadiologySubdomain.FLUOROSCOPY:
+            modality_value = "Fluoroscopy"
+        elif subdomain is RadiologySubdomain.MAMMOGRAPHY:
+            modality_value = "Mammography"
+        elif subdomain is RadiologySubdomain.ULTRASOUND and modality_variant == "DOPPLER":
+            modality_value = "Doppler Ultrasound"
         region_label = " & ".join(item.title() for item in regions)
         study_anatomy = (
             authoritative_anatomy
-            if modality is DocumentSubtype.X_RAY and authoritative_anatomy
+            if authoritative_anatomy and (
+                subdomain is RadiologySubdomain.X_RAY or not region_label
+            )
             else region_label or None
         )
         modality_label = {
             "X_RAY": "X-ray",
-            "DOPPLER": "Doppler Ultrasound",
         }.get(modality_value, modality_value)
         return " ".join(filter(None, (
             modality_label, study_anatomy.title() if study_anatomy else None,
@@ -601,9 +1177,12 @@ class RadiologyReasoner:
 
     @staticmethod
     def _modality_context(
-        modality: DocumentSubtype,
+        subdomain: RadiologySubdomain | None,
+        modality_variant: str | None,
+        other_reason: RadiologyOtherReason | None,
         study_family,
         techniques: tuple[str, ...],
+        body_regions: tuple[str, ...],
         frame: DocumentEvidenceFrame,
         roles: RadiologyRoleResolution,
         current_roles: tuple[RadiologySemanticRole, ...],
@@ -611,7 +1190,7 @@ class RadiologyReasoner:
         registry,
     ) -> RadiologyModalityContext | None:
         multiplanar = "Multiplanar imaging" in techniques
-        if modality is DocumentSubtype.CT:
+        if subdomain is RadiologySubdomain.CT:
             family = study_family or CTStudyFamily.CT
             acquisition = tuple(feature for feature, present in (
                 (CTAcquisitionFeature.ANGIOGRAPHIC, family is CTStudyFamily.CTA),
@@ -623,7 +1202,7 @@ class RadiologyReasoner:
                 angiographic_context=family is CTStudyFamily.CTA,
                 multiplanar_reconstruction_present=multiplanar,
             )
-        if modality is DocumentSubtype.MRI:
+        if subdomain is RadiologySubdomain.MRI:
             technique_ids = {
                 item.concept_id for item in roles.signals(
                     frame.technique_signals, *current_roles
@@ -640,8 +1219,12 @@ class RadiologyReasoner:
                 ),
                 multiplanar_acquisition_present=multiplanar,
             )
-        if modality is DocumentSubtype.X_RAY:
-            view_signals = roles.signals(frame.view_signals, *current_roles)
+        if subdomain is RadiologySubdomain.X_RAY:
+            view_signals = tuple(
+                item for item in roles.signals(frame.view_signals, *current_roles)
+                if dict(item.attributes).get("part_type") == "RAD_VIEW_VIEW_TYPE"
+                or item.concept_family != "PROCEDURE_ATTRIBUTE"
+            )
             views = tuple(dict.fromkeys(
                 registry.concept(item.concept_id).canonical_name
                 for item in sorted(view_signals, key=lambda signal: signal.start)
@@ -664,9 +1247,9 @@ class RadiologyReasoner:
                 laterality=laterality, source_type=source_type,
                 views=views, view_count=view_count, view_count_qualifier=qualifier,
             )
-        if modality in {DocumentSubtype.ULTRASOUND, DocumentSubtype.DOPPLER}:
+        if subdomain is RadiologySubdomain.ULTRASOUND:
             doppler = (
-                modality is DocumentSubtype.DOPPLER
+                modality_variant == "DOPPLER"
                 or any(item.canonical_name.casefold() == "doppler"
                        for item in procedure_components)
             )
@@ -683,6 +1266,142 @@ class RadiologyReasoner:
                 measurement_bearing_present=None,
                 doppler_present=doppler,
             )
+        if subdomain is RadiologySubdomain.MAMMOGRAPHY:
+            purpose_names = {
+                item.canonical_name.casefold()
+                for item in procedure_components
+                if dict(item.attributes).get("part_type") == "RAD_REASON_FOR_EXAM"
+            }
+            purposes = tuple(
+                value for name, value in (
+                    ("screening", MammographyStudyPurpose.SCREENING),
+                    ("diagnostic", MammographyStudyPurpose.DIAGNOSTIC),
+                ) if name in purpose_names
+            )
+            if not purposes and any(
+                dict(item.attributes).get("part_type") == "RAD_VIEW_VIEW_TYPE"
+                and item.canonical_name.casefold() == "spot"
+                for item in procedure_components
+            ):
+                purposes = (MammographyStudyPurpose.DIAGNOSTIC,)
+            acquisition = tuple(value for value, present in (
+                (
+                    MammographyAcquisitionContext.STANDARD_VIEWS,
+                    any(
+                        dict(item.attributes).get("part_type") == "RAD_VIEW_AGGREGATION"
+                        and item.canonical_name.casefold() in {"view", "views"}
+                        for item in procedure_components
+                    ),
+                ),
+                (
+                    MammographyAcquisitionContext.TOMOSYNTHESIS,
+                    any(
+                        dict(item.attributes).get("part_type")
+                        == "RAD_MODALITY_MODALITY_SUBTYPE"
+                        and item.canonical_name.casefold() == "tomosynthesis"
+                        for item in procedure_components
+                    ),
+                ),
+            ) if present)
+            return MammographyClinicalContext(
+                study_purpose=purposes[0] if len(purposes) == 1 else None,
+                laterality=RadiologyReasoner._laterality_context(
+                    frame, roles, current_roles, procedure_components, registry
+                ),
+                acquisition_context=acquisition,
+                birads_assessment_present=RadiologyReasoner._birads_assessment_presence(
+                    frame, roles, registry
+                ),
+            )
+        if subdomain is RadiologySubdomain.NUCLEAR_MEDICINE:
+            family = RadiologyReasoner._nuclear_study_family(
+                procedure_components,
+                roles.signals(frame.modality_signals, *current_roles),
+                registry,
+            )
+            radiopharmaceutical = any(
+                dict(item.attributes).get("part_type")
+                == "RAD_PHARMACEUTICAL_SUBSTANCE_GIVEN"
+                for item in procedure_components
+            )
+            quantitative_uptake = any(
+                dict(item.attributes).get("part_type") == "RAD_VIEW_AGGREGATION"
+                and item.canonical_name.casefold() == "uptake"
+                for item in procedure_components
+            )
+            return NuclearMedicineClinicalContext(
+                study_family=family,
+                radiopharmaceutical_context_present=(
+                    True if radiopharmaceutical else None
+                ),
+                quantitative_uptake_context_present=(
+                    True if quantitative_uptake else None
+                ),
+            )
+        if subdomain is RadiologySubdomain.FLUOROSCOPY:
+            contrast = any(
+                dict(item.attributes).get("part_type")
+                in {"RAD_PHARMACEUTICAL_SUBSTANCE_GIVEN", "RAD_GUIDANCE_FOR_OBJECT"}
+                and "contrast" in item.canonical_name.casefold()
+                for item in procedure_components
+            )
+            dynamic = any(
+                (
+                    dict(item.attributes).get("part_type") == "RAD_VIEW_AGGREGATION"
+                    and item.canonical_name.casefold() == "dynamic"
+                )
+                or (
+                    dict(item.attributes).get("part_type")
+                    == "RAD_MODALITY_MODALITY_SUBTYPE"
+                    and item.canonical_name.casefold() == "functional"
+                )
+                or (
+                    dict(item.attributes).get("part_type") == "RAD_REASON_FOR_EXAM"
+                    and item.canonical_name.casefold().endswith("function")
+                )
+                for item in procedure_components
+            )
+            family = (
+                FluoroscopyStudyFamily.DYNAMIC_FUNCTIONAL_STUDY if dynamic
+                else FluoroscopyStudyFamily.CONTRAST_STUDY if contrast
+                else FluoroscopyStudyFamily.GENERAL_DIAGNOSTIC
+            )
+            return FluoroscopyClinicalContext(
+                study_family=family,
+                body_system=body_regions[0] if body_regions else None,
+                contrast_study_present=True if contrast else None,
+                dynamic_functional_present=True if dynamic else None,
+            )
+        if subdomain is RadiologySubdomain.OTHER:
+            return OtherRadiologyClinicalContext(
+                resolution_reason=(
+                    other_reason or RadiologyOtherReason.INSUFFICIENT_FAMILY_EVIDENCE
+                )
+            )
+        return None
+
+    @staticmethod
+    def _birads_assessment_presence(frame, roles, registry) -> bool | None:
+        assessment_signals = roles.signals(
+            frame.observation_signals,
+            RadiologySemanticRole.FINDINGS_CONTEXT,
+            RadiologySemanticRole.IMPRESSION_CONTEXT,
+            RadiologySemanticRole.RECOMMENDED_FUTURE_STUDY,
+        )
+        for signal in assessment_signals:
+            try:
+                concept = registry.concept(signal.concept_id)
+            except KeyError:
+                continue
+            attributes = dict(concept.attributes)
+            if (
+                concept.concept_family.value == "IMAGING_OBSERVATION"
+                and concept.canonical_name.casefold().startswith("bi-rads category")
+                and attributes.get("relationship.Source", "").casefold().startswith(
+                    "bi-rads"
+                )
+            ):
+                return True
         return None
 
     @staticmethod
@@ -777,6 +1496,11 @@ class RadiologyReasoner:
         if not current_modalities or not anatomy_signals:
             return None
         registry = build_active_reference_registry()
+        identity_anatomy = RadiologyReasoner._performed_study_anatomy_signals(
+            anatomy_signals, roles
+        )
+        if identity_anatomy:
+            anatomy_signals = identity_anatomy
         modality = min(current_modalities, key=lambda item: item.start)
         specific = [
             item for item in anatomy_signals
@@ -788,6 +1512,8 @@ class RadiologyReasoner:
         if not specific:
             broad = [item for item in anatomy_signals if item.concept_id in _BODY_REGION_IDS]
             if not broad:
+                return None
+            if identity_anatomy and len({item.concept_id for item in broad}) > 1:
                 return None
             nearest = min(broad, key=lambda item: (
                 max(modality.start - item.end, item.start - modality.end, 0), item.start,
@@ -843,7 +1569,12 @@ class RadiologyReasoner:
         return True
 
     @staticmethod
-    def _explanations(frame, roles, report_satisfied) -> tuple[RecognitionExplanation, ...]:
+    def _explanations(
+        frame,
+        roles,
+        report_satisfied,
+        subdomain: RadiologySubdomain | None,
+    ) -> tuple[RecognitionExplanation, ...]:
         current = (RadiologySemanticRole.PERFORMED_STUDY,
                    RadiologySemanticRole.TECHNIQUE_ACQUISITION)
         explanations = []
@@ -868,6 +1599,20 @@ class RadiologyReasoner:
                     f"CURRENT_MODALITY_{signal.concept_id}", message, "modality",
                     signal.concept_id, RadiologySemanticRole.PERFORMED_STUDY.value,
                 ))
+        current_procedures = roles.signals(frame.procedure_signals, *current)
+        if current_procedures:
+            family = (
+                subdomain.value.replace("_", " ").title()
+                if subdomain not in {None, RadiologySubdomain.OTHER}
+                else "Imaging"
+            )
+            explanations.append(RecognitionExplanation(
+                "CURRENT_GOVERNED_PROCEDURE",
+                f"Current {family} procedure composition identified",
+                "procedure",
+                current_procedures[0].concept_id,
+                RadiologySemanticRole.PERFORMED_STUDY.value,
+            ))
         if roles.signals(frame.anatomy_signals, *current):
             explanations.append(RecognitionExplanation(
                 "CURRENT_STUDY_ANATOMY", "Current study anatomy identified", "anatomy",
@@ -901,25 +1646,61 @@ class RadiologyReasoner:
 
     @staticmethod
     def _narrative_body_present(
-        text: str, sections: tuple[DetectedSection, ...], frame: DocumentEvidenceFrame
+        text: str,
+        sections: tuple[DetectedSection, ...],
+        frame: DocumentEvidenceFrame,
     ) -> bool:
-        """Detect substantive pre-Impression report prose without assigning section semantics."""
+        """Detect substantive report prose without assigning EXTRACT semantics."""
+        inferred = RadiologySemanticRoleResolver.unheaded_observation_regions(
+            text, sections, frame
+        )
+        if any(
+            RadiologySemanticRoleResolver.substantive_narrative(text[start:end])
+            for start, end in inferred
+        ):
+            return True
+        if inferred:
+            return True
         impression = next((item for item in sections if item.canonical_name == "impression"), None)
-        if impression is None:
-            return False
-        preceding = [item for item in sections if item.start < impression.start]
-        if not preceding:
-            return False
-        boundary = max(preceding, key=lambda item: item.start)
-        body = text[boundary.start + len(boundary.original_heading):impression.start].strip(" \t\r\n:")
-        words = re.findall(r"[^\W_]+", body, re.UNICODE)
-        if len(body) < 180 or len(words) < 30:
-            return False
-        normalized_words = {item.casefold() for item in words}
-        if len(normalized_words) / len(words) < 0.30:
-            return False
-        sentence_count = len(re.findall(r"[.!?](?:\s|$)", body))
-        return sentence_count >= 2 and bool(frame.modality_signals or frame.procedure_signals)
+        if impression is not None:
+            preceding = [item for item in sections if item.start < impression.start]
+            if preceding:
+                boundary = max(preceding, key=lambda item: item.start)
+                body = text[
+                    boundary.start + len(boundary.original_heading):impression.start
+                ].strip(" \t\r\n:")
+            else:
+                body = text[:impression.start].strip(" \t\r\n:")
+        else:
+            findings = next(
+                (item for item in sections if item.canonical_name == "findings"), None
+            )
+            if findings is not None:
+                body = text[
+                    findings.start + len(findings.original_heading):
+                ].strip(" \t\r\n:")
+            else:
+                title = RadiologyEvidenceFrameBuilder._first_nonempty_line(text)
+                if title is None:
+                    return False
+                body = text[title[2]:].strip(" \t\r\n:")
+        return RadiologySemanticRoleResolver.substantive_narrative(body)
+
+    @staticmethod
+    def _observation_region_present(
+        text: str, sections: tuple[DetectedSection, ...]
+    ) -> bool:
+        """Accept a non-empty governed observation region without prose heuristics."""
+
+        for section in sections:
+            if section.canonical_name not in {"findings", "results"}:
+                continue
+            body = text[
+                section.start + len(section.original_heading):section.end
+            ].strip(" \t\r\n:")
+            if re.search(r"[^\W_]", body, re.UNICODE):
+                return True
+        return False
 
     @classmethod
     def _score_support(
@@ -935,10 +1716,12 @@ class RadiologyReasoner:
         report_groups = (
             eligibility.signals(composition, "structure_signals"),
             eligibility.signals(composition, "professional_role_signals"),
+            eligibility.signals(composition, "observation_signals"),
         )
         subdomain_groups = tuple(
             eligibility.signals(current, field_name) for field_name in (
-                "modality_signals", "technique_signals", "acquisition_signals",
+                "modality_signals", "procedure_signals",
+                "technique_signals", "acquisition_signals",
                 "anatomy_signals", "contrast_signals", "laterality_signals",
                 "view_signals", "view_count_signals",
             )
@@ -951,13 +1734,15 @@ class RadiologyReasoner:
         support_dimensions = (
             domain_groups[0],
             subdomain_groups[0],
-            (*subdomain_groups[1], *subdomain_groups[2]),
-            subdomain_groups[3],
+            subdomain_groups[1],
+            (*subdomain_groups[2], *subdomain_groups[3]),
             subdomain_groups[4],
             subdomain_groups[5],
-            (*subdomain_groups[6], *subdomain_groups[7]),
+            subdomain_groups[6],
+            (*subdomain_groups[7], *subdomain_groups[8]),
             report_groups[0],
             report_groups[1],
+            report_groups[2],
         )
         diversity = sum(bool(items) for items in support_dimensions)
         scored_signals = tuple(
