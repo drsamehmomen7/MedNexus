@@ -1,6 +1,20 @@
 # MedNexus Current State
 
-**Authoritative date:** 24 August 2026
+**Authoritative date:** 6 September 2026
+
+## Multi-Engine Medical Intelligence Strategy v1.0 — Accepted Architecture Checkpoint
+
+**Status:** ACCEPTED ARCHITECTURE STRATEGY CHECKPOINT — v1.0. No multi-engine runtime implementation is authorized or claimed. The [Multi-Engine Medical Intelligence Strategy v1.0](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) is an additive, versioned strategy subordinate to the frozen UNDERSTAND v1 authority package below; it does not replace or modify that authority.
+
+MedNexus is evolving toward a model-agnostic, multi-engine clinical-intelligence platform while preserving MEDNEXUS⁷: `UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS`, with INGEST internal to UNDERSTAND. The governing principle is **“Models generate evidence. MedNexus determines authority.”** External engines remain replaceable candidate contributors; MedNexus continues to own routing, semantic roles and eligibility, privacy, arbitration, abstention, confidence, provenance, clinical contracts, terminology standardization, persistent structured data, analytics, visualization, indicators, and human-review decisions.
+
+The proposed MedNexus Medical Intelligence Gateway supplies a future vendor-neutral engine boundary and capability registry. MedGemma is a planned candidate engine only. MedUAG and the wider unified medical understanding-and-generation class remain `WATCH` / benchmark / future-adapter candidates pending independent verification of model and code availability, licensing and commercial rights, reproducibility, hardware, security/privacy, and MedNexus-specific validation. The planned MedNexus Evidence Fusion & Arbitration layer will not use model confidence or cross-engine agreement as clinical truth. Future Radiology image-report concordance remains review-oriented until clinically validated and appropriately governed.
+
+The strategy now defines a cross-cutting PROTECT-owned Engine Data-Access Preflight before any external engine receives clinical input. It authorizes a specific data exposure, engine/version, execution context, and stage/capability without completing Stage 02 PROTECT or reordering MEDNEXUS⁷; local execution alone is not compliance. Future engine approvals bind to reproducible artifacts, adapters, contracts, configurations, terms, validation scope, and use scope. Fusion is stage-scoped and acyclic, with evidence lineage/correlation controls and a strict distinction between raw engine confidence and MedNexus-calibrated support. Future Image-Report Concordance has five review-safe outcomes, including `INDETERMINATE`, and cannot automatically rewrite reports or create clinical facts.
+
+PROTECT remains the MedNexus-owned policy boundary; EXTRACT remains source-grounded and terminology-independent; STANDARDIZE remains the governed terminology authority. No external engine may directly establish authoritative document identity, persistent clinical facts, privacy decisions, terminology mappings, analytics, or indicators.
+
+Current accepted working regression baseline before this architecture-only task: **950 passed, 8 warnings, 0 failures**. It was not re-run or changed. MedNexus is currently awaiting responses or approval from external real-world Radiology dataset providers; architecture work is not blocked, no provider outcome/date is inferred, and real-world Radiology data remains the primary acceptance benchmark.
 
 ## UNDERSTAND Domain Matrix v1.0 — Frozen Architecture Authority
 

@@ -21,6 +21,8 @@ Public signature: **MEDNEXUS⁷ — One document. Seven intelligent transformati
 
 The current implemented capabilities are **Clinical Privacy Policy Engine / De-identification** and the accepted foundation of **Medical Document Understanding & Recognition**. Phase 2 implements the MedNexus-owned UNDERSTAND stage after existing ingestion; Phase 1 remains frozen at its accepted POC checkpoint.
 
+The accepted [Multi-Engine Medical Intelligence Strategy v1.0](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) checkpoint defines the next evolution: external medical AI engines may contribute candidate evidence through a future vendor-neutral Gateway, while MedNexus retains authority, policy, provenance, arbitration, clinical contracts, standardization, and persistent intelligence. It is a versioned strategy subordinate to the frozen UNDERSTAND v1 authority, not an implementation or replacement for that authority.
+
 ## UNDERSTAND v1 Architecture Package
 
 The **FROZEN UNDERSTAND v1 Architecture Authority** consists of [MedNexus UNDERSTAND Domain Matrix v1.0](docs/architecture/MedNexus_UNDERSTAND_Domain_Matrix_v1.0.md), the current [MedNexus Enterprise Architecture & Engineering Blueprint v2.0](docs/architecture/MedNexus_Enterprise_Architecture_and_Engineering_Blueprint_v2.0.docx), [Architecture Crosswalk v2.0](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v2.0.md), [Clinical Semantic Context Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.2.md), and [Clinical Extraction Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.2.md). Blueprint v1.9 and the v1.1/v0.1 contracts remain preserved architecture history. Architecture authority is not a claim of completed implementation.
@@ -35,6 +37,18 @@ The **FROZEN UNDERSTAND v1 Architecture Authority** consists of [MedNexus UNDERS
 - The Radiology UNDERSTAND v1 Core Migration checkpoint is verified at **872 passed, 8 warnings, 0 failures**. The previous accepted Core checkpoint remains **780 passed, 8 warnings, 0 failures** at `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
 
 Radiology remains the first rich UNDERSTAND reference domain. Its current compositional reasoning and active offline LOINC/RadLex/DICOM reference foundation preserve the separation between document/domain understanding and future field-level extraction. The latest correction supports strongly composed Radiology reports whose findings narrative lacks an explicit `FINDINGS` heading without introducing report-specific production rules, vocabulary, mappings, or threshold changes.
+
+## Multi-Engine Medical Intelligence Strategy
+
+MedNexus is evolving toward a model-agnostic, multi-engine clinical-intelligence platform under one governing principle: **Models generate evidence. MedNexus determines authority.** The future [MedNexus Medical Intelligence Gateway](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) will provide a stable candidate-engine boundary and capability registry; MedNexus-owned Evidence Fusion & Arbitration will remain responsible for eligibility, source authority, conflicts, abstention, confidence, and human-review routing.
+
+Before any external engine receives clinical input, a cross-cutting PROTECT-owned Engine Data-Access Preflight must authorize the exact engine, version, data exposure, execution environment, stage/capability, and local or remote route. This preflight is not completion of Stage 02 PROTECT and does not reorder MEDNEXUS⁷. Local execution alone does not establish compliance.
+
+MedGemma is a planned candidate engine, not MedNexus-owned intelligence. Unified medical understanding-and-generation systems such as MedUAG remain research-watch and future benchmark/adapter candidates pending independent verification of availability, license, commercial rights, reproducibility, runtime, privacy, and MedNexus-specific performance. No external model is authorized to own document identity, privacy decisions, persistent extraction, terminology mapping, analytics, or indicators.
+
+The strategy preserves MEDNEXUS⁷ and the frozen stage boundaries. It proposes future Radiology document and imaging planes, followed by MedNexus-owned evidence arbitration and review-oriented image-report concordance. Public Health compatibility is preserved without starting a Public Health multi-engine implementation. Current accepted working regression baseline before this architecture-only task: **950 passed, 8 warnings, 0 failures**; tests were not re-run and the baseline is unchanged. MedNexus is awaiting responses or approval from external real-world Radiology dataset providers; no provider outcome or date is inferred.
+
+Future engine approval is exact-artifact, adapter, contract, configuration, terms, validation-scope, and use-scope specific. Fusion remains stage-scoped and acyclic; correlated evidence is not independent corroboration, raw engine confidence is distinct from MedNexus-calibrated support, and downstream evidence cannot silently rewrite upstream authority. Future concordance explicitly supports concordant, discordant, unsupported-assertion, possible-omission, and indeterminate review outcomes without automatically rewriting reports or creating clinical facts.
 
 ### Radiology UNDERSTAND v1 Core Migration
 
@@ -201,6 +215,7 @@ Accepted checkpoint baselines:
 - Radiology Intelligence Architecture v2 (uncommitted review state): **758 passed, 8 warnings, 0 failures**; focused Radiology/Understanding suite: **77 passed, 1 warning**. Validation Failure R-001 resolves compositionally as MRI Abdomen & Pelvis with pre/post contrast, Oncologic Staging, MRI technique context, and HIGH confidence.
 - Reference Model Foundation v1 (uncommitted review state): **764 passed, 8 warnings, 0 failures**; focused reference/Radiology/Understanding suite: **83 passed, 1 warning**.
 - Radiology UNDERSTAND v1 Core Migration — Milestones 1–4 accepted: **872 passed, 8 warnings, 0 failures**; focused Radiology/UNDERSTAND conformance suite: **180 passed, 1 warning**.
+- Current accepted working baseline before the Multi-Engine Medical Intelligence architecture task: **950 passed, 8 warnings, 0 failures**. This documentation-only task does not change or re-run that baseline.
 
 Earlier controlled and synthetic validation provides evidence across samples from:
 

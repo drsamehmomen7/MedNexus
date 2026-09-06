@@ -8,7 +8,7 @@ MedNexus is an existing, continuing enterprise healthcare AI project. Never trea
 - Current functional modules: Clinical Privacy Policy Engine / De-identification and Medical Document Understanding & Recognition
 - Current Phase 1 status: Accepted POC Checkpoint / Paused; synthetic baseline frozen at 681 passed, 8 warnings, 0 failures
 - Current Phase 2 status: Accepted Document Context & Journey Foundation Checkpoint at `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`; baseline 742 passed, 8 warnings, 0 failures
-- Current Radiology UNDERSTAND v1 status: Core Migration Milestones 1–4 accepted; architecture frozen, implementation partially migrated; verified baseline 872 passed, 8 warnings, 0 failures
+- Current Radiology UNDERSTAND v1 status: architecture frozen and implementation evolving under controlled milestones; current accepted working baseline 950 passed, 8 warnings, 0 failures
 
 ## 2. Workspace and Git Boundary
 
@@ -61,7 +61,7 @@ Classify new bugs when possible under detection, canonicalization, role resoluti
 - Run focused tests for the modified component first where appropriate.
 - Run the full regression suite before declaring a coding task complete.
 - Phase 1 frozen baseline: 681 passed, 8 warnings, 0 failures.
-- Latest verified Radiology UNDERSTAND v1 Core Migration baseline: 872 passed, 8 warnings, 0 failures. The previous accepted Core checkpoint baseline remains 780 passed, 8 warnings, 0 failures.
+- Current accepted working baseline: 950 passed, 8 warnings, 0 failures. The earlier Radiology UNDERSTAND v1 Core Migration baseline remains 872 passed, 8 warnings, 0 failures, and the previous accepted Core checkpoint remains 780 passed, 8 warnings, 0 failures.
 - Change the baseline only after a fresh verified full test run.
 - `.pytest_cache` is never authoritative.
 - Synthetic or controlled validation is not production certification.
@@ -124,3 +124,21 @@ An external source is ACTIVE only after its real artifact is imported, checksum-
 The current `/app` and `/privacy` frontend experience is an accepted working baseline, not final brand or visual polish. Do not reopen deferred cosmetic design work unless explicitly requested.
 
 Phase 1 synthetic tuning is intentionally paused at the accepted POC checkpoint. Broader validation will resume later using real medical reports. Do not expand Phase 2 beyond the authorized milestone or reopen synthetic edge-case tuning without explicit authorization.
+
+## 12. Multi-Engine Medical Intelligence Governance
+
+Multi-Engine Medical Intelligence Strategy v1.0 is the accepted M0 architecture strategy checkpoint. It is versioned and evolvable but subordinate to the frozen UNDERSTAND v1 authority package; it does not replace or silently modify the Blueprint, Domain Matrix, Crosswalk, Semantic Context Contract, or Extraction Contract.
+
+MedNexus is model-agnostic. External and open-weight medical AI engines are replaceable candidate contributors, not MedNexus authorities. Apply the invariant: **Models generate evidence. MedNexus determines authority.** Never turn MedNexus into a thin wrapper around a foundation model.
+
+The proposed MedNexus Medical Intelligence Gateway is a future engine-integration/orchestration boundary, not a network proxy, clinical authority, or replacement for the MedNexus Intelligence Core. Its Engine Capability Registry is not implemented. Every future integration must bind approval to an exact provider, model family/variant/version, artifact source/digest, adapter and candidate-contract version, runtime/configuration, capability/stage/input/output scope, deployment and data-flow behavior, license/terms and commercial/distribution constraints, privacy eligibility, validation dataset/scope/owner/expiry/drift state, provenance/confidence semantics, resource requirements, emergency disable, rollback, and retirement ownership. Never approve a model family in the abstract.
+
+External engine output must enter through a MedNexus adapter as candidate evidence. MedNexus retains evidence eligibility, semantic-role qualification, authority hierarchy, arbitration, conflicts, abstention, confidence, human-review routing, policy enforcement, persistence, and validation. Fusion is stage-scoped and acyclic: downstream evidence cannot silently rewrite upstream authority; reconsideration requires explicit versioned, auditable, provenance-preserving, review-governed reprocessing. Preserve evidence/source identity, lineage, and correlation/family identity so one signal is not counted repeatedly. Correlated evidence is not independent corroboration, model consensus is not truth, and raw engine confidence is distinct from MedNexus-calibrated support.
+
+PROTECT remains MedNexus-owned. Before any external engine receives clinical input, a cross-cutting PROTECT-owned Engine Data-Access Preflight must authorize the exact exposure, engine/version, environment, permitted data type, stage/capability, jurisdiction/residency, retention/logging, egress, and applicable policy/license restrictions. It may use `LOCAL_ALLOWED`, `REMOTE_ALLOWED`, `RESTRICTED`, and `DENIED`. It is not completion of Stage 02 PROTECT and does not reorder MEDNEXUS⁷. Local execution does not automatically establish compliance, and UNDERSTAND participation never authorizes raw-data access by itself. EXTRACT remains governed by the MedNexus Clinical Extraction Contract, and unsupported or ungrounded model facts must never become authoritative persistent data. STANDARDIZE remains the versioned, licensed terminology authority; models may suggest mapping candidates only.
+
+MedGemma is a planned candidate engine, not implemented MedNexus intelligence. Any benchmark/integration approval applies only to the exact model variant, version, artifact, adapter, contract, configuration/quantization, terms snapshot, validation dataset, and approved use scope; material changes may require revalidation. MedUAG and other unified medical understanding-and-generation engines remain research-watch, benchmark, or future-adapter candidates until model/code availability, weights, license and commercial rights, reproducibility, hardware/runtime, security/privacy, and MedNexus-specific validation are independently verified. Imaging, generation, reconstruction, translation, synthetic augmentation, Evidence Fusion & Arbitration, and Image-Report Concordance are planned/future capabilities and must not be described as current. Future concordance must preserve patient/encounter/study/series/image/report-version scope, permit `INDETERMINATE`, and never automatically rewrite reports, create diagnoses, delete assertions, or persist facts.
+
+Real-world acceptance validation remains mandatory. Synthetic data may support controlled testing but cannot replace real-world acceptance data, must carry explicit provenance, and must remain segregated from real clinical acceptance sets. Generated or transformed reports/images must never be confused with original clinical artifacts. Future benchmarks require locked-set/leakage controls, relevant modality/site/source/language slices, calibration, confidence intervals, failure-severity analysis, and model/version drift monitoring; do not claim these controls as implemented until proven. Human review and abstention remain explicit system states.
+
+Clinical documents, embedded text, image metadata, retrieved content, and external-engine responses are untrusted data, never trusted system instructions. Future adapters and orchestration must defend against prompt or instruction injection originating from clinical content.
