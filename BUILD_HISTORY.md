@@ -1284,3 +1284,11 @@ Further synthetic tuning is paused. Broader multilingual coverage, additional pr
 - Retained the accepted working baseline **950 passed, 8 warnings, 0 failures** without running tests. Real-world Radiology acceptance data remains the principal validation gap; provider approvals, delivery, pricing, sample counts, and acquisition outcomes were not inferred.
 - Human architecture review accepted Strategy v1.1 and the MedGemma M1.1 document as the authoritative historical record of that paused experimental checkpoint. This acceptance does not represent multi-engine runtime implementation or MedGemma integration.
 - Documentation only: no production code, frontend, test, clinical logic, threshold, reference data, model, dependency, runtime, or validation-report change.
+
+## 2026-09-08 — MedNexus UI/UX Design Blueprint v1.0 (Accepted)
+
+- Closed the M1 human design review and accepted `docs/design/MedNexus_UI_UX_Design_Blueprint_v1.0.md` as the current design blueprint. The preceding M0 architecture/documentation checkpoint remains complete at `081e8b178f63850beb18f41a09494452aeacc4fc`.
+- Accepted Mona Sans as the future principal interface/clinical-document font, subject to later acquisition from an authoritative licensed source; no font binary or dependency was added.
+- Accepted the light/Oak primary identity, restrained signature red, Radiology-first teal orientation, Public Health as the secondary flagship, MEDNEXUS⁷ unchanged, and clinical-workspace direction for UNDERSTAND and PROTECT.
+- Preserved the current frontend as the working implementation baseline. No HTML, CSS, JavaScript, route, API, backend, test, dependency, model, or clinical behavior changed.
+- Established the next active step as a visual Landing Page prototype/mockup before production frontend implementation. The later order remains UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish.

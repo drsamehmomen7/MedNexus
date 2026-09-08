@@ -123,13 +123,13 @@ An external source is ACTIVE only after its real artifact is imported, checksum-
 
 The current `/app` and `/privacy` frontend experience is an accepted working baseline, not final brand or visual polish. Do not reopen deferred cosmetic design work unless explicitly requested.
 
-The next product-design direction is planned, not implemented: light, clinical, calm, premium, professional, high-trust, spacious, simple, and broad-audience friendly, beginning with the Landing Page, Radiology UNDERSTAND, and PROTECT/DE-ID. Frontend changes require a separate explicitly authorized UI/UX task.
+MedNexus UI/UX Design Blueprint v1.0 is the accepted design direction: Mona Sans; a light/Oak primary identity; restrained signature red; Radiology visually primary; Public Health secondary; MEDNEXUS⁷ unchanged; and UNDERSTAND/PROTECT presented as clinical workspaces. Acceptance is not frontend implementation. The next active design step is a visual Landing Page prototype/mockup before production frontend work. The authorized implementation sequence remains UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish; every implementation stage requires a separate explicit task.
 
 Phase 1 synthetic tuning is intentionally paused at the accepted POC checkpoint. Broader validation will resume later using real medical reports. Do not expand Phase 2 beyond the authorized milestone or reopen synthetic edge-case tuning without explicit authorization.
 
 ## 12. Multi-Engine Medical Intelligence Governance
 
-Multi-Engine Medical Intelligence Strategy v1.1 is the current accepted architecture strategy. Strategy v1.0 remains its immutable historical accepted predecessor and M0 checkpoint. The strategy is versioned and evolvable but subordinate to the frozen UNDERSTAND v1 authority package; it does not replace or silently modify the Blueprint, Domain Matrix, Crosswalk, Semantic Context Contract, or Extraction Contract.
+Multi-Engine Medical Intelligence Strategy v1.1 is the current accepted architecture strategy, and its M0 architecture/documentation checkpoint is complete at `081e8b178f63850beb18f41a09494452aeacc4fc`. Strategy v1.0 remains its immutable historical accepted predecessor and M0 strategy checkpoint. The strategy is versioned and evolvable but subordinate to the frozen UNDERSTAND v1 authority package; it does not replace or silently modify the Blueprint, Domain Matrix, Crosswalk, Semantic Context Contract, or Extraction Contract.
 
 MedNexus is model-agnostic. External and open-weight medical AI engines are replaceable candidate contributors, not MedNexus authorities. Apply the invariant: **Models generate evidence. MedNexus determines authority.** Never turn MedNexus into a thin wrapper around a foundation model.
 

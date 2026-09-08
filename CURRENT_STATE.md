@@ -2,6 +2,12 @@
 
 **Authoritative date:** 8 September 2026
 
+## UI/UX Design Blueprint v1.0 — Accepted Design Checkpoint
+
+The M0 architecture/documentation checkpoint is complete at `081e8b178f63850beb18f41a09494452aeacc4fc`. Human design review accepted [MedNexus UI/UX Design Blueprint v1.0](docs/design/MedNexus_UI_UX_Design_Blueprint_v1.0.md) as the M1 design direction. It preserves MEDNEXUS⁷ and the frozen architecture authority while defining a Mona Sans, light/Oak, clinically readable product system with Radiology visually primary, Public Health secondary, and UNDERSTAND/PROTECT treated as clinical workspaces rather than marketing pages.
+
+No frontend HTML, CSS, JavaScript, route, API, backend, test, dependency, font, model, or clinical behavior changed in this checkpoint. The current frontend remains the working implementation baseline. The next active step is a visual Landing Page prototype/mockup for human review before production frontend implementation. The approved later order is `UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish`.
+
 ## Multi-Engine Medical Intelligence Strategy v1.1 — Accepted Architecture Checkpoint
 
 **Status:** ACCEPTED ARCHITECTURE STRATEGY CHECKPOINT — v1.1. No multi-engine runtime implementation is authorized or claimed. The current accepted [Multi-Engine Medical Intelligence Strategy v1.1](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) updates current priority, the MedGemma experiment state, hardware sequencing, UI direction, and roadmap while remaining subordinate to the frozen UNDERSTAND v1 authority package below. The accepted [Strategy v1.0 predecessor](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) remains the immutable historical M0 checkpoint.
@@ -30,7 +36,7 @@ The planned current loading path uses `AutoProcessor` and `AutoModelForImageText
 
 After a harmless smoke succeeds, the first planned clinical candidate is the previously exposed and accepted de-identified `D:\MedNexus\Validation_Input\cr_chest.pdf`; it was not opened or submitted in this task. The previously considered Open-I paired case remains blocked pending clear case-level reuse/license terms. No MIMIC-CXR material was used.
 
-The current roadmap is: M0 documentation synchronization; M1 UI/UX Design Blueprint; M2 Landing Page; M3 Radiology UNDERSTAND UX; M4 PROTECT/DE-ID UX; M5 hardware migration; M6 controlled MedGemma resumption; M7 generic engine interface; M8 MedGemma adapter; M9 real-world Native/MedGemma/Hybrid benchmark; M10 Fusion and Arbitration; M11 Imaging Intelligence; M12 Image-Report Concordance; M13 UAG-class evaluation; and M14 Radiology analytics. The UI direction is light, clinical, calm, premium, professional, high-trust, spacious, simple, and broad-audience friendly. These are planned milestones, not implementation claims.
+M0 architecture/documentation is complete and M1 UI/UX Design Blueprint v1.0 is accepted. The next active step is the visual Landing Page prototype/mockup before any production frontend implementation. The later roadmap remains: M2 Landing Page; M3 Radiology UNDERSTAND UX; M4 PROTECT/DE-ID UX; M5 hardware migration; M6 controlled MedGemma resumption; M7 generic engine interface; M8 MedGemma adapter; M9 real-world Native/MedGemma/Hybrid benchmark; M10 Fusion and Arbitration; M11 Imaging Intelligence; M12 Image-Report Concordance; M13 UAG-class evaluation; and M14 Radiology analytics. These are roadmap states, not implementation claims.
 
 ## UNDERSTAND Domain Matrix v1.0 — Frozen Architecture Authority
 
@@ -309,7 +315,7 @@ Deferred: broader real medical-report validation, additional real-report privacy
 
 ## Frontend Checkpoint
 
-The current Deep Teal Hybrid `/app` and `/privacy` experience remains the accepted working baseline until explicitly replaced. The next planned design direction is a light, clinical, calm, premium, high-trust experience; no frontend implementation is part of this documentation checkpoint.
+The current Deep Teal Hybrid `/app` and `/privacy` experience remains the accepted working implementation baseline until explicitly replaced. UI/UX Design Blueprint v1.0 is now accepted and defines the future light/Oak, Mona Sans, clinical direction; no frontend implementation is part of this documentation checkpoint. The next active step is a visual Landing Page prototype/mockup for review.
 
 ## Active Parallel Work
 
@@ -317,7 +323,7 @@ Public Health Intelligence is active parallel MedNexus work aligned to the share
 
 ## Current Near-Term Direction
 
-Follow the Strategy v1.1 sequence: UI/UX Design Blueprint, Landing Page redesign, Radiology UNDERSTAND UX redesign, PROTECT/DE-ID UX redesign, hardware migration, and only then controlled MedGemma resumption unless an earlier cloud experiment is explicitly authorized. Dataset-acquisition follow-up continues because sufficient real-world Radiology acceptance data remains the main validation constraint.
+Follow the accepted UI sequence: visual Landing Page prototype/mockup, then—only after review—UX foundation, Landing implementation, Radiology UNDERSTAND UX, PROTECT/DE-ID UX, and responsive/accessibility/regression polish. Hardware migration and controlled MedGemma resumption remain later Strategy v1.1 work unless an earlier cloud experiment is explicitly authorized. Dataset-acquisition follow-up continues because sufficient real-world Radiology acceptance data remains the main validation constraint.
 
 OCR, scanned recognition, layout vision, table extraction, advanced clinical extraction, FHIR/HL7, dashboard integration, broad synthetic tuning, and ungoverned external-model integration remain deliberately deferred.
 

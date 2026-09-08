@@ -23,6 +23,12 @@ The current implemented capabilities are **Clinical Privacy Policy Engine / De-i
 
 The [Multi-Engine Medical Intelligence Strategy v1.1](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) is the current accepted strategy and records the current priority, technical-spike checkpoint, hardware transition, UI direction, and roadmap. The accepted [Strategy v1.0 predecessor](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) remains the immutable historical M0 checkpoint. External medical AI engines may contribute candidate evidence through a future vendor-neutral Gateway, while MedNexus retains authority, policy, provenance, arbitration, clinical contracts, standardization, and persistent intelligence. The accepted strategy remains subordinate to the frozen UNDERSTAND v1 authority and does not claim runtime implementation.
 
+## UI/UX Design Blueprint v1.0
+
+The M0 architecture/documentation checkpoint is complete at `081e8b178f63850beb18f41a09494452aeacc4fc`. Human review has accepted the [MedNexus UI/UX Design Blueprint v1.0](docs/design/MedNexus_UI_UX_Design_Blueprint_v1.0.md) as the M1 design direction. It establishes a Mona Sans, light/Oak, clinically readable shared product system with Radiology visually primary, Public Health secondary, MEDNEXUS⁷ unchanged, and UNDERSTAND/PROTECT treated as clinical workspaces. No frontend implementation, route/API change, dependency, or font download is part of this checkpoint.
+
+The next active step is a visual Landing Page prototype/mockup for human review before production frontend implementation. The approved later sequence remains `UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish`.
+
 ## UNDERSTAND v1 Architecture Package
 
 The **FROZEN UNDERSTAND v1 Architecture Authority** consists of [MedNexus UNDERSTAND Domain Matrix v1.0](docs/architecture/MedNexus_UNDERSTAND_Domain_Matrix_v1.0.md), the current [MedNexus Enterprise Architecture & Engineering Blueprint v2.0](docs/architecture/MedNexus_Enterprise_Architecture_and_Engineering_Blueprint_v2.0.docx), [Architecture Crosswalk v2.0](docs/architecture/contracts/MedNexus_Architecture_Crosswalk_v2.0.md), [Clinical Semantic Context Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Semantic_Context_Contract_v0.2.md), and [Clinical Extraction Contract v0.2](docs/architecture/contracts/MedNexus_Clinical_Extraction_Contract_v0.2.md). Blueprint v1.9 and the v1.1/v0.1 contracts remain preserved architecture history. Architecture authority is not a claim of completed implementation.
@@ -52,7 +58,7 @@ Future engine approval is exact-artifact, adapter, contract, configuration, term
 
 The accepted historical [MedGemma M1.1 technical-spike checkpoint](docs/experiments/MedNexus_MedGemma_Technical_Spike_M1.1.md) is safely paused at the official Hugging Face access/terms gate; this is not an inference failure. “M1.1” is a historical experiment identifier from the prior strategy sequence, not roadmap milestone M1 of accepted Strategy v1.1; controlled MedGemma resumption is roadmap M6. No immutable revision was guessed, no GPU or runtime was measured, no model or dependency was installed locally, no clinical inference occurred, and no PHI or unopened holdout was used. `MG-RAD-CANDIDATE-v0.2` remains an experimental exact-quote, no-model-offset candidate contract with deterministic MedNexus grounding.
 
-Near-term work prioritizes a light, clinical UI/UX blueprint and redesign of the Landing, Radiology UNDERSTAND, and PROTECT experiences, followed by hardware migration and controlled MedGemma resumption. These are planned tasks, not current frontend or model capabilities.
+The light, clinical UI/UX Blueprint v1.0 is accepted, but no frontend redesign has been implemented. Near-term work now begins with a visual Landing Page prototype/mockup, followed only after review by the approved UX foundation, Landing, Radiology UNDERSTAND, PROTECT, and responsive/accessibility/regression implementation sequence. Hardware migration and controlled MedGemma resumption remain later roadmap work.
 
 ### Radiology UNDERSTAND v1 Current Baseline
 
