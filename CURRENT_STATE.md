@@ -1,20 +1,36 @@
 # MedNexus Current State
 
-**Authoritative date:** 6 September 2026
+**Authoritative date:** 8 September 2026
 
-## Multi-Engine Medical Intelligence Strategy v1.0 — Accepted Architecture Checkpoint
+## Multi-Engine Medical Intelligence Strategy v1.1 — Accepted Architecture Checkpoint
 
-**Status:** ACCEPTED ARCHITECTURE STRATEGY CHECKPOINT — v1.0. No multi-engine runtime implementation is authorized or claimed. The [Multi-Engine Medical Intelligence Strategy v1.0](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) is an additive, versioned strategy subordinate to the frozen UNDERSTAND v1 authority package below; it does not replace or modify that authority.
+**Status:** ACCEPTED ARCHITECTURE STRATEGY CHECKPOINT — v1.1. No multi-engine runtime implementation is authorized or claimed. The current accepted [Multi-Engine Medical Intelligence Strategy v1.1](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) updates current priority, the MedGemma experiment state, hardware sequencing, UI direction, and roadmap while remaining subordinate to the frozen UNDERSTAND v1 authority package below. The accepted [Strategy v1.0 predecessor](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) remains the immutable historical M0 checkpoint.
 
 MedNexus is evolving toward a model-agnostic, multi-engine clinical-intelligence platform while preserving MEDNEXUS⁷: `UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS`, with INGEST internal to UNDERSTAND. The governing principle is **“Models generate evidence. MedNexus determines authority.”** External engines remain replaceable candidate contributors; MedNexus continues to own routing, semantic roles and eligibility, privacy, arbitration, abstention, confidence, provenance, clinical contracts, terminology standardization, persistent structured data, analytics, visualization, indicators, and human-review decisions.
 
 The proposed MedNexus Medical Intelligence Gateway supplies a future vendor-neutral engine boundary and capability registry. MedGemma is a planned candidate engine only. MedUAG and the wider unified medical understanding-and-generation class remain `WATCH` / benchmark / future-adapter candidates pending independent verification of model and code availability, licensing and commercial rights, reproducibility, hardware, security/privacy, and MedNexus-specific validation. The planned MedNexus Evidence Fusion & Arbitration layer will not use model confidence or cross-engine agreement as clinical truth. Future Radiology image-report concordance remains review-oriented until clinically validated and appropriately governed.
 
+Current product concentration is `RADIOLOGY` first and `PUBLIC_HEALTH` second. Radiology should reach strong end-to-end maturity before broad multi-engine expansion to other clinical domains. The immediate acceptance constraint is insufficient authorized real-world Radiology data, not synthetic regression. Real clinical reports remain the primary acceptance benchmark; synthetic reports remain secondary for adversarial, abstention, controlled-conformance, and stress testing.
+
 The strategy now defines a cross-cutting PROTECT-owned Engine Data-Access Preflight before any external engine receives clinical input. It authorizes a specific data exposure, engine/version, execution context, and stage/capability without completing Stage 02 PROTECT or reordering MEDNEXUS⁷; local execution alone is not compliance. Future engine approvals bind to reproducible artifacts, adapters, contracts, configurations, terms, validation scope, and use scope. Fusion is stage-scoped and acyclic, with evidence lineage/correlation controls and a strict distinction between raw engine confidence and MedNexus-calibrated support. Future Image-Report Concordance has five review-safe outcomes, including `INDETERMINATE`, and cannot automatically rewrite reports or create clinical facts.
 
 PROTECT remains the MedNexus-owned policy boundary; EXTRACT remains source-grounded and terminology-independent; STANDARDIZE remains the governed terminology authority. No external engine may directly establish authoritative document identity, persistent clinical facts, privacy decisions, terminology mappings, analytics, or indicators.
 
-Current accepted working regression baseline before this architecture-only task: **950 passed, 8 warnings, 0 failures**. It was not re-run or changed. MedNexus is currently awaiting responses or approval from external real-world Radiology dataset providers; architecture work is not blocked, no provider outcome/date is inferred, and real-world Radiology data remains the primary acceptance benchmark.
+Current accepted working regression baseline: **950 passed, 8 warnings, 0 failures**. It was not re-run or changed by this documentation task. MedNexus is awaiting responses or sample information from external real-world Radiology dataset providers; no approval, delivery, price, sample count, or acquisition result is inferred.
+
+## MedGemma Technical Spike M1.1 — Safely Paused
+
+The accepted historical [M1.1 checkpoint](docs/experiments/MedNexus_MedGemma_Technical_Spike_M1.1.md) records `google/medgemma-1.5-4b-it`, official version `1.5.0`, as the exact planned candidate model. “M1.1” is the historical experiment identifier from the prior strategy sequence, not milestone M1 in the accepted Strategy v1.1 roadmap; controlled resumption is roadmap M6. The experiment is **safely paused at the Hugging Face access/terms gate**; this is not an inference failure. Authenticated access had not completed, so no immutable revision SHA was obtained or guessed.
+
+No Colab GPU was allocated, model loaded, clinical inference run, local model/dependency installed, PHI used, or unopened holdout inspected. A100/L4 availability, CUDA, PyTorch, Transformers, resolved model/processor classes, VRAM, and latency remain unmeasured. No fallback model, quantization, dtype, GPU, or unofficial checkpoint was substituted.
+
+The planned current loading path uses `AutoProcessor` and `AutoModelForImageTextToText`, pins the future immutable revision, loads BF16 with `device_map="auto"`, and uses deterministic `do_sample=False`; it remains unexecuted. Secure resumption requires accepted HAI-DEF terms, a fine-grained read-only token stored only as Colab Secret `HF_TOKEN`, and complete model/runtime/terms provenance.
+
+`MG-RAD-CANDIDATE-v0.2` remains experimental and unintegrated. It returns exact evidence quotes without model-calculated offsets. MedNexus grounds each quote against the exact canonical source string as `GROUNDED`, `GROUNDING_FAILURE`, or `AMBIGUOUS_GROUNDING`, with no Unicode, whitespace, punctuation, or newline normalization and no silent quote repair or first-occurrence selection. Candidate roles remain bounded to `CURRENT_STUDY`, `RECOMMENDATION`, `COMPARISON`, `HISTORY`, `FINDINGS`, and `UNRESOLVED`.
+
+After a harmless smoke succeeds, the first planned clinical candidate is the previously exposed and accepted de-identified `D:\MedNexus\Validation_Input\cr_chest.pdf`; it was not opened or submitted in this task. The previously considered Open-I paired case remains blocked pending clear case-level reuse/license terms. No MIMIC-CXR material was used.
+
+The current roadmap is: M0 documentation synchronization; M1 UI/UX Design Blueprint; M2 Landing Page; M3 Radiology UNDERSTAND UX; M4 PROTECT/DE-ID UX; M5 hardware migration; M6 controlled MedGemma resumption; M7 generic engine interface; M8 MedGemma adapter; M9 real-world Native/MedGemma/Hybrid benchmark; M10 Fusion and Arbitration; M11 Imaging Intelligence; M12 Image-Report Concordance; M13 UAG-class evaluation; and M14 Radiology analytics. The UI direction is light, clinical, calm, premium, professional, high-trust, spacious, simple, and broad-audience friendly. These are planned milestones, not implementation claims.
 
 ## UNDERSTAND Domain Matrix v1.0 — Frozen Architecture Authority
 
@@ -293,17 +309,17 @@ Deferred: broader real medical-report validation, additional real-report privacy
 
 ## Frontend Checkpoint
 
-The current Deep Teal Hybrid `/app` and `/privacy` experience is an accepted working baseline. Minor visual refinements are intentionally deferred.
+The current Deep Teal Hybrid `/app` and `/privacy` experience remains the accepted working baseline until explicitly replaced. The next planned design direction is a light, clinical, calm, premium, high-trust experience; no frontend implementation is part of this documentation checkpoint.
 
 ## Active Parallel Work
 
 Public Health Intelligence is active parallel MedNexus work aligned to the shared journey while retaining domain-specific extraction schemas, analytics, dashboards, and indicators. It is not declared production-complete.
 
-## Next Development Direction
+## Current Near-Term Direction
 
-**Phase 2 Document Context Validation — Round 1.** Validate the common context contract and Radiology extension across a small representative set before adding meaningful context packages for other domains.
+Follow the Strategy v1.1 sequence: UI/UX Design Blueprint, Landing Page redesign, Radiology UNDERSTAND UX redesign, PROTECT/DE-ID UX redesign, hardware migration, and only then controlled MedGemma resumption unless an earlier cloud experiment is explicitly authorized. Dataset-acquisition follow-up continues because sufficient real-world Radiology acceptance data remains the main validation constraint.
 
-OCR, scanned recognition, layout vision, table extraction, universal or ML/transformer/LLM classifiers, external classification, embeddings, advanced clinical extraction, FHIR/HL7, dashboard integration, and broad synthetic tuning remain deliberately deferred.
+OCR, scanned recognition, layout vision, table extraction, advanced clinical extraction, FHIR/HL7, dashboard integration, broad synthetic tuning, and ungoverned external-model integration remain deliberately deferred.
 
 ## Privacy Handoff UX Correction
 
