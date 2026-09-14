@@ -1,6 +1,6 @@
 # MRJ Current State
 
-**Authoritative date:** 13 September 2026
+**Authoritative date:** 15 September 2026
 
 ## MRJ Phase 0 public identity and documentation
 
@@ -18,11 +18,17 @@ Approved language:
 
 The public journey remains **UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS**, with INGEST internal to UNDERSTAND. Radiology remains primary and Public Health secondary. Recognition, privacy processing, contracts, policies, provenance, and external-engine candidate-only authority are unchanged. PROTECT and STANDARDIZE ownership stays with the platform; this rebrand implements no future stage or multi-engine runtime.
 
-Approved MRJ icons are installed at `frontend/assets/brand/mrj/`; original supplied bytes are preserved. Native typography provides the wordmark. Public titles, labels, and branding on `/app`, `/understanding`, and `/privacy` now use MRJ. Old raster branding is suppressed, not edited. This is identity migration, not acceptance of the uncommitted frontend's visual design. Technical policy/provenance values can still contain MedNexus and remain unmodified.
+Approved MRJ icons are installed at `frontend/assets/brand/mrj/`; original supplied bytes are preserved. Native typography provides the wordmark. Public titles, labels, and branding on `/app`, `/understanding`, and `/privacy` use MRJ. Old raster branding remains unreferenced and unedited; `/app` domain visuals are brand-neutral native SVG. Technical policy/provenance values can still contain MedNexus and remain unmodified.
 
-Accepted checkpoints remain M0 `081e8b178f63850beb18f41a09494452aeacc4fc`, design `b64a8ee`, and Radiology `31b22ab`. The accepted pre-migration working regression baseline is **950 passed, 8 warnings, 0 failures**. Phase 0 verification is recorded in the new BUILD_HISTORY entry; it does not rewrite historical baselines.
+Accepted checkpoints remain M0 `081e8b178f63850beb18f41a09494452aeacc4fc`, design `b64a8ee`, Radiology `31b22ab`, and MRJ identity/website baseline `9e96656`. The current freshly verified regression baseline is **950 passed, 8 warnings, 0 failures**.
 
-The next visual work is an explicitly authorized MRJ website review/prototype. Preserve the sequence UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish. No naming exploration, logo redesign, or internal-identifier migration is authorized.
+MRJ Website Experience / Cinematic Hero V1 is closed. The immediate product focus returns to core MRJ clinical validation. Later UNDERSTAND, PROTECT, and responsive/accessibility visual work remains separately authorized; no naming exploration, logo redesign, or internal-identifier migration is authorized.
+
+## MRJ Website Experience / Cinematic Hero V1 — Closed
+
+The accepted `/app` renderer uses `frontend/assets/video/mrj-kling-cinematic.mp4` as the primary cinematic Hero. The full native SVG/Web-Animations scene remains preserved for direct rollback and automatic fallback. Reduced-motion environments receive its static final composition; media/autoplay failure selects the native renderer; no-JavaScript presentation retains the meaningful static native scene. The video is decorative, muted, inline, control-free, one-shot, viewport-paused while incomplete, and held on its final frame.
+
+Desktop navigation is **How MRJ Works → Radiology → Public Health → Privacy & Governance**. Page order is **Hero → MRJ Journey → Radiology/Public Health → Multi-Engine Intelligence → Governance → remaining value and closing sections**. The Hero has one enlarged **Explore the Journey** action targeting `#journey`; local native SVG illustrations distinguish Radiology and Public Health without exposing legacy branding. Final desktop container geometry removes the unnecessary top band and gives the headline/video stronger first-viewport presence while preserving complete video content and bounded tablet/mobile behavior. No frontend dependency, route, API, backend, clinical, `/understanding`, or `/privacy` behavior changed. Closure verification: focused homepage **2 passed, 48 deselected, 1 warning**; full regression **950 passed, 8 warnings, 0 failures**.
 
 ## Prior checkpoint records — historical context
 
@@ -62,7 +68,7 @@ The planned current loading path uses `AutoProcessor` and `AutoModelForImageText
 
 After a harmless smoke succeeds, the first planned clinical candidate is the previously exposed and accepted de-identified `D:\MedNexus\Validation_Input\cr_chest.pdf`; it was not opened or submitted in this task. The previously considered Open-I paired case remains blocked pending clear case-level reuse/license terms. No MIMIC-CXR material was used.
 
-M0 architecture/documentation is complete and M1 UI/UX Design Blueprint v1.0 is accepted. The next active step is the visual Landing Page prototype/mockup before any production frontend implementation. The later roadmap remains: M2 Landing Page; M3 Radiology UNDERSTAND UX; M4 PROTECT/DE-ID UX; M5 hardware migration; M6 controlled MedGemma resumption; M7 generic engine interface; M8 MedGemma adapter; M9 real-world Native/MedGemma/Hybrid benchmark; M10 Fusion and Arbitration; M11 Imaging Intelligence; M12 Image-Report Concordance; M13 UAG-class evaluation; and M14 Radiology analytics. These are roadmap states, not implementation claims.
+M0 architecture/documentation and M1 UI/UX Design Blueprint v1.0 remain accepted; the Landing/Cinematic Hero V1 implementation stage is now closed. The immediate product focus returns to core MRJ clinical validation. Later Radiology UNDERSTAND UX, PROTECT/DE-ID UX, responsive/accessibility work, hardware migration, controlled MedGemma resumption, generic engine integration, benchmarking, fusion, imaging, concordance, UAG-class evaluation, and Radiology analytics remain separately authorized roadmap states, not implementation claims.
 
 ## UNDERSTAND Domain Matrix v1.0 — Frozen Architecture Authority
 
@@ -253,7 +259,7 @@ Progressive Result Reveal is frontend presentation of a completed authoritative 
 
 ## Phase 2 Product Integration
 
-`/understanding` is the active standalone Medical Document Understanding & Recognition POC. It supports pasted text and existing TXT/DOCX/text-based PDF ingestion, displays recognition, confidence, sections, evidence, symbolic route recommendations and warnings, and treats UNKNOWN/manual review as a valid outcome. `/app` now orders its capability entry points as Document Recognition → Clinical Privacy Policy Engine → Clinical Extraction → Public Health Intelligence.
+`/understanding` is the active standalone Medical Document Understanding & Recognition POC. It supports pasted text and existing TXT/DOCX/text-based PDF ingestion, displays recognition, confidence, sections, evidence, symbolic route recommendations and warnings, and treats UNKNOWN/manual review as a valid outcome. `/app` presents the MRJ Journey first after its Hero, followed by Radiology and Public Health as the primary and strategic application domains.
 
 Frontend integration verification: focused Understanding/API/frontend suite **37 passed, 1 warning**; full repository regression **718 passed, 8 warnings, 0 failures**.
 
@@ -337,11 +343,11 @@ Progressive protected-result presentation now paints its first intact chunk imme
 
 Correction verification: focused suite **78 passed, 8 warnings**; full repository regression **742 passed, 8 warnings, 0 failures**. Live Arabic and English browser journeys preserved their source filenames, landed at `#workspace`, completed the handoff lifecycle, and produced authoritative protected output without re-upload.
 
-Deferred: broader real medical-report validation, additional real-report privacy edge cases, broader multilingual person/clinician coverage, OCR, production hardening, performance/load validation, formal benchmark expansion, and remaining frontend visual refinements. These are not blockers for this POC checkpoint.
+Deferred: broader real medical-report validation, additional real-report privacy edge cases, broader multilingual person/clinician coverage, OCR, production hardening, performance/load validation, formal benchmark expansion, and visual work outside the closed Landing V1 scope. These are not blockers for this POC checkpoint.
 
 ## Frontend Checkpoint
 
-The current Deep Teal Hybrid `/app` and `/privacy` experience remains the accepted working implementation baseline until explicitly replaced. UI/UX Design Blueprint v1.0 is now accepted and defines the future light/Oak, Mona Sans, clinical direction; no frontend implementation is part of this documentation checkpoint. The next active step is a visual Landing Page prototype/mockup for review.
+The light, warm-ivory MRJ `/app` Website Experience / Cinematic Hero V1 is the accepted Landing implementation baseline. Its cinematic MP4 is primary and its complete native Hero remains the accessibility/error/no-JavaScript fallback. `/understanding` and `/privacy` retain their existing functional working baselines and were not redesigned by this closure.
 
 ## Active Parallel Work
 
@@ -349,7 +355,7 @@ Public Health Intelligence is active parallel MedNexus work aligned to the share
 
 ## Current Near-Term Direction
 
-Follow the accepted UI sequence: visual Landing Page prototype/mockup, then—only after review—UX foundation, Landing implementation, Radiology UNDERSTAND UX, PROTECT/DE-ID UX, and responsive/accessibility/regression polish. Hardware migration and controlled MedGemma resumption remain later Strategy v1.1 work unless an earlier cloud experiment is explicitly authorized. Dataset-acquisition follow-up continues because sufficient real-world Radiology acceptance data remains the main validation constraint.
+Return to core MRJ clinical validation after the closed Landing V1 checkpoint. Radiology UNDERSTAND UX, PROTECT/DE-ID UX, and broader responsive/accessibility polish require explicit later authorization. Hardware migration and controlled MedGemma resumption remain later Strategy v1.1 work unless an earlier cloud experiment is explicitly authorized. Dataset-acquisition follow-up continues because sufficient real-world Radiology acceptance data remains the main validation constraint.
 
 OCR, scanned recognition, layout vision, table extraction, advanced clinical extraction, FHIR/HL7, dashboard integration, broad synthetic tuning, and ungoverned external-model integration remain deliberately deferred.
 

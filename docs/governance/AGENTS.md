@@ -141,9 +141,9 @@ Authoritative terminology distributions and normalized local reference stores be
 
 An external source is ACTIVE only after its real artifact is imported, checksum-verified, normalized and explicitly activated. Referenced identifiers from an inactive terminology (for example SNOMED codes carried by DICOM DCMR) remain provenance mappings, not active terminology concepts. Frozen validation must remain closed until the authorized reference-population set is complete.
 
-The current `/app` and `/privacy` frontend experience is an accepted working baseline, not final brand or visual polish. Do not reopen deferred cosmetic design work unless explicitly requested.
+MRJ Website Experience / Cinematic Hero V1 is the accepted `/app` presentation baseline. Its primary renderer is `frontend/assets/video/mrj-kling-cinematic.mp4`; the complete native SVG/Web-Animations Hero must remain available for rollback, reduced-motion static presentation, video/autoplay failure, and no-JavaScript presentation. Preserve the accepted navigation order, Hero → Journey → Radiology/Public Health hierarchy, single `#journey` Hero CTA, local brand-neutral domain illustrations, and unclipped warm-ivory composition. Do not reopen Landing/Hero V1 without explicit authorization. `/understanding` and `/privacy` retain their existing functional working baselines.
 
-MedNexus UI/UX Design Blueprint v1.0 retains its accepted structural guidance and is qualified by the MRJ identity decision above. Its former branding is historical. Current uncommitted UI work is preserved, not declared visually accepted by this migration. Further visual work requires separate authorization; preserve UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish.
+MedNexus UI/UX Design Blueprint v1.0 retains its accepted structural guidance and is qualified by the MRJ identity decision and the accepted Landing V1 implementation above. Its former branding is historical. Further UNDERSTAND, PROTECT, or responsive/accessibility visual work requires separate authorization.
 
 Phase 1 synthetic tuning is intentionally paused at the accepted POC checkpoint. Broader validation will resume later using real medical reports. Do not expand Phase 2 beyond the authorized milestone or reopen synthetic edge-case tuning without explicit authorization.
 

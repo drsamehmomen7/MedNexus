@@ -20,7 +20,7 @@ Approved language:
 - Understand it. Protect it. Structure it. Analyze it. Measure what matters.
 - REPORT | PATHWAY | OUTCOME
 
-The approved icon is installed unchanged from the owner-supplied MRJ pack. The public wordmark is native text: MRJ / Medical Report Journey. Public identity is migrated on `/app`, `/understanding`, and `/privacy`; larger legacy branded illustrations are suppressed pending later visual work. Existing uncommitted UI implementation is preserved and is not declared an accepted visual checkpoint.
+The approved icon is installed unchanged from the owner-supplied MRJ pack. The public wordmark is native text: MRJ / Medical Report Journey. Public identity is migrated on `/app`, `/understanding`, and `/privacy`. Legacy branded raster artwork remains unreferenced; the accepted `/app` domain visuals are brand-neutral native SVG illustrations.
 
 ## Overview
 
@@ -45,7 +45,13 @@ The [Multi-Engine Medical Intelligence Strategy v1.1](docs/architecture/MedNexus
 
 The M0 architecture/documentation checkpoint is complete at `081e8b178f63850beb18f41a09494452aeacc4fc`. Human review accepted the [MedNexus UI/UX Design Blueprint v1.0](docs/design/MedNexus_UI_UX_Design_Blueprint_v1.0.md) as the M1 design direction. That documentation-only checkpoint established Mona Sans, light/Oak reference tokens, Radiology-first hierarchy, Public Health secondary, the seven stages and clinical workspaces. The 13 September MRJ decision supersedes its public brand identity; it does not retroactively claim that the earlier checkpoint implemented UI changes.
 
-The next visual step is MRJ website review/prototyping under a separately authorized task. The working tree already contains uncommitted UI implementation; Phase 0 changes only public identity and copy. The approved later sequence remains `UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish`.
+The Landing implementation stage is now complete as **MRJ Website Experience / Cinematic Hero V1**. Later UNDERSTAND, PROTECT, and responsive/accessibility refinements remain separately authorized work; the immediate product focus returns to core MRJ clinical validation.
+
+### MRJ Website Experience / Cinematic Hero V1 — Closed
+
+`/app` uses `frontend/assets/video/mrj-kling-cinematic.mp4` as its primary warm-ivory cinematic Hero renderer. The complete native SVG/Web-Animations Hero remains available as the renderer fallback and rollback path. Reduced-motion users receive the static native final scene; video load/autoplay failure activates the native renderer; without JavaScript, the static native composition remains visible. The video plays muted and inline once, pauses while offscreen, and holds its final frame.
+
+The final navigation order is **How MRJ Works → Radiology → Public Health → Privacy & Governance**. The landing sequence is **Hero → MRJ Journey → Radiology/Public Health → Multi-Engine Intelligence → Governance → value/closing sections**. The Journey retains all seven stages and is the single enlarged Hero CTA destination. Radiology and Public Health use local brand-neutral SVG domain illustrations. Desktop top whitespace was removed at the container-geometry source, and copy/video scale now uses the first viewport deliberately without changing backend, route, API, clinical, `/understanding`, or `/privacy` behavior. No frontend dependency was added. Fresh closure regression: **950 passed, 8 warnings, 0 failures**.
 
 ## UNDERSTAND v1 Architecture Package
 
@@ -76,7 +82,7 @@ Future engine approval is exact-artifact, adapter, contract, configuration, term
 
 The accepted historical [MedGemma M1.1 technical-spike checkpoint](docs/experiments/MedNexus_MedGemma_Technical_Spike_M1.1.md) is safely paused at the official Hugging Face access/terms gate; this is not an inference failure. “M1.1” is a historical experiment identifier from the prior strategy sequence, not roadmap milestone M1 of accepted Strategy v1.1; controlled MedGemma resumption is roadmap M6. No immutable revision was guessed, no GPU or runtime was measured, no model or dependency was installed locally, no clinical inference occurred, and no PHI or unopened holdout was used. `MG-RAD-CANDIDATE-v0.2` remains an experimental exact-quote, no-model-offset candidate contract with deterministic MRJ grounding.
 
-The UI/UX Blueprint v1.0 retains its accepted structural guidance, with MRJ identity superseding its former MedNexus branding. Current uncommitted UI work is preserved; further visual implementation follows separately authorized UX foundation, Landing, Radiology UNDERSTAND, PROTECT, and responsive/accessibility/regression stages. Hardware migration and controlled MedGemma resumption remain later roadmap work.
+The UI/UX Blueprint v1.0 retains its accepted structural guidance, with MRJ identity superseding its former MedNexus branding and the accepted Cinematic Hero V1 closure qualifying its earlier pre-implementation Landing assumptions. Landing V1 is complete; further UNDERSTAND, PROTECT, and responsive/accessibility work requires separate authorization. Hardware migration and controlled MedGemma resumption remain later roadmap work.
 
 ### Radiology UNDERSTAND v1 Current Baseline
 
@@ -196,7 +202,7 @@ The frontend includes a reusable Progressive Result Reveal convention for substa
 - `/app` — MRJ Medical Report Journey homepage and seven-stage product journey.
 - `/privacy` — functional Clinical Privacy Policy Engine POC.
 
-The accepted frontend checkpoint and the current uncommitted UI changes are distinct. Phase 0 migrates public identity while preserving those changes for review; it is not final visual acceptance. Public Health Intelligence is active parallel domain work aligned to the shared document journey; it is not represented as production-complete.
+MRJ Website Experience / Cinematic Hero V1 is the accepted `/app` presentation baseline. This visual checkpoint does not change or certify backend/clinical behavior. Public Health Intelligence is active parallel domain work aligned to the shared document journey; it is not represented as production-complete.
 
 ---
 
@@ -244,6 +250,7 @@ Accepted checkpoint baselines:
 - Reference Model Foundation v1 (uncommitted review state): **764 passed, 8 warnings, 0 failures**; focused reference/Radiology/Understanding suite: **83 passed, 1 warning**.
 - Radiology UNDERSTAND v1 Core Migration — Milestones 1–4 accepted: **872 passed, 8 warnings, 0 failures**; focused Radiology/UNDERSTAND conformance suite: **180 passed, 1 warning**.
 - Current accepted working baseline before the Multi-Engine Medical Intelligence architecture task: **950 passed, 8 warnings, 0 failures**. This documentation-only task does not change or re-run that baseline.
+- MRJ Website Experience / Cinematic Hero V1 closure: **950 passed, 8 warnings, 0 failures** in a fresh full regression; focused homepage suite: **2 passed, 48 deselected, 1 warning**.
 
 Earlier controlled and synthetic validation provides evidence across samples from:
 
@@ -261,7 +268,7 @@ Earlier controlled and synthetic validation provides evidence across samples fro
 
 The current synthetic POC acceptance checkpoint is complete. Broader real medical-document validation is intentionally deferred and is expected to reveal additional cases. This checkpoint does not establish clinical or production certification.
 
-The immediate roadmap is the Strategy v1.1 UI/UX and hardware-transition sequence, followed by controlled MedGemma resumption and later generic engine, adapter, benchmark, fusion, imaging, concordance, UAG-class, and Radiology analytics milestones. None is authorized by documentation alone. Real-world Radiology acceptance data remains the major unresolved validation requirement. OCR, scanned-document recognition, layout vision, advanced clinical extraction, and broad synthetic classifier tuning remain deliberately deferred. Known technical debt is tracked in `backend/TECH_DEBT.md`.
+Landing/Cinematic Hero V1 is closed. The immediate product focus returns to core MRJ clinical validation, with sufficient authorized real-world Radiology acceptance data still the major unresolved validation requirement. Later workspace UI, hardware transition, controlled MedGemma resumption, generic engine, adapter, benchmark, fusion, imaging, concordance, UAG-class, and Radiology analytics milestones require separate authorization. OCR, scanned-document recognition, layout vision, advanced clinical extraction, and broad synthetic classifier tuning remain deliberately deferred. Known technical debt is tracked in `backend/TECH_DEBT.md`.
 
 ## Latest Privacy Handoff Correction
 

@@ -8,7 +8,9 @@ The medical report is the hero of the platform. Approved language is: **Every Me
 
 The public wordmark is native typography: **MRJ / Medical Report Journey**. Use only the approved icon files installed unchanged under `frontend/assets/brand/mrj/`. Do not redraw, trace, recolor or generate the icon. MRJ palette direction is charcoal/near-black, muted teal, warm sand/beige and cream/ivory; no new exact color or font decision is invented in Phase 0. Mona Sans/readability and the structural workspace principles remain in place. The EdgeCase reference values below are historical reference evidence, not new MRJ brand approval. Former signature-red, public superscript, logo and slogan prescriptions do not override this update.
 
-The seven-stage journey, Radiology-first priority, Public Health secondary role and clinical workspace boundaries remain unchanged. Frozen MedNexus-named architecture governs MRJ. Existing uncommitted UI work is preserved; this public-identity synchronization is not a new visual acceptance. Larger old branded illustrations are temporarily suppressed, pending separate MRJ website visual work.
+The seven-stage journey, Radiology-first priority, Public Health secondary role and clinical workspace boundaries remain unchanged. Frozen MedNexus-named architecture governs MRJ. Larger old branded illustrations remain unreferenced and unedited.
+
+**Landing implementation closure — 15 September 2026:** Human review accepted MRJ Website Experience / Cinematic Hero V1 as the current `/app` presentation. The owner-supplied Kling-generated MP4 at `frontend/assets/video/mrj-kling-cinematic.mp4` is the primary decorative Hero renderer; the complete native SVG/Web-Animations scene remains preserved for rollback, reduced-motion static display, media/autoplay failure, and no-JavaScript presentation. This accepted implementation qualification supersedes the earlier pre-implementation assumption that `/app` would not depend on a cinematic primary renderer. It does not alter clinical workspace, backend, route, API, or architecture authority.
 
 The remaining token proposals and original design sections below are retained for continuity, subject to this identity update.
 
@@ -347,25 +349,24 @@ The landing scale adapts the verified EdgeCase hierarchy without automatically c
 - Keep the structural hero hierarchy; use native MRJ identity with “Every Medical Report Has a Journey.” and “From Medical Report to Measurable Indicator.” Existing token proposals do not authorize a new MRJ visual redesign.
 - Core message: understand medical documents and imaging, protect sensitive clinical data, and transform evidence into structured intelligence.
 - Radiology is the primary near-term emphasis; Public Health is the secondary strategic vertical.
-- Maximum two CTAs: **Understand a Document** (`/understanding`) and **Protect Clinical Data** (`/privacy`).
-- The current hero video is not a structural requirement. Use the verified EdgeCase hero spacing rhythm and strong type-to-copy contrast without copying its illustration or product composition.
+- Current accepted CTA: **Explore the Journey** (`#journey`). Do not create a second Hero action without a successor review.
+- The accepted primary visual is the warm-ivory integrated cinematic MP4 renderer described in the closure note above. It plays once without controls or looping and holds the completed scene. The complete native renderer remains the required accessibility/failure/rollback path.
+- Desktop composition begins directly below the header with intentional minimal spacing, stronger editorial type, and a contained 16:9 visual that preserves the complete report → MRJ → measurable-indicator story. Mobile retains copy-first stacking and bounded scale.
 
-### Section 2 — Two flagship domains
-
-1. **Radiology Intelligence** — first and visually primary. Clearly distinguish implemented Radiology UNDERSTAND capabilities from future image intelligence, extraction, and concordance.
-2. **Public Health Intelligence** — second. Describe the active strategic track without implying production completion or a live workspace where none exists.
-
-Use the verified supporting teal for Radiology and the compatible MRJ Public Health green extension. Both remain recognizably part of the same Oak/Mona system.
-
-### Section 3 — MRJ seven-stage journey
+### Section 2 — MRJ seven-stage journey
 
 Present the complete public journey in order:
 
 `UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS`
 
-Use a compact horizontal sequence that reflows vertically on small screens. Show current availability explicitly: UNDERSTAND and PROTECT are current capabilities; subsequent stages must retain accurate status. Do not use seven unrelated colors or the existing cinematic scroll-stage treatment.
+Use a compact horizontal sequence that reflows appropriately on small screens. Show current availability explicitly: UNDERSTAND and PROTECT are current capabilities; subsequent stages must retain accurate status. Do not use seven unrelated colors. The Journey is the first content section immediately after the Hero.
 
-On mobile, use the screenshot-validated single-column rhythm and clear section separation rather than compressing the seven stages into unreadable horizontal tiles.
+### Section 3 — Two flagship domains
+
+1. **Radiology Intelligence** — first and visually primary. Clearly distinguish implemented Radiology UNDERSTAND capabilities from future image intelligence, extraction, and concordance.
+2. **Public Health Intelligence** — second. Describe the active strategic track without implying production completion or a live workspace where none exists.
+
+Use the verified supporting teal for Radiology and the compatible MRJ Public Health green extension. Both remain recognizably part of the same Oak/Mona system. Brand-neutral native SVG illustrations provide a radiology scan/report scene and a population-health globe/indicator scene; legacy branded raster artwork is not rendered. The sibling cards follow the Journey and stack with illustration-first composition on mobile.
 
 ### Section 4 — Multi-Engine Intelligence
 
@@ -634,7 +635,7 @@ The active Privacy page is currently a large monolithic file containing embedded
 No implementation is authorized by this blueprint. If approved, use this order:
 
 1. **UX-FOUNDATION** — introduce shared visual tokens and a reusable shell; establish accessible primitives without changing page contracts.
-2. **LANDING** — redesign `/app`; preserve route truth and capability status.
+2. **LANDING — COMPLETE** — `/app` is closed at MRJ Website Experience / Cinematic Hero V1; route truth and capability status remain preserved.
 3. **UNDERSTAND** — redesign `/understanding`; retain authoritative context interpretation and journey behavior.
 4. **PROTECT** — redesign `/privacy`; replace the raster-hotspot presentation and separate presentation code within the preservation boundary.
 5. **POLISH** — verify responsive behavior, keyboard/accessibility behavior, reduced motion, visual consistency, and full regression.
@@ -648,12 +649,12 @@ Each stage requires focused browser review and relevant automated tests before a
 - The system reads as light, clinical, premium, calm, spacious, and high-trust.
 - Mona Sans is the principal MRJ visual, interface, and clinical-document font, sourced later through an authoritative licensed distribution.
 - Oak/light is the primary visual identity; the Ink palette remains reference or optional future-theme material.
-- Major black, dark, cinematic, glow, and neon surfaces are removed from the near-term redesign.
+- Major black, dark, cyber-security, glow, and neon surfaces are excluded. The accepted `/app` cinematic video remains integrated into the light warm-ivory product surface.
 - Radiology is clearly primary and Public Health clearly secondary without fragmenting the brand.
 - MRJ seven-stage journey remains intact and is presented as one coherent journey rather than seven visual identities.
 - Implemented, planned, candidate, and research-watch capabilities are visually distinguishable.
 - Clinical workspaces prioritize readability and stable results over animation.
-- No page depends on cinematic video or gaming/cyber-security cues.
+- Clinical workspaces do not depend on cinematic video. `/app` may use its accepted cinematic renderer only with the preserved static native, reduced-motion, no-JavaScript, and media-failure fallbacks.
 - One shared shell and token language can serve all three routes.
 - A broad-audience user can identify the page purpose and primary action within approximately five seconds.
 - Verified EdgeCase reference values and MRJ adaptation decisions remain explicitly distinguishable.
@@ -693,4 +694,4 @@ Each stage requires focused browser review and relevant automated tests before a
 
 ## 16. Review decision
 
-Human design review accepted this document as **MedNexus UI/UX Design Blueprint v1.0** on 2026-09-08. The 2026-09-13 public-identity note qualifies its current use for MRJ without renaming this accepted artifact. Acceptance establishes the design direction and implementation guardrails; it does not implement or authorize production frontend, presentation refactor, route, API, clinical, dependency, or font changes. The next step is a visual Landing Page prototype/mockup for review before production frontend implementation.
+Human design review accepted this document as **MedNexus UI/UX Design Blueprint v1.0** on 2026-09-08. The 2026-09-13 public-identity note qualifies its current use for MRJ without renaming this accepted artifact. On 2026-09-15, human review accepted and closed MRJ Website Experience / Cinematic Hero V1 as the Landing implementation qualification recorded above. Landing closure changes presentation only: backend, route, API, clinical logic, architecture authority, and dependency state remain unchanged. The next product focus returns to core MRJ clinical validation; later UNDERSTAND, PROTECT, and broad responsive/accessibility refinements require separate authorization.
