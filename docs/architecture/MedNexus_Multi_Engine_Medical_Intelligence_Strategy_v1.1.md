@@ -2,6 +2,8 @@
 
 ## Version 1.1
 
+**Public identity clarification — 13 September 2026:** MedNexus is now **MRJ — Medical Report Journey**. The report-centered product narrative is **REPORT | PATHWAY | OUTCOME**. The original acceptance date and strategy version below are preserved. This editorial identity synchronization changes no technical architecture, planned engine/component name, stage ownership, runtime status, safeguard, or frozen contract. MedNexus-named frozen artifacts continue to govern MRJ; their filenames, links and identifiers are intentionally retained.
+
 **Status:** ACCEPTED ARCHITECTURE STRATEGY CHECKPOINT — v1.1
 
 **Date:** 8 September 2026
@@ -16,15 +18,15 @@ All safety, governance, privacy, provenance, validation, audit, and clinical-con
 
 ## 1. Strategic decision
 
-MedNexus is evolving into a model-agnostic, multi-engine clinical intelligence platform without becoming a thin wrapper around one model, vendor, or research system.
+MRJ is evolving into a model-agnostic, multi-engine clinical intelligence platform without becoming a thin wrapper around one model, vendor, or research system.
 
-> **Models generate evidence. MedNexus determines authority.**
+> **Models generate evidence. MRJ determines authority.**
 
-External engines may contribute candidate semantic interpretations, document understanding, structured extraction, imaging observations, multimodal reasoning, report generation, reconstruction, enhancement, translation, synthetic augmentation, or other medically useful evidence. MedNexus retains authority over context, evidence eligibility, orchestration, routing, validation, provenance, source hierarchy, arbitration, conflicts, abstention, human review, privacy and policy, extraction contracts, terminology governance, persistent structured clinical data, longitudinal intelligence, analytics, visualization, and indicators.
+External engines may contribute candidate semantic interpretations, document understanding, structured extraction, imaging observations, multimodal reasoning, report generation, reconstruction, enhancement, translation, synthetic augmentation, or other medically useful evidence. MRJ retains authority over context, evidence eligibility, orchestration, routing, validation, provenance, source hierarchy, arbitration, conflicts, abstention, human review, privacy and policy, extraction contracts, terminology governance, persistent structured clinical data, longitudinal intelligence, analytics, visualization, and indicators.
 
 The existing reference-driven principle extends to every external and image-derived candidate:
 
-> **Reference knowledge tells MedNexus what concepts may mean; document structure and semantic context tell it what those concepts mean here; MedNexus reasoning decides what is authoritative for this document.**
+> **Reference knowledge tells MRJ what concepts may mean; document structure and semantic context tell it what those concepts mean here; MRJ reasoning decides what is authoritative for this document.**
 
 Fluency, model confidence, multimodality, or agreement between engines does not independently establish clinical truth.
 
@@ -37,11 +39,11 @@ Near-term development is concentrated on two flagship clinical domains:
 
 The remaining approved domain architecture stays valid but does not dominate current positioning or near-term implementation. Radiology should reach strong end-to-end maturity before broad multi-engine expansion to other clinical domains.
 
-The accepted Radiology working baseline remains **950 passed, 8 warnings, 0 failures**. This documentation task does not re-run or change it. The principal acceptance blocker is insufficient authorized real-world Radiology acceptance data, not the synthetic regression suite. MedNexus is awaiting responses or sample information from external dataset providers; no approval, delivery, price, sample count, or acquisition outcome is inferred.
+The accepted Radiology working baseline remains **950 passed, 8 warnings, 0 failures**. This documentation task does not re-run or change it. The principal acceptance blocker is insufficient authorized real-world Radiology acceptance data, not the synthetic regression suite. MRJ is awaiting responses or sample information from external dataset providers; no approval, delivery, price, sample count, or acquisition outcome is inferred.
 
 Real-world clinical Radiology reports remain the primary acceptance benchmark. Synthetic material remains secondary for adversarial, abstention, controlled-conformance, and stress testing and cannot replace real-world acceptance data.
 
-## 3. Relationship to MEDNEXUS7
+## 3. Relationship to MRJ seven-stage journey
 
 The authoritative public journey remains:
 
@@ -63,7 +65,7 @@ The authoritative public journey remains:
 
 INGEST remains internal to UNDERSTAND. It covers file/text intake, extraction/parsing, and `DocumentContent` construction and is not an eighth public stage.
 
-Multi-engine participation is a governed implementation option within an authorized stage. It cannot collapse UNDERSTAND into EXTRACT, bypass PROTECT, transfer terminology authority out of STANDARDIZE, or create authoritative analytical facts outside the MEDNEXUS7 contracts.
+Multi-engine participation is a governed implementation option within an authorized stage. It cannot collapse UNDERSTAND into EXTRACT, bypass PROTECT, transfer terminology authority out of STANDARDIZE, or create authoritative analytical facts outside the MRJ seven-stage journey contracts.
 
 ## 4. MedNexus Medical Intelligence Gateway
 
@@ -105,7 +107,7 @@ No model family may be approved in the abstract. Registry governance must explic
 
 ## 5. MedGemma candidate strategy and M1.1 checkpoint
 
-MedGemma remains a planned external candidate engine, not implemented MedNexus intelligence. The durable experiment record is [MedGemma Technical Spike M1.1](../experiments/MedNexus_MedGemma_Technical_Spike_M1.1.md).
+MedGemma remains a planned external candidate engine, not implemented MRJ intelligence. The durable experiment record is [MedGemma Technical Spike M1.1](../experiments/MedNexus_MedGemma_Technical_Spike_M1.1.md).
 
 **Identifier note:** “MedGemma Technical Spike M1.1” is a historical experiment identifier from the prior v1.0 sequence. It is not roadmap milestone M1 of the current v1.1 roadmap and must not be interpreted in that namespace.
 
@@ -176,9 +178,9 @@ After a harmless non-clinical smoke test succeeds, the designated first clinical
 
 [MedUAG: Unified Understanding and Generation for Medical Multimodal Models](https://arxiv.org/abs/2608.18937) reports medical multimodal understanding, VQA, report generation, image synthesis, translation, reconstruction, prediction, synthetic augmentation, and more than six million instances across fourteen imaging modalities.
 
-MedNexus classifies MedUAG as **WATCH / BENCHMARK / FUTURE ADAPTER CANDIDATE**. This research evidence does not establish available production-ready weights, commercial rights, runtime suitability, reproducibility, MedNexus validation, or integration. Independent verification of official model/code availability, artifact provenance, license and commercial/distribution rights, hardware, security, privacy, and clinical behavior is mandatory.
+MRJ classifies MedUAG as **WATCH / BENCHMARK / FUTURE ADAPTER CANDIDATE**. This research evidence does not establish available production-ready weights, commercial rights, runtime suitability, reproducibility, MRJ validation, or integration. Independent verification of official model/code availability, artifact provenance, license and commercial/distribution rights, hardware, security, privacy, and clinical behavior is mandatory.
 
-MedUAG represents the broader future engine class **Unified Medical Understanding and Generation Engines**. MedNexus architecture remains independent of MedUAG itself.
+MedUAG represents the broader future engine class **Unified Medical Understanding and Generation Engines**. MRJ architecture remains independent of MedUAG itself.
 
 ## 8. Radiology multi-engine planes
 
@@ -215,7 +217,7 @@ MedNexus provenance, eligibility, safety, and review controls
 
 The imaging plane is future. No image ingestion, interpretation, reconstruction, enhancement, generation, or translation capability is claimed as implemented. Original, transformed, derivative, and synthetic artifacts must retain distinct immutable lineage.
 
-The planes may later converge only through a MedNexus-owned multimodal intelligence layer.
+The planes may later converge only through a MRJ-owned multimodal intelligence layer.
 
 ## 9. MedNexus Evidence Fusion and Arbitration
 
@@ -229,7 +231,7 @@ It should support agreement, disagreement, conflict resolution, image-report con
 
 Fusion remains stage-scoped and acyclic. Downstream evidence cannot silently rewrite upstream authority. Reconsideration requires explicit, versioned, auditable, provenance-preserving, review-governed reprocessing. Evidence identity, source, lineage, and correlation/family identity must prevent one underlying signal from being counted repeatedly. Raw engine confidence and MedNexus-calibrated support remain distinct.
 
-For every authoritative MedNexus decision involving candidate engines, the future audit record must retain or permit deterministic reconstruction of the original candidate outputs, candidate source and engine, exact engine version/revision, source evidence, evidence-eligibility outcomes, provenance, conflicts or disagreements, arbitration steps, abstention or review decisions, and the final authority rationale. Retaining only a final merged answer is insufficient; every authoritative result must remain auditable back to its contributing evidence.
+For every authoritative MRJ decision involving candidate engines, the future audit record must retain or permit deterministic reconstruction of the original candidate outputs, candidate source and engine, exact engine version/revision, source evidence, evidence-eligibility outcomes, provenance, conflicts or disagreements, arbitration steps, abstention or review decisions, and the final authority rationale. Retaining only a final merged answer is insufficient; every authoritative result must remain auditable back to its contributing evidence.
 
 ## 10. Future Image-Report Concordance
 
@@ -261,7 +263,7 @@ These are decision-support and review states, not autonomous diagnostic conclusi
 
 ## 11. PROTECT, EXTRACT, and STANDARDIZE authority
 
-PROTECT remains MedNexus-owned. External models do not replace the Clinical Privacy Policy Engine or choose privacy rules. Before any external engine receives clinical input, a PROTECT-owned Engine Data-Access Preflight must authorize the exact exposure, engine/version, environment, data type, stage/capability, jurisdiction/residency, retention/logging, egress, and policy/license route. This cross-cutting preflight does not complete Stage 02 PROTECT or reorder MEDNEXUS7. Local execution alone does not establish compliance.
+PROTECT remains MRJ-owned. External models do not replace the Clinical Privacy Policy Engine or choose privacy rules. Before any external engine receives clinical input, a PROTECT-owned Engine Data-Access Preflight must authorize the exact exposure, engine/version, environment, data type, stage/capability, jurisdiction/residency, retention/logging, egress, and policy/license route. This cross-cutting preflight does not complete Stage 02 PROTECT or reorder MRJ seven-stage journey. Local execution alone does not establish compliance.
 
 The accepted Phase 1 authoritative path remains unchanged:
 
@@ -287,11 +289,11 @@ Candidate extraction
 
 Unsupported model-generated facts cannot silently become authoritative persistent clinical data. EXTRACT remains terminology-independent and preserves per-field provenance, confidence, and review.
 
-STANDARDIZE remains MedNexus-owned. Models may suggest terminology candidates, but authoritative mappings require governed, versioned, licensed terminology services. Mapping failure must not erase extraction or change extraction confidence.
+STANDARDIZE remains MRJ-owned. Models may suggest terminology candidates, but authoritative mappings require governed, versioned, licensed terminology services. Mapping failure must not erase extraction or change extraction confidence.
 
-## 12. MedNexus proprietary value after STANDARDIZE
+## 12. MRJ proprietary value after STANDARDIZE
 
-The product moat is not access to a foundation model. MedNexus builds durable, provenance-aware clinical intelligence through:
+The product moat is not access to a foundation model. MRJ builds durable, provenance-aware clinical intelligence through:
 
 - `05 ANALYZE`
 - `06 VISUALIZE`
@@ -327,7 +329,7 @@ Synthetic data may support adversarial testing, conformance testing, stress test
 
 Synthetic-data use requires review for privacy leakage, memorization risk, plausible clinical content, bias, and unsafe artifacts. Controls must prevent synthetic material from contaminating real-world acceptance sets or being presented as a genuine clinical record. Real-world clinical data remains the primary acceptance benchmark, and synthetic performance must never be reported as equivalent to real-world clinical validation.
 
-The objective is not to make MedNexus beat every foundation model. It is to determine whether MedNexus orchestration, grounding, governance, provenance, and arbitration create a safer and more useful clinical intelligence system than direct model use.
+The objective is not to make MRJ beat every foundation model. It is to determine whether MRJ orchestration, grounding, governance, provenance, and arbitration create a safer and more useful clinical intelligence system than direct model use.
 
 The NLM Open-I/Indiana University collection may support future paired image/report research. Candidate case `CXR1108_IM-0075-1001` remains **BLOCKED** because case-level reuse and commercial permission were not conclusively verified. Collection-level public access does not establish commercial permission. No MIMIC-CXR material was used in the M1.1 experiment.
 
@@ -337,13 +339,13 @@ The project currently operates on an older development laptop. A stronger local 
 
 During the transition, priorities are documentation synchronization, product positioning, UI/UX redesign, dataset-acquisition follow-up, and preparation for later multi-engine work.
 
-The next UI direction is strategic only and does not authorize frontend changes. MedNexus will move away from the very-dark cinematic direction toward a light, clinical, calm, premium, professional, high-trust, spacious, simple, broad-audience experience. Near-term screens are:
+The next UI direction is strategic only and does not authorize frontend changes. MRJ will move away from the very-dark cinematic direction toward a light, clinical, calm, premium, professional, high-trust, spacious, simple, broad-audience experience. Near-term screens are:
 
 1. Landing Page.
 2. Radiology UNDERSTAND.
 3. PROTECT / DE-ID.
 
-The experience should emphasize Radiology, Public Health, MEDNEXUS7, multi-engine intelligence, governed evidence, structured clinical data, analytics, visualization, and indicators. A separate UI/UX task will define the visual system and implementation.
+The experience should emphasize Radiology, Public Health, MRJ seven-stage journey, multi-engine intelligence, governed evidence, structured clinical data, analytics, visualization, and indicators. The accepted UI/UX Blueprint v1.0 now carries the MRJ identity clarification. Existing uncommitted frontend work is preserved; further visual changes require a separate authorized task.
 
 ## 16. Current roadmap
 
@@ -391,7 +393,7 @@ Public Health remains the second flagship vertical. Multi-engine Public Health i
 ## 18. Architecture guardrails
 
 - Frozen UNDERSTAND v1 authority remains unchanged.
-- Models generate candidates; MedNexus determines authority.
+- Models generate candidates; MRJ determines authority.
 - External engines cannot own MedNexus clinical contracts, privacy rules, terminology, persistence, or final decisions.
 - Clinical documents, embedded text, image metadata, retrieved content, and model responses are untrusted data, never trusted instructions.
 - No raw clinical exposure occurs without a PROTECT-owned engine data-access decision.

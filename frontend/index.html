@@ -3,287 +3,204 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#041c1a">
-  <title>MedNexus — Medical Document Intelligence</title>
-  <meta name="description" content="From medical documents to healthcare intelligence.">
+  <meta name="theme-color" content="#faf6ed">
+  <title>MRJ — Medical Report Journey</title>
+  <meta name="description" content="MRJ — Medical Report Journey. Every Medical Report Has a Journey. From Medical Report to Measurable Indicator.">
+  <link rel="stylesheet" href="/static/mednexus-design-system.css">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/static/mrj-brand.css">
+  <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="/assets/brand/mrj/app_icon/png/MRJ_app_icon_180.png">
 </head>
-<body>
-<header class="site-header">
-  <a class="brand" href="/app" aria-label="MedNexus home">
-<svg class="brand-svg" viewBox="0 0 460 82" role="img" aria-label="MedNexus Seven">
+<body data-product-brand="mrj" class="landing-page">
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- Local vector symbols keep all interface icons consistent and dependency-free. -->
+<svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
-    <linearGradient id="mnGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#55dfd0"/>
-      <stop offset="100%" stop-color="#9a6cff"/>
-    </linearGradient>
+    <linearGradient id="petal-teal" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#003e43"/><stop offset=".55" stop-color="#068e95"/><stop offset="1" stop-color="#79c8c3"/></linearGradient>
+    <linearGradient id="petal-light" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#75beb8"/><stop offset="1" stop-color="#e5eeE5"/></linearGradient>
   </defs>
-
-  <!-- Balanced Flow master mark -->
-  <g class="master-mark" fill="none" stroke-linecap="round" stroke-width="4">
-    <path d="M10 18 C28 18, 39 28, 52 41 C65 54, 77 64, 95 64" stroke="#55dfd0"/>
-    <path d="M10 30 C29 30, 41 36, 54 46 C67 56, 77 70, 95 70" stroke="#55dfd0"/>
-    <path d="M10 64 C28 64, 40 54, 53 41 C66 28, 78 18, 95 18" stroke="#9a6cff"/>
-    <path d="M10 52 C29 52, 41 46, 54 36 C67 26, 78 12, 95 12" stroke="#9a6cff"/>
-  </g>
-
-  <!-- MEDNE -->
-  <text x="120" y="50" fill="#f2f5ef" font-size="35" font-family="Arial, Helvetica, sans-serif" letter-spacing="6">MEDNE</text>
-
-  <!-- approved minimal X inside MEDNEXUS wordmark -->
-  <g transform="translate(285 17)" fill="none" stroke-linecap="round" stroke-width="3.3">
-    <path d="M0 7 C9 7, 13 13, 20 20 C27 27, 31 33, 40 33" stroke="#55dfd0"/>
-    <path d="M0 33 C9 33, 13 27, 20 20 C27 13, 31 7, 40 7" stroke="#9a6cff"/>
-  </g>
-
-  <text x="333" y="50" fill="#f2f5ef" font-size="35" font-family="Arial, Helvetica, sans-serif" letter-spacing="6">US</text>
-  <text class="brand-seven" x="421" y="28" fill="#f2f5ef" font-size="15" font-family="Arial, Helvetica, sans-serif" font-weight="700">7</text>
+  <symbol id="icon-brand" viewBox="0 0 48 48"><path d="M24 24C7 27 1 9 10 4c9-5 17 7 14 20Z" fill="url(#petal-teal)"/><path d="M24 24C21 7 39 1 44 10c5 9-7 17-20 14Z" fill="url(#petal-teal)"/><path d="M24 24c17-3 23 15 14 20-9 5-17-7-14-20Z" fill="url(#petal-light)"/><path d="M24 24c3 17-15 23-20 14-5-9 7-17 20-14Z" fill="url(#petal-teal)"/></symbol>
+  <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+  <symbol id="icon-document" viewBox="0 0 32 32"><path d="M8 4h11l6 6v18H8z"/><path d="M18 4v7h7M12 15h9m-9 5h9m-9 4h6"/></symbol>
+  <symbol id="icon-extract" viewBox="0 0 32 32"><path d="M7 4h12l6 6v18H7zM18 4v7h7M11 15h10m-10 5h5m-5 4h10"/><path d="m19 18 3 2-3 2"/></symbol>
+  <symbol id="icon-shield" viewBox="0 0 32 32"><path d="m16 3 11 4v9c0 6-6 11-11 14C11 27 5 22 5 16V7z"/></symbol>
+  <symbol id="icon-lock" viewBox="0 0 32 32"><rect x="6" y="14" width="20" height="15" rx="3" fill="currentColor" stroke="none"/><path d="M10 14V9a6 6 0 0 1 12 0v5"/><path d="M16 20v4" stroke="#fff8ee"/></symbol>
+  <symbol id="icon-people" viewBox="0 0 32 32"><circle cx="16" cy="9" r="4" fill="currentColor" stroke="none"/><path d="M9 27v-7a7 7 0 0 1 14 0v7z" fill="currentColor" stroke="none"/><path d="M5 12a3 3 0 1 0 0-.1M27 12a3 3 0 1 0 0-.1M6 19c-4 0-4 4-4 7h4m20-7c4 0 4 4 4 7h-4"/></symbol>
+  <symbol id="icon-database" viewBox="0 0 32 32"><ellipse cx="16" cy="6" rx="11" ry="4" fill="currentColor" stroke="none"/><path d="M5 8v5c0 5 22 5 22 0V8M5 15v5c0 5 22 5 22 0v-5M5 22v4c0 5 22 5 22 0v-4"/></symbol>
+  <symbol id="icon-chart" viewBox="0 0 32 32"><rect x="3" y="20" width="5" height="10" rx="1" fill="currentColor" stroke="none"/><rect x="13" y="12" width="5" height="18" rx="1" fill="currentColor" stroke="none"/><rect x="23" y="3" width="5" height="27" rx="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="icon-grid" viewBox="0 0 32 32"><rect x="4" y="4" width="10" height="10" rx="1" fill="currentColor" fill-opacity=".85"/><rect x="19" y="4" width="10" height="10" rx="1"/><rect x="4" y="19" width="10" height="10" rx="1"/><rect x="19" y="19" width="10" height="10" rx="1" fill="currentColor" fill-opacity=".5"/></symbol>
+  <symbol id="icon-target" viewBox="0 0 32 32"><circle cx="15" cy="17" r="12"/><circle cx="15" cy="17" r="7"/><circle cx="15" cy="17" r="2" fill="currentColor"/><path d="m15 17 12-13m-5 0h5v5"/></symbol>
+  <symbol id="icon-leaves" viewBox="0 0 32 32"><path d="M3 29C0 12 8 3 17 3c2 12-3 21-14 26ZM16 21c0-12 6-16 14-18 2 14-3 21-14 18Z" fill="currentColor" stroke="none"/><path d="M3 29 16 7m0 14L27 7" stroke="#b0ded0" stroke-width="1.5"/></symbol>
+  <symbol id="icon-network" viewBox="0 0 32 32"><path d="m6 6 10 10 10-10M6 27l10-11 10 11"/><circle cx="16" cy="16" r="5" fill="currentColor"/><circle cx="6" cy="6" r="4" fill="#94d3d6" stroke="none"/><circle cx="26" cy="6" r="4" fill="currentColor" stroke="none"/><circle cx="6" cy="27" r="4" fill="#94d3d6" stroke="none"/><circle cx="26" cy="27" r="4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="icon-image" viewBox="0 0 32 32"><rect x="3" y="3" width="26" height="26" rx="4" fill="currentColor" stroke="none"/><circle cx="11" cy="10" r="2.5" fill="#fff8ee" stroke="none"/><path d="m6 25 7-9 5 5 4-5 5 9" fill="#fff8ee" stroke="none"/></symbol>
+  <symbol id="icon-chip" viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="20" rx="2"/><rect x="11" y="11" width="10" height="10" rx="1" fill="currentColor" fill-opacity=".3"/><path d="M11 2v4m10-4v4M11 26v4m10-4v4M2 11h4m-4 10h4m20-10h4m-4 10h4"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 32 32"><circle cx="15" cy="17" r="11"/><path d="m10 16 5 5L28 6"/></symbol>
+  <symbol id="icon-pause" viewBox="0 0 32 32"><path d="M12 6v21m9-21v21" stroke-width="4"/></symbol>
+  <symbol id="icon-person" viewBox="0 0 32 32"><circle cx="16" cy="9" r="6" fill="currentColor" stroke="none"/><path d="M5 29v-4a11 11 0 0 1 22 0v4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="icon-gear" viewBox="0 0 32 32"><path d="m13 3-1 4-4 2-4-1-2 5 4 3-1 4-2 3 4 4 4-2 4 1 3 4 5-2-1-4 3-3 4-1-1-6-4-1-2-3V5l-5-2-2 3z"/><circle cx="16" cy="16" r="5"/></symbol>
 </svg>
-</a>
-  <nav>
-    <a href="#journey">Document Journey</a>
-    <a href="#capabilities">Capabilities</a>
-    <a href="#domains">Domains</a>
-    <a href="#architecture">Architecture</a>
-    <a class="nav-cta" href="/privacy">Launch Privacy Engine</a>
-  </nav>
+
+<header class="landing-header">
+  <div class="header-inner">
+    <a class="landing-brand" href="/app" aria-label="MRJ journey home">
+      <img class="brand-symbol mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="48" height="48" alt="">
+      <span><b>MRJ</b><small>Medical Report Journey</small></span>
+    </a>
+    <nav class="desktop-navigation" aria-label="Primary navigation">
+      <a href="#radiology">Radiology</a>
+      <a href="#public-health">Public Health</a>
+      <a href="#journey">How MRJ Works</a>
+      <a href="#governance">Privacy &amp; Governance</a>
+    </nav>
+    <a class="landing-button header-cta" href="/understanding">Open Workspace <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
+    <details class="mobile-navigation">
+      <summary>Menu</summary>
+      <nav aria-label="Mobile navigation"><a href="#radiology">Radiology</a><a href="#public-health">Public Health</a><a href="#journey">How MRJ Works</a><a href="#governance">Privacy &amp; Governance</a></nav>
+    </details>
+  </div>
 </header>
 
-<main>
-  <!-- HERO: text no longer covers the cinematic video -->
-  <section class="hero">
-    <video class="hero-video" autoplay muted loop playsinline preload="metadata">
-      <source src="/assets/video/mednexus-hero.mp4" type="video/mp4">
-    </video>
-    <div class="hero-shade"></div>
-
-    <div class="hero-layout shell">
-      <div class="hero-copy-block">
-        <p class="eyebrow">ENTERPRISE MEDICAL DOCUMENT INTELLIGENCE</p>
-        <h1>From medical documents to <span>healthcare intelligence.</span></h1>
-        <p class="hero-copy">
-          One document. Seven intelligent transformations. MedNexus understands,
-          protects, structures and transforms medical information into usable
-          clinical and population intelligence.
-        </p>
+<main id="main">
+  <section class="landing-hero" aria-labelledby="heroTitle">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="section-label">Clinical Intelligence Platform</p>
+        <h1 id="heroTitle"><span>Every Medical Report</span><span class="teal-text">Has a Journey.</span></h1>
+        <p class="hero-description">From Medical Report to Measurable Indicator.</p><p>Understand it. Protect it. Structure it. Analyze it. Measure what matters.</p>
         <div class="hero-actions">
-          <a class="btn primary" href="#journey">Explore the Journey</a>
-          <a class="btn secondary" href="/privacy">Clinical Privacy Policy Engine</a>
-        </div>
-        <div class="support-row">
-          <span>TXT</span><span>DOCX</span><span>Text PDF</span><span>Local-first POC</span>
+          <a class="landing-button" href="/understanding">Explore Radiology <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
+          <a class="landing-button button-outline" href="#public-health">Explore Public Health <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
         </div>
       </div>
-      <div class="hero-video-window" aria-hidden="true"></div>
+      <!-- Phase 0: the historical branded illustration is suppressed pending MRJ visual work. -->
+      <figure class="hero-art mrj-identity-panel"><img src="/assets/brand/mrj/icon_only/png/MRJ_icon_512.png" width="192" height="192" alt="MRJ approved report and pathway icon"><figcaption>REPORT | PATHWAY | OUTCOME</figcaption></figure>
+      <ul class="trust-indicators" aria-label="MRJ commitments">
+        <li><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-shield"/></svg></span>Clinically grounded</li>
+        <li><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-lock"/></svg></span>Privacy by design</li>
+        <li><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-people"/></svg></span>Built for real-world workflows</li>
+      </ul>
     </div>
   </section>
 
-  <section id="journey" class="journey">
-    <header class="section-head shell">
-      <p class="eyebrow">THE MEDNEXUS SEVEN</p>
-      <h2>One document. <span>Seven intelligent transformations.</span></h2>
-      <p>The document is the beginning — not the destination.</p>
-    </header>
+  <div class="landing-content">
+    <section class="vertical-grid" aria-label="Primary healthcare verticals">
+      <article class="vertical-card radiology-card" id="radiology">
+        <svg class="vertical-art" hidden viewBox="27 512 139 198" role="img" aria-label="Illustrated radiology scan"><image href="/assets/landing/approved-landing-artwork.png" width="769" height="2046"/></svg>
+        <div class="vertical-copy">
+          <p class="section-label">Primary vertical</p>
+          <h2>Radiology Intelligence</h2>
+          <p>From reports and images to structured clinical intelligence.</p>
+          <ul class="checklist"><li>Radiology reports (CT, MRI, X-ray, US)</li><li>Clinical document understanding</li><li>Structured data for downstream use</li><li>Built for real clinical workflows</li></ul>
+          <a class="text-link" href="/understanding">Explore Radiology <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
+        </div>
+      </article>
+      <article class="vertical-card public-health-card" id="public-health">
+        <svg class="vertical-art" hidden viewBox="397 512 140 198" role="img" aria-label="Public health globe and population analytics illustration"><image href="/assets/landing/approved-landing-artwork.png" width="769" height="2046"/></svg>
+        <div class="vertical-copy">
+          <p class="section-label">Strategic vertical</p>
+          <h2>Public Health Intelligence</h2>
+          <p>From de-identified clinical data to healthier populations.</p>
+          <ul class="checklist"><li>De-identified clinical data</li><li>Population health analytics</li><li>Outbreak and trend detection</li><li>Support for research and policy</li></ul>
+          <button class="text-link" type="button" disabled title="The Public Health workspace is in development">Explore Public Health <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+          <small class="availability">Workspace in development</small>
+        </div>
+      </article>
+    </section>
 
-    <div class="journey-grid shell">
-      <aside class="rail">
-        <div class="rail-track"><i id="railProgress"></i></div>
-        <ol>
-          <li class="active">01</li><li>02</li><li>03</li><li>04</li>
-          <li>05</li><li>06</li><li>07</li>
-        </ol>
-      </aside>
-
-      <div class="stages">
-        <article class="stage stage-1 active" data-stage="1">
-          <div class="stage-copy">
-            <small>01</small><p class="eyebrow">UNDERSTAND</p>
-            <h3>Bring the medical document in. Understand what it is.</h3>
-            <p>TXT, DOCX and text-based PDF become recognized, structured and reusable MedNexus Document Context.</p>
-            <a href="/understanding">Open Document Recognition →</a>
-          </div>
-          <div class="visual understand-flow" aria-label="Medical document becomes document content, recognized identity, and MedNexus Document Context">
-            <div class="understand-sequence">
-              <div class="understand-step source"><small>MEDICAL DOCUMENT</small><b>TXT · DOCX · PDF</b><i></i><i></i><i></i></div>
-              <div class="understand-step content"><small>DOCUMENT CONTENT</small><b>Parsed · normalized</b><span>Internal ingestion</span></div>
-              <div class="understand-step identity"><small>RECOGNIZED IDENTITY</small><b>Radiology · CT</b><span>Findings · Impression</span></div>
-              <div class="understand-step context"><small>MEDNEXUS CONTEXT</small><b>Reusable intelligence</b><span>Structure · clinical · privacy</span></div>
-            </div>
-          </div>
+    <section class="section-panel journey-panel" id="journey" aria-labelledby="journeyTitle">
+      <header class="section-heading journey-heading">
+        <div><p class="section-label">MRJ Journey</p><h2 id="journeyTitle">From Medical Report to Measurable Indicator.</h2></div>
+        <p>Seven stages. INGEST is internal to UNDERSTAND.</p>
+      </header>
+      <div class="journey-track" aria-label="MRJ journey">
+        <article class="stage stage-understand" data-stage="1">
+          <a href="/understanding" aria-label="Open Understand workspace"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-document"/></svg></span><span class="stage-heading"><small>01</small><p class="eyebrow">UNDERSTAND</p></span></a>
+          <p class="stage-description">Recognize and contextualize</p>
         </article>
-
-        <article class="stage stage-2" data-stage="2">
-          <div class="stage-copy">
-            <small>02</small><p class="eyebrow">PROTECT</p>
-            <h3>Protect identity. Preserve clinical meaning.</h3>
-            <p>The purpose-based Clinical Privacy Policy Engine governs protection decisions.</p>
-            <a href="/privacy">Open Clinical Privacy Policy Engine →</a>
-          </div>
-          <div class="visual protect">
-            <div class="record raw"><b>Ahmed Hassan</b><span>MRN-998122</span><span>+123 456 7890</span></div>
-            <div class="shield">◇</div>
-            <div class="record clean"><b>[PATIENT_NAME]</b><span>[MRN:a12f…]</span><span>[REMOVED]</span></div>
-          </div>
+        <article class="stage stage-protect" data-stage="2">
+          <a href="/privacy" aria-label="Open Protect workspace"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-lock"/></svg></span><span class="stage-heading"><small>02</small><p class="eyebrow">PROTECT</p></span></a>
+          <p class="stage-description">De-identify<br>and secure</p>
         </article>
-
-        <article class="stage stage-3" data-stage="3">
-          <div class="stage-copy">
-            <small>03</small><p class="eyebrow">EXTRACT</p>
-            <h3>Turn narrative text into structured clinical data.</h3>
-            <p>Capture entities, attributes, relationships, dates and measurements.</p>
-          </div>
-          <div class="visual extract">
-            <!-- The MedNexus mark appears only here: one central transformation gateway -->
-            <img class="core-logo" src="/privacy-assets/brand/mednexus_mark.svg" alt="">
-            <div class="fields"><span>Modality <b>CT</b></span><span>Body part <b>Chest</b></span><span>Finding <b>Nodule</b></span><span>Laterality <b>Right</b></span></div>
-          </div>
-        </article>
-
-        <article class="stage stage-4" data-stage="4">
-          <div class="stage-copy">
-            <small>04</small><p class="eyebrow">STANDARDIZE</p>
-            <h3>Normalize medical meaning for interoperability.</h3>
-            <p>Align extracted data to terminology and exchange standards.</p>
-          </div>
-          <div class="visual standards">
-            <span>SNOMED CT</span><span>LOINC</span><span>ICD</span><span>UCUM</span><span>FHIR</span>
-          </div>
-        </article>
-
-        <article class="stage stage-5" data-stage="5">
-          <div class="stage-copy">
-            <small>05</small><p class="eyebrow">ANALYZE</p>
-            <h3>Apply domain-specific intelligence.</h3>
-            <p>Each healthcare document domain retains its own analytics logic.</p>
-          </div>
-          <div class="visual analytics">
-      <div class="analysis-panel trend-panel">
-        <span class="panel-label">TREND</span>
-        <svg viewBox="0 0 320 180" aria-hidden="true">
-          <polyline points="10,145 58,115 97,126 142,74 188,92 234,48 304,62" fill="none" stroke="#55dfd0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-          <polyline points="10,150 58,140 97,112 142,126 188,84 234,96 304,52" fill="none" stroke="#b56dff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".82"/>
-        </svg>
+        <article class="stage stage-extract" data-stage="3"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-extract"/></svg></span><span class="stage-heading"><small>03</small><p class="eyebrow">EXTRACT</p></span><p class="stage-description">Turn content into structured data</p></article>
+        <article class="stage stage-standardize accent-blue" data-stage="4"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-database"/></svg></span><span class="stage-heading"><small>04</small><p class="eyebrow">STANDARDIZE</p></span><p class="stage-description">Normalize and harmonize</p></article>
+        <article class="stage stage-analyze" data-stage="5"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-chart"/></svg></span><span class="stage-heading"><small>05</small><p class="eyebrow">ANALYZE</p></span><p class="stage-description">Generate clinical and population insights</p></article>
+        <article class="stage stage-visualize accent-blue" data-stage="6"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-grid"/></svg></span><span class="stage-heading"><small>06</small><p class="eyebrow">VISUALIZE</p></span><p class="stage-description">Make insights clear and actionable</p></article>
+        <article class="stage stage-indicators accent-coral" data-stage="7"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-target"/></svg></span><span class="stage-heading"><small>07</small><p class="eyebrow">INDICATORS</p></span><p class="stage-description">Track impact<br>and outcomes</p></article>
       </div>
-      <div class="analysis-panel bars-panel">
-        <span class="panel-label">DISTRIBUTION</span>
-        <div class="mini-bars"><i style="--h:36%"></i><i style="--h:71%"></i><i style="--h:52%"></i><i style="--h:84%"></i><i style="--h:63%"></i></div>
+      <p class="scope-note">UNDERSTAND and PROTECT are available as POC workspaces. Later transformations describe the product roadmap.</p>
+    </section>
+
+    <section class="section-panel engine-panel" id="engines" aria-labelledby="engineTitle">
+      <header class="section-heading">
+        <div><p class="section-label">Multi-Engine Intelligence</p><h2 id="engineTitle">Models generate evidence.<br>MRJ determines authority.</h2></div>
+        <p>MRJ is designed to orchestrate multiple AI capabilities — combining domain expertise, foundation models, and specialized engines — within a healthcare-specific intelligence layer.</p>
+      </header>
+      <div class="engine-grid">
+        <article class="capability-card"><svg class="feature-icon icon" aria-hidden="true"><use href="#icon-leaves"/></svg><h3>MRJ Native</h3><ul class="checklist"><li>Domain-tuned intelligence</li><li>Healthcare-specific logic</li><li>Governed and explainable</li></ul></article>
+        <article class="capability-card accent-blue"><svg class="feature-icon icon" aria-hidden="true"><use href="#icon-network"/></svg><h3>Foundation Models</h3><ul class="checklist"><li>General medical knowledge</li><li>Multi-modal understanding</li><li>Continually evolving</li></ul><small class="availability">Planned integration</small></article>
+        <article class="capability-card"><svg class="feature-icon icon" aria-hidden="true"><use href="#icon-image"/></svg><h3>Specialized Imaging Engines</h3><ul class="checklist"><li>Imaging analysis capabilities</li><li>Domain-specific models</li><li>Planned MRJ integration</li></ul></article>
+        <article class="capability-card accent-blue"><svg class="feature-icon icon" aria-hidden="true"><use href="#icon-chip"/></svg><h3>Future Medical AI Engines</h3><ul class="checklist"><li>Extensible architecture</li><li>Plug-in new capabilities</li><li>Ready for what’s next</li></ul></article>
       </div>
-      <div class="analysis-panel donut-panel">
-        <span class="panel-label">COMPOSITION</span>
-        <div class="donut-ring"><b>68%</b></div>
+    </section>
+
+    <section class="section-panel governance-panel" id="governance" aria-labelledby="governanceTitle">
+      <header class="section-heading">
+        <div><p class="section-label">Governed Clinical Intelligence</p><h2 id="governanceTitle">Trust built in. From data to decisions.</h2></div>
+        <p>MRJ is designed for responsible use,<br>with built-in governance across the entire journey.</p>
+      </header>
+      <div class="governance-grid">
+        <article class="governance-card"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-shield"/></svg></span><h3>Privacy</h3><p>Protecting patients and communities</p></article>
+        <article class="governance-card"><span class="icon-disc neutral-disc"><svg class="icon" aria-hidden="true"><use href="#icon-document"/></svg></span><h3>Provenance</h3><p>Knowing where information comes from</p></article>
+        <article class="governance-card"><span class="icon-disc neutral-disc"><svg class="icon" aria-hidden="true"><use href="#icon-check"/></svg></span><h3>Validation</h3><p>Reliable and clinically grounded</p></article>
+        <article class="governance-card"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-pause"/></svg></span><h3>Abstention</h3><p>Knowing when<br>not to answer</p></article>
+        <article class="governance-card"><span class="icon-disc neutral-disc"><svg class="icon" aria-hidden="true"><use href="#icon-person"/></svg></span><h3>Human Review</h3><p>Keeping humans<br>in the loop</p></article>
+        <article class="governance-card"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-gear"/></svg></span><h3>Responsible Use</h3><p>For better and<br>fairer healthcare</p></article>
       </div>
-    </div>
-  </article>
+    </section>
 
-        <article class="stage stage-6" data-stage="6">
-          <div class="stage-copy">
-            <small>06</small><p class="eyebrow">VISUALIZE</p>
-            <h3>Make the intelligence visible.</h3>
-            <p>Dashboards expose trends, distributions and decision-ready insights.</p>
-          </div>
-          <div class="visual dashboard">
-      <div class="kpi-card"><small>Studies</small><b>24,532</b><span>+8.4%</span></div>
-      <div class="kpi-card"><small>Positive findings</small><b>18,760</b><span>+5.7%</span></div>
-      <div class="dashboard-chart">
-        <span class="panel-label">MONTHLY ACTIVITY</span>
-        <svg viewBox="0 0 640 220" aria-hidden="true">
-          <polyline points="15,170 88,145 162,151 235,106 310,118 385,75 460,90 535,52 625,66" fill="none" stroke="#df69c5" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-          <polyline points="15,190 88,180 162,164 235,172 310,137 385,148 460,117 535,126 625,96" fill="none" stroke="#55dfd0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
-        </svg>
+    <section class="section-panel value-panel" aria-labelledby="valueTitle">
+      <header class="section-heading">
+        <div><p class="section-label">From Reports to Intelligence</p><h2 id="valueTitle">Turning clinical evidence into better decisions.</h2></div>
+        <p>MRJ transforms medical documents and imaging into structured intelligence that can drive clinical care, public health, research, and policy.</p>
+      </header>
+      <div class="value-flow" aria-label="Clinical evidence to indicators">
+        <article class="value-card"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-document"/></svg></span><h3>Clinical<br>Evidence</h3><p>Reports, images<br>and documents</p></article>
+        <article class="value-card accent-blue"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-database"/></svg></span><h3>Structured<br>Clinical Data</h3><p>Organized and<br>standardized</p></article>
+        <article class="value-card accent-blue"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-chart"/></svg></span><h3>Analyze</h3><p>Clinical and<br>population insights</p></article>
+        <article class="value-card accent-blue"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-grid"/></svg></span><h3>Visualize</h3><p>Clear and actionable<br>information</p></article>
+        <article class="value-card accent-coral"><span class="icon-disc"><svg class="icon" aria-hidden="true"><use href="#icon-target"/></svg></span><h3>Indicators</h3><p>Measurable impact<br>and outcomes</p></article>
       </div>
-    </div>
-  </article>
+    </section>
 
-        <article class="stage stage-7" data-stage="7">
-          <div class="stage-copy">
-            <small>07</small><p class="eyebrow">INDICATORS</p>
-            <h3>Produce measurable healthcare intelligence.</h3>
-            <p>Clinical, operational, quality and public-health indicators support action.</p>
-          </div>
-          <div class="visual indicators"><div><small>Incidence</small><b>45.2</b></div><div><small>Detection</small><b>68.7%</b></div><div><small>Quality</small><b>92.1%</b></div></div>
-        </article>
+    <section class="closing-banner" aria-labelledby="closingTitle">
+      <!-- Historical petal branding omitted for MRJ. -->
+      <div class="closing-copy">
+        <p class="section-label">Get started with MRJ</p>
+        <h2 id="closingTitle">Every Medical Report Has a Journey.</h2>
+        <p>From Document to Decision.</p>
+        <div class="closing-actions">
+          <a class="landing-button button-paper" href="/understanding">Open Radiology Workspace <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
+          <div class="future-workspace"><button class="landing-button button-banner-outline" type="button" disabled>Open Public Health Workspace <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button><small>In development</small></div>
+        </div>
       </div>
-    </div>
-  </section>
-
-  <section id="capabilities" class="capabilities shell">
-    <div>
-      <p class="eyebrow">ONE PLATFORM · MULTIPLE ENTRY POINTS</p>
-      <h2>Use one capability.<br>Or continue the full journey.</h2>
-    </div>
-    <div class="cap-grid">
-      <a class="cap live recognize-id" href="/understanding"><em>LIVE POC</em><b>Document Recognition</b><p>Domain, type, subtype, language, section and routing intelligence.</p></a>
-      <a class="cap live privacy-id" href="/privacy"><em>LIVE POC</em><b>Clinical Privacy Policy Engine</b><p>Purpose-based protection and de-identification.</p></a>
-      <article class="cap extract-id"><em>PLANNED</em><b>Clinical Extraction</b><p>Structured document-specific clinical data.</p></article>
-      <article class="cap ph-id"><em>IN DEVELOPMENT</em><b>Public Health Intelligence</b><p>Surveillance, analytics, dashboards and indicators.</p></article>
-    </div>
-  </section>
-
-  <section id="domains" class="domains">
-    <div class="shell">
-      <p class="eyebrow">HEALTHCARE DOCUMENT DOMAINS</p>
-      <h2>One platform. <span>Different medical languages.</span></h2>
-      <div class="domain-grid">
-        <article class="domain public-health"><i>01</i><h3>Public Health</h3><p>Notifications, surveillance, outbreaks and population indicators.</p></article>
-        <article class="domain radiology"><i>02</i><h3>Radiology</h3><p>Findings, impressions, measurements and imaging analytics.</p></article>
-        <article class="domain pathology"><i>03</i><h3>Pathology</h3><p>Specimens, diagnosis, grade, stage, margins and biomarkers.</p></article>
-        <article class="domain laboratory"><i>04</i><h3>Laboratory</h3><p>Tests, results, reference ranges and terminology.</p></article>
-        <article class="domain emergency"><i>05</i><h3>Emergency</h3><p>Presentation, triage, interventions, outcomes and timing.</p></article>
-        <article class="domain admission"><i>06</i><h3>Admission & Discharge</h3><p>Episodes, diagnoses, procedures, LOS and follow-up.</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section id="architecture" class="architecture shell">
-    <p class="eyebrow">MEDNEXUS ARCHITECTURE</p>
-    <h2>Shared intelligence core.<br>Domain-specific intelligence.</h2>
-    <div class="flow">
-      <span>Document</span><b>→</b><span>Understand</span><b>→</b><span>Protect</span><b>→</b>
-      <span>Extract</span><b>→</b><span>Standardize</span><b>→</b><span>Analyze</span><b>→</b><span>Visualize</span><b>→</b><span>Indicators</span>
-    </div>
-  </section>
-
-  <section class="closing">
-    <div class="shell">
-      <p class="eyebrow">THE MEDNEXUS VISION</p>
-      <h2>The medical document is the entry point.<br><span>Healthcare intelligence is the destination.</span></h2>
-    </div>
-  </section>
+      <ul class="banner-values"><li>REPORT</li><li>PATHWAY</li><li>OUTCOME</li></ul>
+    </section>
+  </div>
 </main>
 
-<footer><div class="shell">
-<svg class="brand-svg" viewBox="0 0 460 82" role="img" aria-label="MedNexus Seven">
-  <defs>
-    <linearGradient id="mnGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#55dfd0"/>
-      <stop offset="100%" stop-color="#9a6cff"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Balanced Flow master mark -->
-  <g class="master-mark" fill="none" stroke-linecap="round" stroke-width="4">
-    <path d="M10 18 C28 18, 39 28, 52 41 C65 54, 77 64, 95 64" stroke="#55dfd0"/>
-    <path d="M10 30 C29 30, 41 36, 54 46 C67 56, 77 70, 95 70" stroke="#55dfd0"/>
-    <path d="M10 64 C28 64, 40 54, 53 41 C66 28, 78 18, 95 18" stroke="#9a6cff"/>
-    <path d="M10 52 C29 52, 41 46, 54 36 C67 26, 78 12, 95 12" stroke="#9a6cff"/>
-  </g>
-
-  <!-- MEDNE -->
-  <text x="120" y="50" fill="#f2f5ef" font-size="35" font-family="Arial, Helvetica, sans-serif" letter-spacing="6">MEDNE</text>
-
-  <!-- approved minimal X inside MEDNEXUS wordmark -->
-  <g transform="translate(285 17)" fill="none" stroke-linecap="round" stroke-width="3.3">
-    <path d="M0 7 C9 7, 13 13, 20 20 C27 27, 31 33, 40 33" stroke="#55dfd0"/>
-    <path d="M0 33 C9 33, 13 27, 20 20 C27 13, 31 7, 40 7" stroke="#9a6cff"/>
-  </g>
-
-  <text x="333" y="50" fill="#f2f5ef" font-size="35" font-family="Arial, Helvetica, sans-serif" letter-spacing="6">US</text>
-  <text class="brand-seven" x="421" y="28" fill="#f2f5ef" font-size="15" font-family="Arial, Helvetica, sans-serif" font-weight="700">7</text>
-</svg>
-<p>Enterprise Medical Document Intelligence Platform</p>
+<footer class="landing-footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <a class="landing-brand" href="/app" aria-label="MRJ journey home"><img class="brand-symbol mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="48" height="48" alt=""><span><b>MRJ</b><small>Medical Report Journey</small></span></a>
+      <nav aria-label="Footer navigation"><a href="#engines">About</a><a href="/docs">Documentation</a><a href="/privacy">Privacy</a><button type="button" disabled title="Contact information is not yet available">Contact</button></nav>
+      <p>From Medical Report to Measurable Indicator.</p>
+    </div>
+    <div class="footer-bottom"><span>© 2026 MRJ. All rights reserved.</span><span>REPORT | PATHWAY | OUTCOME</span></div>
   </div>
 </footer>
-
 <script src="/app.js"></script>
 </body>
 </html>

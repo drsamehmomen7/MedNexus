@@ -1,4 +1,6 @@
-# MedNexus Technical Debt
+# MRJ Technical Debt
+
+MRJ is Medical Report Journey, formerly MedNexus. This living register uses the current public product identity while preserving existing MedNexus-prefixed implementation names, contracts, paths, and historical technical facts.
 
 ## TD-0001 — Generalize the de-identification service method name
 

@@ -156,7 +156,7 @@ function renderRadiologyContext(context) {
   const other = family.subdomain === 'OTHER';
   $('contextTitle').textContent = other ? 'Radiology family requires review' : `${label(family.subdomain)} document context`;
   $('contextDescription').textContent = other
-    ? 'MedNexus recognized this as a Radiology document, but the imaging family could not be classified safely.'
+    ? 'MRJ recognized this as a Radiology document, but the imaging family could not be classified safely.'
     : 'Bounded document-level context recognized for the current study.';
   renderRows($('semanticList'), [
     ['Subdomain', label(family.subdomain)],
@@ -188,7 +188,7 @@ function renderIdentity(payload, context) {
   $('confidenceValue').textContent = `${Math.round(Number(identity.confidence ?? payload.confidence ?? 0) * 100)}%`;
   $('confidenceBand').textContent = `${label(identity.confidence_band || payload.confidence_band)} confidence`;
   $('confidenceNote').textContent = unknown
-    ? 'MedNexus found some document features, but not enough evidence to identify the document reliably.'
+    ? 'MRJ found some document features, but not enough evidence to identify the document reliably.'
     : 'Evidence supports this recognition.';
   $('recognitionSummary').classList.toggle('low', unknown || ['LOW', 'UNKNOWN'].includes(identity.confidence_band || payload.confidence_band));
 }
@@ -316,11 +316,11 @@ async function analyze() {
       response = await fetch('/api/v1/understanding/analyze-file', { method: 'POST', body: form });
     }
     const payload = await response.json();
-    if (!response.ok) throw Error(payload.detail || 'MedNexus could not understand this document.');
+    if (!response.ok) throw Error(payload.detail || 'MRJ could not understand this document.');
     render(payload);
     $('status').textContent = '';
   } catch (error) {
-    $('status').textContent = error.message || 'MedNexus could not understand this document.';
+    $('status').textContent = error.message || 'MRJ could not understand this document.';
   } finally {
     $('analyzeBtn').disabled = false;
   }

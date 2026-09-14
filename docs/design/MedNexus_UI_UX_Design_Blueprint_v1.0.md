@@ -2,6 +2,16 @@
 
 **Status:** ACCEPTED DESIGN BLUEPRINT
 
+**Public identity update — 13 September 2026:** MRJ means **Medical Report Journey**, formerly MedNexus. The structural blueprint remains accepted; its original acceptance and EdgeCase source audit are preserved. Current public branding is superseded by the owner-approved MRJ identity, not by a new design exploration.
+
+The medical report is the hero of the platform. Approved language is: **Every Medical Report Has a Journey.** / **From Medical Report to Measurable Indicator.** / **From Document to Decision.** / **Understand it. Protect it. Structure it. Analyze it. Measure what matters.** / **REPORT | PATHWAY | OUTCOME**.
+
+The public wordmark is native typography: **MRJ / Medical Report Journey**. Use only the approved icon files installed unchanged under `frontend/assets/brand/mrj/`. Do not redraw, trace, recolor or generate the icon. MRJ palette direction is charcoal/near-black, muted teal, warm sand/beige and cream/ivory; no new exact color or font decision is invented in Phase 0. Mona Sans/readability and the structural workspace principles remain in place. The EdgeCase reference values below are historical reference evidence, not new MRJ brand approval. Former signature-red, public superscript, logo and slogan prescriptions do not override this update.
+
+The seven-stage journey, Radiology-first priority, Public Health secondary role and clinical workspace boundaries remain unchanged. Frozen MedNexus-named architecture governs MRJ. Existing uncommitted UI work is preserved; this public-identity synchronization is not a new visual acceptance. Larger old branded illustrations are temporarily suppressed, pending separate MRJ website visual work.
+
+The remaining token proposals and original design sections below are retained for continuity, subject to this identity update.
+
 **Milestone:** M1 — MedNexus UI/UX Design Blueprint
 
 **Architecture checkpoint:** `081e8b178f63850beb18f41a09494452aeacc4fc`
@@ -12,12 +22,12 @@
 
 ## 1. Design principles
 
-MedNexus should present clinical intelligence with clarity before spectacle. The interface should feel calm, credible, precise, spacious, and understandable to clinical and non-clinical users.
+MRJ should present clinical intelligence with clarity before spectacle. The interface should feel calm, credible, precise, spacious, and understandable to clinical and non-clinical users.
 
 1. **Clinical clarity first.** The primary result, action, or status must be understandable within seconds.
-2. **Authority must be visible.** Distinguish MedNexus decisions from candidate evidence, future engines, and planned capabilities.
+2. **Authority must be visible.** Distinguish MRJ decisions from candidate evidence, future engines, and planned capabilities.
 3. **Progressive disclosure.** Present a simple result first, an understandable explanation second, and technical detail last.
-4. **One product system.** Radiology and Public Health receive restrained accents within one shared MedNexus identity; MEDNEXUS Seven must not become seven unrelated visual themes.
+4. **One product system.** Radiology and Public Health receive restrained accents within one shared MRJ identity; MRJ seven-stage journey must not become seven unrelated visual themes.
 5. **Evidence without noise.** Provenance, warnings, abstention, and human review remain visible without making the default interface feel like a classifier console.
 6. **Readable clinical documents.** Long medical text uses a highly legible interface typeface, controlled line length, comfortable line height, and selectable text.
 7. **Honest product status.** Implemented, in-development, planned, candidate, and research-watch capabilities must be clearly differentiated.
@@ -154,11 +164,11 @@ The inspected CSS also contains a `prefers-reduced-motion: reduce` mode that dis
 
 The mobile screenshot confirms a centered, single-column hierarchy; generous separation between major sections; vertically stacked cards; warm page/card/paper surface relationships; rounded containers; strong heading-to-copy scale contrast; simple dark CTAs; and compact icon groups. These are compositional observations only. The screenshot is not the source of any token or measurement above.
 
-### 2.2 MedNexus adaptation decisions
+### 2.2 MRJ adaptation decisions
 
-- Use the Light / Oak direction as the primary near-term MedNexus identity.
+- Use the Light / Oak direction as the primary near-term MRJ identity.
 - Treat the Ink palette as optional future-theme reference material, not the product foundation.
-- Adopt Mona Sans as the principal MedNexus visual, interface, and clinical-document font.
+- Adopt Mona Sans as the principal MRJ visual, interface, and clinical-document font.
 - Do not copy either font binary from EdgeCase. Obtain Mona Sans later from an authoritative licensed source and retain its applicable license/notice.
 - Reuse Oak values where they support clinical readability, while adding distinct accessible semantic state colors where clinical meaning requires them.
 - Use `#E23B2B` as a restrained signature accent, not the dominant application color and not a universal error, danger, review, or destructive-action color.
@@ -168,9 +178,9 @@ The mobile screenshot confirms a centered, single-column hierarchy; generous sep
 - Preserve EdgeCase's spacious rhythm and surface layering while reducing decorative motion and dense marketing scale inside clinical workspaces.
 - Do not copy EdgeCase content, branding, illustrations, logos, or product-specific composition.
 
-## 3. Proposed MedNexus clinical design tokens
+## 3. Proposed MRJ clinical design tokens
 
-The following system adapts the verified EdgeCase reference values for MedNexus. Each non-reference semantic extension is labeled as a MedNexus decision.
+The following system adapts the verified EdgeCase reference values for MRJ. Each non-reference semantic extension is labeled as a MRJ decision.
 
 ### 3.1 Color tokens
 
@@ -187,19 +197,19 @@ The following system adapts the verified EdgeCase reference values for MedNexus.
 | `--mnx-border` | `rgba(28, 20, 12, 0.14)` | Default border; verified reference value |
 | `--mnx-action` | `#1C140C` | Primary CTA background; verified Oak role |
 | `--mnx-action-text` | `#EAD6B8` | Primary CTA label; verified Oak role |
-| `--mnx-signature` | `#E23B2B` | MedNexus signature accent; verified reference color |
+| `--mnx-signature` | `#E23B2B` | MRJ signature accent; verified reference color |
 | `--mnx-radiology` | `#2A9B8F` | Radiology accent; verified supporting reference color |
-| `--mnx-radiology-soft` | `#DCEBE3` | Radiology soft surface; MedNexus semantic extension |
-| `--mnx-public-health` | `#4F6F49` | Public Health accent; MedNexus semantic extension compatible with Oak |
-| `--mnx-public-health-soft` | `#E3E8D3` | Public Health soft surface; MedNexus semantic extension |
-| `--mnx-success` | `#2D6848` | Successful completion/readiness; MedNexus semantic extension |
-| `--mnx-success-soft` | `#DFEBDD` | Success surface; MedNexus semantic extension |
-| `--mnx-warning` | `#895A00` | Non-blocking warning; MedNexus semantic extension |
-| `--mnx-warning-soft` | `#F8E7B7` | Warning surface; MedNexus semantic extension |
-| `--mnx-review` | `#664A78` | Review-required/abstention; MedNexus semantic extension |
-| `--mnx-review-soft` | `#EDE1F0` | Review surface; MedNexus semantic extension |
-| `--mnx-error` | `#9E332C` | Error state; MedNexus semantic extension |
-| `--mnx-error-soft` | `#F2D9D2` | Error surface; MedNexus semantic extension |
+| `--mnx-radiology-soft` | `#DCEBE3` | Radiology soft surface; MRJ semantic extension |
+| `--mnx-public-health` | `#4F6F49` | Public Health accent; MRJ semantic extension compatible with Oak |
+| `--mnx-public-health-soft` | `#E3E8D3` | Public Health soft surface; MRJ semantic extension |
+| `--mnx-success` | `#2D6848` | Successful completion/readiness; MRJ semantic extension |
+| `--mnx-success-soft` | `#DFEBDD` | Success surface; MRJ semantic extension |
+| `--mnx-warning` | `#895A00` | Non-blocking warning; MRJ semantic extension |
+| `--mnx-warning-soft` | `#F8E7B7` | Warning surface; MRJ semantic extension |
+| `--mnx-review` | `#664A78` | Review-required/abstention; MRJ semantic extension |
+| `--mnx-review-soft` | `#EDE1F0` | Review surface; MRJ semantic extension |
+| `--mnx-error` | `#9E332C` | Error state; MRJ semantic extension |
+| `--mnx-error-soft` | `#F2D9D2` | Error surface; MRJ semantic extension |
 
 Color must never be the only carrier of meaning. Every status also requires text and, where helpful, an icon. Contrast must be verified against WCAG 2.2 AA before implementation; proposed values are not a substitute for implementation-time contrast testing.
 
@@ -232,13 +242,13 @@ Color must never be the only carrier of meaning. Every status also requires text
 | `--shadow-subtle` | `0 8px 18px rgba(28, 20, 12, 0.06)` |
 | `--shadow-feature-reference` | `0 24px 48px rgba(0, 0, 0, 0.28)` |
 
-The spacing scale remains a MedNexus organizational layer over the verified EdgeCase rhythm. Marketing sections may use the verified `40px 24px 88px` desktop and `28px 16px 64px` mobile rhythm. Clinical workspaces may extend to `1440px` and add intermediate breakpoints where report readability requires them.
+The spacing scale remains a MRJ organizational layer over the verified EdgeCase rhythm. Marketing sections may use the verified `40px 24px 88px` desktop and `28px 16px 64px` mobile rhythm. Clinical workspaces may extend to `1440px` and add intermediate breakpoints where report readability requires them.
 
-Use one-pixel borders for most separation. EdgeCase's major-card shadow is verified, but MedNexus clinical workspaces should prefer no shadow or the verified restrained light-card shadow `0 8px 18px rgba(28, 20, 12, 0.06)`. Elevation should communicate hierarchy, not decoration.
+Use one-pixel borders for most separation. EdgeCase's major-card shadow is verified, but MRJ clinical workspaces should prefer no shadow or the verified restrained light-card shadow `0 8px 18px rgba(28, 20, 12, 0.06)`. Elevation should communicate hierarchy, not decoration.
 
 ### 3.3 Component language
 
-- Primary buttons: at least `44px` high for MedNexus accessibility, pill or restrained rounded treatment, `#1C140C` background, `#EAD6B8` label, and clear hover/focus states. The verified EdgeCase reference height is `42px`.
+- Primary buttons: at least `44px` high for MRJ accessibility, pill or restrained rounded treatment, `#1C140C` background, `#EAD6B8` label, and clear hover/focus states. The verified EdgeCase reference height is `42px`.
 - Large actions and inputs: `52px` high where the hierarchy requires them.
 - Secondary buttons: transparent or paper surface, theme border, and primary ink text.
 - Quiet/text actions: no enclosing pill unless needed for selection; minimum 44px interactive target.
@@ -251,7 +261,7 @@ Use one-pixel borders for most separation. EdgeCase's major-card shadow is verif
 
 ### 3.4 Future shared token structure
 
-Implementation should later expose one shared MedNexus token layer organized by:
+Implementation should later expose one shared MRJ token layer organized by:
 
 - Color: Oak backgrounds, paper surfaces, ink text, border, action, and signature accent.
 - Typography: Mona Sans family, role-based scale, weights, line heights, and reading constraints.
@@ -259,7 +269,7 @@ Implementation should later expose one shared MedNexus token layer organized by:
 - Radius: small card, input, nested panel, primary card, feature, and pill.
 - Shadow: no-shadow default, subtle clinical elevation, and separately governed feature elevation.
 - Layout: `1120px` marketing content, `920px` focused feature, `1440px` maximum clinical workspace, and readable text measure.
-- Controls: reference `42px`, accessible MedNexus minimum `44px`, and large `52px`.
+- Controls: reference `42px`, accessible MRJ minimum `44px`, and large `52px`.
 - Motion: verified easing, landing reveal, shorter workspace transitions, and reduced-motion overrides.
 - Domain accent: Radiology teal and compatible Public Health green.
 - Semantic state: success, warning, review required, and error, kept separate from the signature accent.
@@ -268,10 +278,10 @@ This is a blueprint for future variables and primitives. No CSS token implementa
 
 ## 4. Typography system
 
-### 4.1 MedNexus family decision
+### 4.1 MRJ family decision
 
 - **Primary interface, display, navigation, button, and clinical-document font:** `Mona Sans`, obtained from an authoritative licensed source during implementation, with `Segoe UI`, `Arial`, and `sans-serif` fallbacks.
-- **Technical-only fallback:** `ui-monospace`, `SFMono-Regular`, `Consolas`, `Liberation Mono`, and `monospace`. This is not a MedNexus brand font and remains visually subordinate.
+- **Technical-only fallback:** `ui-monospace`, `SFMono-Regular`, `Consolas`, `Liberation Mono`, and `monospace`. This is not a MRJ brand font and remains visually subordinate.
 
 Inter and IBM Plex Mono are removed from the proposed visual identity. Do not copy EdgeCase font binaries. Implementation must obtain Mona Sans from its original/authoritative licensed source and preserve the applicable font license and notice.
 
@@ -300,11 +310,11 @@ The landing scale adapts the verified EdgeCase hierarchy without automatically c
 ### 5.1 Header
 
 - Reference height: approximately `74px` on desktop and `60px` on mobile, derived from the verified EdgeCase controls, mark, and navigation padding rather than an explicit fixed height.
-- MedNexus logo: left aligned and linked to `/app`.
-- Primary navigation: Radiology, Public Health, How MedNexus Works, Privacy / Governance.
+- Approved MRJ icon plus native MRJ / Medical Report Journey wordmark: left aligned and linked to `/app`.
+- Primary navigation: Radiology, Public Health, How MRJ Works, Privacy / Governance.
 - Radiology may route to the current UNDERSTAND workspace.
 - Public Health must carry an honest status if no dedicated live workspace exists; it must not masquerade as an implemented route.
-- How MedNexus Works may link to the journey section on `/app`.
+- How MRJ Works may link to the journey section on `/app`.
 - Privacy / Governance may link to `/privacy` or the appropriate landing section.
 - One right-aligned workspace/action CTA where useful. Do not display competing primary actions.
 - Active route: restrained underline, side marker, or soft background with an explicit `aria-current="page"` state.
@@ -312,14 +322,14 @@ The landing scale adapts the verified EdgeCase hierarchy without automatically c
 ### 5.2 Page frame
 
 - Landing content width: verified reference maximum `1120px`; focused CTA features may use the verified `920px` maximum.
-- Complex document workspaces may extend to `1440px` as a MedNexus readability adaptation.
+- Complex document workspaces may extend to `1440px` as a MRJ readability adaptation.
 - Horizontal content padding: verified reference `24px` desktop and `16px` mobile.
 - Marketing section rhythm: verified reference `40px 24px 88px` desktop and `28px 16px 64px` mobile.
 - Use the Oak background with card and clinical-paper surfaces; reserve domain and semantic-state accents for orientation and meaning.
 
 ### 5.3 Footer
 
-- Compact MedNexus identity and enterprise medical intelligence description.
+- Compact MRJ identity and enterprise medical intelligence description.
 - Product navigation and concise status/governance links where real destinations exist.
 - No cinematic closing treatment or large repeated product claim.
 
@@ -334,7 +344,7 @@ The landing scale adapts the verified EdgeCase hierarchy without automatically c
 
 ### Section 1 — Hero
 
-- Minimal Oak composition with Mona Sans, MedNexus as the primary identity, and “Clinical Intelligence Platform” as the positioning line.
+- Keep the structural hero hierarchy; use native MRJ identity with “Every Medical Report Has a Journey.” and “From Medical Report to Measurable Indicator.” Existing token proposals do not authorize a new MRJ visual redesign.
 - Core message: understand medical documents and imaging, protect sensitive clinical data, and transform evidence into structured intelligence.
 - Radiology is the primary near-term emphasis; Public Health is the secondary strategic vertical.
 - Maximum two CTAs: **Understand a Document** (`/understanding`) and **Protect Clinical Data** (`/privacy`).
@@ -345,9 +355,9 @@ The landing scale adapts the verified EdgeCase hierarchy without automatically c
 1. **Radiology Intelligence** — first and visually primary. Clearly distinguish implemented Radiology UNDERSTAND capabilities from future image intelligence, extraction, and concordance.
 2. **Public Health Intelligence** — second. Describe the active strategic track without implying production completion or a live workspace where none exists.
 
-Use the verified supporting teal for Radiology and the compatible MedNexus Public Health green extension. Both remain recognizably part of the same Oak/Mona system.
+Use the verified supporting teal for Radiology and the compatible MRJ Public Health green extension. Both remain recognizably part of the same Oak/Mona system.
 
-### Section 3 — MEDNEXUS Seven
+### Section 3 — MRJ seven-stage journey
 
 Present the complete public journey in order:
 
@@ -359,11 +369,11 @@ On mobile, use the screenshot-validated single-column rhythm and clear section s
 
 ### Section 4 — Multi-Engine Intelligence
 
-Lead with: **“Models generate evidence. MedNexus determines authority.”**
+Lead with: **“Models generate evidence. MRJ determines authority.”**
 
 Represent four contributor groups without implying equivalence or integration:
 
-- MedNexus Native — authoritative orchestration and decision ownership.
+- MRJ Native — authoritative orchestration and decision ownership.
 - External Foundation Models — candidate evidence, subject to adapters and governance.
 - Specialized Imaging Engines — future candidate contributors.
 - Future Medical AI Engines — research/adapter candidates.
@@ -372,7 +382,7 @@ MedGemma and MedUAG, if named, must be labeled planned/candidate and watch/bench
 
 ### Section 5 — Governed Clinical Intelligence
 
-Explain in broad-audience language that MedNexus preserves privacy, source traceability, grounding, validation, abstention, human review, and final authority. Avoid internal pipeline jargon as the primary message.
+Explain in broad-audience language that MRJ preserves privacy, source traceability, grounding, validation, abstention, human review, and final authority. Avoid internal pipeline jargon as the primary message.
 
 ### Section 6 — From Reports to Intelligence
 
@@ -380,7 +390,7 @@ Show the future value chain without claiming full implementation:
 
 `Clinical Evidence → Structured Clinical Data → ANALYZE → VISUALIZE → INDICATORS`
 
-Emphasize that downstream interpretation and product value remain MedNexus-owned rather than being delegated to a foundation model.
+Emphasize that downstream interpretation and product value remain MRJ-owned rather than being delegated to a foundation model.
 
 ### Section 7 — Closing and footer
 
@@ -415,7 +425,7 @@ Use human labels in the primary surface. Raw enums remain available only in Tech
 
 Use the strongest workspace type scale here, but keep it materially below the landing hero maximum. Domain and modality should remain identifiable without forcing the user to scan decorative panels.
 
-#### B. What MedNexus Understood
+#### B. What MRJ Understood
 
 Show only bounded document-level context supported by the authoritative `MedNexusDocumentContext`, such as performed examination, authoritative anatomy, contrast context, and document nature. Do not display field-level clinical facts or turn UNDERSTAND into EXTRACT.
 
@@ -427,7 +437,7 @@ Present semantic regions in source order with readable labels. Offsets and canon
 
 Use document-paper surfaces and stable vertical rhythm suitable for long section labels and bilingual content.
 
-#### D. Why MedNexus Recognized It
+#### D. Why MRJ Recognized It
 
 Translate backend-provided evidence messages into a readable list. Do not create clinical inferences, evidence weights, or explanations in the browser.
 
@@ -475,7 +485,7 @@ Preserve backend IDs and default Clinical selection. Explain the use case and su
 
 ### D. Privacy result summary
 
-Show only backend-supported values: protection status, selected policy, processing time, warning/review state, source type, and MedNexus output ownership. Do not invent entity counts, risk scores, or policy-decision summaries.
+Show only backend-supported values: protection status, selected policy, processing time, warning/review state, source type, and MRJ output ownership. Do not invent entity counts, risk scores, or policy-decision summaries.
 
 ### E. Side-by-side document view
 
@@ -495,7 +505,7 @@ Collapsed by default. Preserve raw metadata for technical users without making i
 
 ## 9. Responsive behavior
 
-The verified EdgeCase homepage uses one primary width breakpoint at `860px`, where navigation and multi-column content simplify to a mobile composition. MedNexus retains `860px` as a reference breakpoint but may introduce additional breakpoints because clinical document comparison and evidence layouts have materially different readability needs.
+The verified EdgeCase homepage uses one primary width breakpoint at `860px`, where navigation and multi-column content simplify to a mobile composition. MRJ retains `860px` as a reference breakpoint but may introduce additional breakpoints because clinical document comparison and evidence layouts have materially different readability needs.
 
 | Range | Intended composition |
 |---|---|
@@ -546,7 +556,7 @@ Motion should explain state change, not create atmosphere.
 | Reveal threshold | `0.16` |
 | Reveal root margin | `0px 0px -8% 0px` |
 
-### 11.2 MedNexus adaptation
+### 11.2 MRJ adaptation
 
 | Future token | Proposed value | Use |
 |---|---:|---|
@@ -577,14 +587,14 @@ Use explicit status language:
 
 Representation requirements:
 
-- MEDNEXUS Seven remains the full target journey; the UI must not imply all seven stages are live.
+- MRJ seven-stage journey remains the full target journey; the UI must not imply all seven stages are live.
 - UNDERSTAND and PROTECT may be presented as current capabilities according to their accepted boundaries.
 - Radiology is the first reference domain and near-term primary focus.
 - Public Health is the secondary strategic priority and active parallel domain work, not production-complete.
 - MedGemma remains a planned candidate engine.
 - MedUAG remains watch/benchmark/future-adapter material.
-- Evidence Fusion & Arbitration and Image–Report Concordance remain future MedNexus-owned capabilities.
-- PROTECT and STANDARDIZE remain MedNexus-owned authority boundaries.
+- Evidence Fusion & Arbitration and Image–Report Concordance remain future MRJ-owned capabilities.
+- PROTECT and STANDARDIZE remain MRJ-owned authority boundaries.
 
 ## 13. Technical preservation boundaries
 
@@ -599,7 +609,7 @@ The visual redesign must preserve:
 - Backend-provided recognition explanations and semantic regions.
 - Backend-provided journey continuation and one-active-source behavior.
 - Canonical privacy policy IDs and the default Clinical profile.
-- Original/protected output fidelity and MedNexus-owned output authority.
+- Original/protected output fidelity and MRJ-owned output authority.
 - Progressive reveal, Show full result, copy behavior, and reduced-motion path.
 - Technical metadata and progressive disclosure.
 - Existing error conventions and mobile behavior.
@@ -636,24 +646,24 @@ Each stage requires focused browser review and relevant automated tests before a
 ### Design review
 
 - The system reads as light, clinical, premium, calm, spacious, and high-trust.
-- Mona Sans is the principal MedNexus visual, interface, and clinical-document font, sourced later through an authoritative licensed distribution.
+- Mona Sans is the principal MRJ visual, interface, and clinical-document font, sourced later through an authoritative licensed distribution.
 - Oak/light is the primary visual identity; the Ink palette remains reference or optional future-theme material.
 - Major black, dark, cinematic, glow, and neon surfaces are removed from the near-term redesign.
 - Radiology is clearly primary and Public Health clearly secondary without fragmenting the brand.
-- MEDNEXUS Seven remains intact and is presented as one coherent journey rather than seven visual identities.
+- MRJ seven-stage journey remains intact and is presented as one coherent journey rather than seven visual identities.
 - Implemented, planned, candidate, and research-watch capabilities are visually distinguishable.
 - Clinical workspaces prioritize readability and stable results over animation.
 - No page depends on cinematic video or gaming/cyber-security cues.
 - One shared shell and token language can serve all three routes.
 - A broad-audience user can identify the page purpose and primary action within approximately five seconds.
-- Verified EdgeCase reference values and MedNexus adaptation decisions remain explicitly distinguishable.
+- Verified EdgeCase reference values and MRJ adaptation decisions remain explicitly distinguishable.
 - No EdgeCase branding, assets, content, illustration, logo, or font binary is copied.
 
 ### Product truth
 
-- MEDNEXUS Seven remains unchanged and future stages are labeled accurately.
+- MRJ seven-stage journey remains unchanged and future stages are labeled accurately.
 - Current, planned, candidate, and research-watch capabilities cannot be confused.
-- External engines are presented as candidate evidence contributors; MedNexus authority remains explicit.
+- External engines are presented as candidate evidence contributors; MRJ authority remains explicit.
 - UNDERSTAND does not display EXTRACT-level claims.
 - PROTECT does not display unsupported entity counts, risk scores, or fabricated policy decisions.
 
@@ -683,4 +693,4 @@ Each stage requires focused browser review and relevant automated tests before a
 
 ## 16. Review decision
 
-Human design review accepted this document as **MedNexus UI/UX Design Blueprint v1.0** on 2026-09-08. Acceptance establishes the design direction and implementation guardrails; it does not implement or authorize production frontend, presentation refactor, route, API, clinical, dependency, or font changes. The next step is a visual Landing Page prototype/mockup for review before production frontend implementation.
+Human design review accepted this document as **MedNexus UI/UX Design Blueprint v1.0** on 2026-09-08. The 2026-09-13 public-identity note qualifies its current use for MRJ without renaming this accepted artifact. Acceptance establishes the design direction and implementation guardrails; it does not implement or authorize production frontend, presentation refactor, route, API, clinical, dependency, or font changes. The next step is a visual Landing Page prototype/mockup for review before production frontend implementation.

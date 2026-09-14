@@ -294,16 +294,17 @@ def test_understanding_file_api_rejects_unsupported_or_empty_files(filename, con
 def test_understanding_frontend_route_and_assets_are_available():
     page = client.get("/understanding")
     styles = client.get("/understanding-styles.css")
+    design_system = client.get("/static/mednexus-design-system.css")
     script = client.get("/understanding.js")
-    assert page.status_code == styles.status_code == script.status_code == 200
-    assert "Document Understanding Workspace — MedNexus" in page.text
-    assert "Medical Document" in page.text
-    assert "Understanding Workspace." in page.text
+    assert page.status_code == styles.status_code == design_system.status_code == script.status_code == 200
+    assert "Document Understanding Workspace — MRJ" in page.text
+    assert "Understand clinical documents" in page.text
+    assert "What MRJ understood" in page.text
     assert "/api/v1/understanding/analyze-text" in script.text
     assert "/api/v1/understanding/analyze-file" in script.text
     assert "Recognized Structure" in page.text
     assert "DOCUMENT CONTEXT" in page.text
-    assert "Why MedNexus recognized this document" in page.text
+    assert "Why MRJ recognized this document" in page.text
     assert "PROCESSING READINESS" in page.text
     assert "Continue to Privacy Protection" in page.text
     assert "Technical details" in page.text
@@ -335,9 +336,9 @@ def test_understanding_frontend_uses_canonical_backend_authority_and_bounded_con
         "suv_value", "exact_measurement", "recommendation_text",
     )
     assert all(field not in script.casefold() for field in forbidden_product_fields)
-    assert "01 UNDERSTAND" in page
-    assert "02 PROTECT" in page
-    assert "03 EXTRACT" in page
+    assert '<i>01</i><span>UNDERSTAND</span>' in page
+    assert '<i>02</i><span>PROTECT</span>' in page
+    assert '<i>03</i><span>EXTRACT</span>' in page
     assert "01 INGEST" not in page
     assert "02 UNDERSTAND" not in page
     assert "pathology" not in page.casefold()
@@ -372,7 +373,7 @@ def test_progressive_reveal_keeps_placeholders_as_complete_line_chunks():
 def test_privacy_handoff_status_and_lifecycle_are_visible_without_breaking_standalone():
     page = client.get("/privacy").text
     assert "DOCUMENT RECEIVED" in page
-    assert "MedNexus Document Context available" in page
+    assert "MRJ document context available" in page
     assert "No re-upload required" in page
     assert "UNDERSTAND" in page and "PRIVACY PROTECTION" in page
     assert "loadJourney" in page
@@ -394,11 +395,14 @@ def test_privacy_handoff_status_and_lifecycle_are_visible_without_breaking_stand
 
 def test_homepage_lists_live_capabilities_in_canonical_order():
     page = client.get("/app")
-    recognition = page.text.index("Document Recognition")
-    privacy = page.text.index("Clinical Privacy Policy Engine", recognition)
-    extraction = page.text.index("Clinical Extraction", privacy)
-    public_health = page.text.index("Public Health Intelligence", extraction)
-    assert recognition < privacy < extraction < public_health
+    radiology = page.text.index("Radiology Intelligence")
+    public_health = page.text.index("Public Health Intelligence", radiology)
+    assert radiology < public_health
+    assert "Primary vertical" in page.text
+    assert "Strategic vertical" in page.text
+    assert "Models generate evidence." in page.text
+    assert "MRJ determines authority." in page.text
+    assert "Pathology" not in page.text
     assert 'href="/understanding"' in page.text
 
 
@@ -408,10 +412,24 @@ def test_homepage_presents_mednexus_seven_without_changing_routes():
     assert page.text.count('class="stage ') == 7
     assert 'data-stage="8"' not in page.text
     assert "Eight transformations" not in page.text
-    assert "Seven intelligent transformations" in page.text
-    assert 'aria-label="MedNexus Seven"' in page.text
+    assert "From Medical Report to Measurable Indicator." in page.text
+    assert 'aria-label="MRJ journey"' in page.text
+    for route in ("/app", "/understanding", "/privacy"):
+        branded_page = client.get(route)
+        assert branded_page.status_code == 200
+        assert 'data-product-brand="mrj"' in branded_page.text
+        assert "Medical Report Journey" in branded_page.text
+        assert "/assets/brand/mrj/favicon/favicon.ico" in branded_page.text
+        assert "/static/mrj-brand.css" in branded_page.text
+    for asset in (
+        "/assets/brand/mrj/favicon/favicon.ico",
+        "/assets/brand/mrj/icon_only/png/MRJ_icon_128.png",
+        "/assets/brand/mrj/app_icon/png/MRJ_app_icon_180.png",
+        "/static/mrj-brand.css",
+    ):
+        assert client.get(asset).status_code == 200
     assert '<small>01</small><p class="eyebrow">UNDERSTAND</p>' in page.text
     assert '<small>07</small><p class="eyebrow">INDICATORS</p>' in page.text
-    assert 'TXT · DOCX · PDF' in page.text
+    assert 'href="#public-health"' in page.text
     assert 'href="/understanding"' in page.text
     assert 'href="/privacy"' in page.text

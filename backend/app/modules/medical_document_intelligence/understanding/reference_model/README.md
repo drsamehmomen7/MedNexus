@@ -1,5 +1,7 @@
 # MedNexus Reference Model
 
+Public identity note (2026-09-13): MRJ is Medical Report Journey, formerly MedNexus. The existing MedNexus canonical IDs, source/provenance values, importer interfaces and local paths remain unchanged. Frozen MedNexus architecture continues to govern this package.
+
 This package separates external reference metadata, MedNexus canonical concepts, and proprietary runtime reasoning. Recognition is offline: runtime code reads the local canonical model and never queries terminology services.
 
 ## Controlled source acquisition

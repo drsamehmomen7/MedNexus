@@ -1,17 +1,15 @@
-const stages=[...document.querySelectorAll('.stage')];
-const rail=[...document.querySelectorAll('.rail li')];
-const progress=document.getElementById('railProgress');
+const revealItems = [...document.querySelectorAll('[data-reveal]')];
 
-function activate(i){
-  stages.forEach((el,n)=>el.classList.toggle('active',n===i));
-  rail.forEach((el,n)=>el.classList.toggle('active',n===i));
-  if(progress) progress.style.height=((i/(stages.length-1))*100)+'%';
+if ('IntersectionObserver' in window) {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
+
+  revealItems.forEach(item => observer.observe(item));
+} else {
+  revealItems.forEach(item => item.classList.add('is-visible'));
 }
-
-const observer=new IntersectionObserver(entries=>{
-  const hit=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
-  if(!hit) return;
-  activate(Number(hit.target.dataset.stage)-1);
-},{threshold:[.38,.52,.66],rootMargin:'-14% 0px -20% 0px'});
-
-stages.forEach(stage=>observer.observe(stage));

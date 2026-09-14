@@ -1,6 +1,32 @@
-# MedNexus Current State
+# MRJ Current State
 
-**Authoritative date:** 8 September 2026
+**Authoritative date:** 13 September 2026
+
+## MRJ Phase 0 public identity and documentation
+
+MRJ is the approved public identity of the continuing MedNexus project. MRJ means **Medical Report Journey**. The MedNexus-named frozen Blueprint v2.0, UNDERSTAND Domain Matrix v1.0, Crosswalk v2.0, Semantic Context Contract v0.2, and Extraction Contract v0.2 remain the governing technical authority for MRJ. Their files, versions, technical identifiers, and historical names are not renamed by this public-identity migration.
+
+**The medical report is the hero of the platform.** The product narrative is **REPORT | PATHWAY | OUTCOME**.
+
+Approved language:
+
+- Every Medical Report Has a Journey.
+- From Medical Report to Measurable Indicator.
+- From Document to Decision.
+- Understand it. Protect it. Structure it. Analyze it. Measure what matters.
+- REPORT | PATHWAY | OUTCOME
+
+The public journey remains **UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS**, with INGEST internal to UNDERSTAND. Radiology remains primary and Public Health secondary. Recognition, privacy processing, contracts, policies, provenance, and external-engine candidate-only authority are unchanged. PROTECT and STANDARDIZE ownership stays with the platform; this rebrand implements no future stage or multi-engine runtime.
+
+Approved MRJ icons are installed at `frontend/assets/brand/mrj/`; original supplied bytes are preserved. Native typography provides the wordmark. Public titles, labels, and branding on `/app`, `/understanding`, and `/privacy` now use MRJ. Old raster branding is suppressed, not edited. This is identity migration, not acceptance of the uncommitted frontend's visual design. Technical policy/provenance values can still contain MedNexus and remain unmodified.
+
+Accepted checkpoints remain M0 `081e8b178f63850beb18f41a09494452aeacc4fc`, design `b64a8ee`, and Radiology `31b22ab`. The accepted pre-migration working regression baseline is **950 passed, 8 warnings, 0 failures**. Phase 0 verification is recorded in the new BUILD_HISTORY entry; it does not rewrite historical baselines.
+
+The next visual work is an explicitly authorized MRJ website review/prototype. Preserve the sequence UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish. No naming exploration, logo redesign, or internal-identifier migration is authorized.
+
+## Prior checkpoint records — historical context
+
+The records below retain their original dates, product names, counts, scope and then-current next steps. Their MedNexus branding and former visual direction do not override the MRJ decision above; older “pending” and “not implemented” descriptions are checkpoint snapshots, not a replacement for current source code or the latest accepted implementation baseline.
 
 ## UI/UX Design Blueprint v1.0 — Accepted Design Checkpoint
 

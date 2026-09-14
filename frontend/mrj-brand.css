@@ -1,0 +1,26 @@
+/* Phase 0 identity only. Approved image bytes are not styled or recolored. */
+[data-product-brand="mrj"] .mrj-brand-icon { width: 48px; height: 48px; object-fit: contain; flex-shrink: 0; }
+[data-product-brand="mrj"] .mrj-wordmark { display: inline-flex; flex-direction: column; gap: 2px; line-height: 1.15; }
+[data-product-brand="mrj"] .mrj-wordmark b { font-size: 27px; letter-spacing: .02em; }
+[data-product-brand="mrj"] .mrj-wordmark small { font: 500 11px/1.4 "Mona Sans", "Segoe UI", sans-serif; letter-spacing: .01em; text-transform: none; }
+[data-product-brand="mrj"] .landing-brand small { font-size: 11px; letter-spacing: .01em; text-transform: none; }
+[data-product-brand="mrj"] .mrj-identity-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+[data-product-brand="mrj"] .mrj-identity-panel img { width: 192px; height: 192px; object-fit: contain; }
+[data-product-brand="mrj"] .vertical-card { grid-template-columns: 1fr; }
+[data-product-brand="mrj"] .vertical-art[hidden] { display: none !important; }
+[data-product-brand="mrj"] .engine-brand { display: inline-flex; flex-direction: row; align-items: center; gap: 12px; }
+[data-product-brand="mrj"] .engine-identity-mark .engine-orbit,
+[data-product-brand="mrj"] .engine-core-x,
+[data-product-brand="mrj"] .reference-stage > img,
+[data-product-brand="mrj"] .core-disc img:not(.mrj-brand-icon),
+[data-product-brand="mrj"] footer img:not(.mrj-brand-icon) { display: none !important; }
+/* Retain every policy/action link and its behavior without the old image map. */
+[data-product-brand="mrj"] .reference-stage { display: flex; flex-wrap: wrap; gap: 12px; padding: 24px; min-height: 0; height: auto; aspect-ratio: auto; }
+[data-product-brand="mrj"] .reference-stage a { position: static; inset: auto; width: auto; height: auto; min-height: 44px; display: inline-flex; align-items: center; padding: 10px 16px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 10px; opacity: 1; }
+[data-product-brand="mrj"] .core-disc .mrj-brand-icon { display: block; margin: 0 auto 12px; }
+[data-product-brand="mrj"] .footer-brand { display: inline-flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+@media (max-width: 430px) {
+  [data-product-brand="mrj"] .mrj-brand-icon { width: 40px; height: 40px; }
+  [data-product-brand="mrj"] .mrj-wordmark b { font-size: 24px; }
+  [data-product-brand="mrj"] .landing-brand small { font-size: 10px; }
+}

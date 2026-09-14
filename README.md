@@ -1,14 +1,32 @@
-# MedNexus
+# MRJ
+
+Medical Report Journey
 
 Enterprise Medical Document Intelligence Platform
 
 ---
 
+## Public identity — 13 September 2026
+
+MRJ is the approved public identity of the continuing MedNexus project. MRJ means **Medical Report Journey**. The MedNexus-named frozen Blueprint v2.0, UNDERSTAND Domain Matrix v1.0, Crosswalk v2.0, Semantic Context Contract v0.2, and Extraction Contract v0.2 remain the governing technical authority for MRJ. Their files, versions, technical identifiers, and historical names are not renamed by this public-identity migration.
+
+**The medical report is the hero of the platform.** The product narrative is **REPORT | PATHWAY | OUTCOME**.
+
+Approved language:
+
+- Every Medical Report Has a Journey.
+- From Medical Report to Measurable Indicator.
+- From Document to Decision.
+- Understand it. Protect it. Structure it. Analyze it. Measure what matters.
+- REPORT | PATHWAY | OUTCOME
+
+The approved icon is installed unchanged from the owner-supplied MRJ pack. The public wordmark is native text: MRJ / Medical Report Journey. Public identity is migrated on `/app`, `/understanding`, and `/privacy`; larger legacy branded illustrations are suppressed pending later visual work. Existing uncommitted UI implementation is preserved and is not declared an accepted visual checkpoint.
+
 ## Overview
 
-MedNexus is an enterprise platform that turns medical documents into protected, structured, standardized, and analyzable clinical information. Capabilities are modular and may operate independently while participating in one connected document journey.
+MRJ is an enterprise platform that turns medical documents into protected, structured, standardized, and analyzable clinical information. Capabilities are modular and may operate independently while participating in one connected document journey.
 
-The public MEDNEXUS⁷ product journey is:
+The public MRJ journey is:
 
 ```text
 01 UNDERSTAND → 02 PROTECT → 03 EXTRACT → 04 STANDARDIZE
@@ -17,17 +35,17 @@ The public MEDNEXUS⁷ product journey is:
 
 This is the target product architecture, not a claim that all seven stages are implemented. INGEST remains an internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction.
 
-Public signature: **MEDNEXUS⁷ — One document. Seven intelligent transformations.** This is a visual/product brand signature. Internal code identifiers, packages, classes, APIs, routes, repositories, and runtime contracts remain `MedNexus`; `MedNexus7` is only a textual fallback where superscript typography is unavailable.
+Public identity: **MRJ — Medical Report Journey**. The former MEDNEXUS⁷ signature is historical. The seven-stage architecture is unchanged; internal code, policy IDs, APIs, schemas, provenance values, filenames, and `D:\MedNexus` paths retain their existing names.
 
 The current implemented capabilities are **Clinical Privacy Policy Engine / De-identification** and **Medical Document Understanding & Recognition**, with Radiology as the primary current specialization. Public Health is the second strategic specialization. Phase 1 remains frozen at its accepted POC checkpoint.
 
-The [Multi-Engine Medical Intelligence Strategy v1.1](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) is the current accepted strategy and records the current priority, technical-spike checkpoint, hardware transition, UI direction, and roadmap. The accepted [Strategy v1.0 predecessor](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) remains the immutable historical M0 checkpoint. External medical AI engines may contribute candidate evidence through a future vendor-neutral Gateway, while MedNexus retains authority, policy, provenance, arbitration, clinical contracts, standardization, and persistent intelligence. The accepted strategy remains subordinate to the frozen UNDERSTAND v1 authority and does not claim runtime implementation.
+The [Multi-Engine Medical Intelligence Strategy v1.1](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) is the current accepted strategy and records the current priority, technical-spike checkpoint, hardware transition, UI direction, and roadmap. The accepted [Strategy v1.0 predecessor](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) remains the immutable historical M0 checkpoint. External medical AI engines may contribute candidate evidence through a future vendor-neutral Gateway, while MRJ retains authority, policy, provenance, arbitration, clinical contracts, standardization, and persistent intelligence. The accepted strategy remains subordinate to the frozen UNDERSTAND v1 authority and does not claim runtime implementation.
 
 ## UI/UX Design Blueprint v1.0
 
-The M0 architecture/documentation checkpoint is complete at `081e8b178f63850beb18f41a09494452aeacc4fc`. Human review has accepted the [MedNexus UI/UX Design Blueprint v1.0](docs/design/MedNexus_UI_UX_Design_Blueprint_v1.0.md) as the M1 design direction. It establishes a Mona Sans, light/Oak, clinically readable shared product system with Radiology visually primary, Public Health secondary, MEDNEXUS⁷ unchanged, and UNDERSTAND/PROTECT treated as clinical workspaces. No frontend implementation, route/API change, dependency, or font download is part of this checkpoint.
+The M0 architecture/documentation checkpoint is complete at `081e8b178f63850beb18f41a09494452aeacc4fc`. Human review accepted the [MedNexus UI/UX Design Blueprint v1.0](docs/design/MedNexus_UI_UX_Design_Blueprint_v1.0.md) as the M1 design direction. That documentation-only checkpoint established Mona Sans, light/Oak reference tokens, Radiology-first hierarchy, Public Health secondary, the seven stages and clinical workspaces. The 13 September MRJ decision supersedes its public brand identity; it does not retroactively claim that the earlier checkpoint implemented UI changes.
 
-The next active step is a visual Landing Page prototype/mockup for human review before production frontend implementation. The approved later sequence remains `UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish`.
+The next visual step is MRJ website review/prototyping under a separately authorized task. The working tree already contains uncommitted UI implementation; Phase 0 changes only public identity and copy. The approved later sequence remains `UX foundation → Landing → UNDERSTAND → PROTECT → responsive/accessibility/regression polish`.
 
 ## UNDERSTAND v1 Architecture Package
 
@@ -38,7 +56,7 @@ The **FROZEN UNDERSTAND v1 Architecture Authority** consists of [MedNexus UNDERS
 - EXTRACT produces terminology-independent clinical facts with per-field provenance and confidence. STANDARDIZE owns terminology/code mapping.
 - The frozen target catalog is Radiology, Public Health, Laboratory, Admission, Discharge, ICU, and Emergency; Pathology is future. Radiology and Public Health are the full implementation priorities. Native immunization/vaccination documents use `PUBLIC_HEALTH / IMMUNIZATION` in the current product scope. `PUBLIC_HEALTH / LABORATORY_DERIVED_SURVEILLANCE` requires native Public Health surveillance identity plus laboratory-derived context; native Laboratory documents remain Laboratory even when used by Public Health workflows.
 - Nuclear Medicine remains one Radiology subdomain with `PLANAR`, `SPECT`, `PET`, `SPECT_CT`, `PET_CT`, and `OTHER` study families. Diagnostic Fluoroscopy is distinct from image-guided intervention, which remains `RADIOLOGY / OTHER` until a future family is approved.
-- MedNexus Main/Core and Claude/Claude Code Domain Intelligence develop in parallel. Main/Core owns UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics; Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS.
+- MRJ Main/Core and Claude/Claude Code Domain Intelligence develop in parallel. Main/Core owns UNDERSTAND, PROTECT, core contracts/foundations, and shared platform semantics; Domain Intelligence owns downstream domain-specific EXTRACT, STANDARDIZE implementation, ANALYZE, VISUALIZE, and INDICATORS.
 - A standing Cross-Track Synchronization Policy requires a concise Cross-Track Sync Brief when shared architecture or contracts change, either track reaches a stable checkpoint, a cross-track dependency or impact appears, or before integration. Routine internal changes with no shared-contract impact do not require a brief.
 - The current accepted Radiology UNDERSTAND v1 working baseline is **950 passed, 8 warnings, 0 failures**. The earlier Core Migration baseline remains **872 passed, 8 warnings, 0 failures**, and the previous accepted Core checkpoint remains **780 passed, 8 warnings, 0 failures** at `53a988cafd23e514b31d85e240688a6d0c3b1b31`.
 
@@ -46,19 +64,19 @@ Radiology remains the first rich UNDERSTAND reference domain. Its current compos
 
 ## Multi-Engine Medical Intelligence Strategy
 
-MedNexus is evolving toward a model-agnostic, multi-engine clinical-intelligence platform under one governing principle: **Models generate evidence. MedNexus determines authority.** The future [MedNexus Medical Intelligence Gateway](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) will provide a stable candidate-engine boundary and capability registry; MedNexus-owned Evidence Fusion & Arbitration will remain responsible for eligibility, source authority, conflicts, abstention, confidence, and human-review routing.
+MRJ is evolving toward a model-agnostic, multi-engine clinical-intelligence platform under one governing principle: **Models generate evidence. MRJ determines authority.** The future [MedNexus Medical Intelligence Gateway](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) will provide a stable candidate-engine boundary and capability registry; MRJ-owned Evidence Fusion & Arbitration will remain responsible for eligibility, source authority, conflicts, abstention, confidence, and human-review routing.
 
-Before any external engine receives clinical input, a cross-cutting PROTECT-owned Engine Data-Access Preflight must authorize the exact engine, version, data exposure, execution environment, stage/capability, and local or remote route. This preflight is not completion of Stage 02 PROTECT and does not reorder MEDNEXUS⁷. Local execution alone does not establish compliance.
+Before any external engine receives clinical input, a cross-cutting PROTECT-owned Engine Data-Access Preflight must authorize the exact engine, version, data exposure, execution environment, stage/capability, and local or remote route. This preflight is not completion of Stage 02 PROTECT and does not reorder MRJ seven-stage journey. Local execution alone does not establish compliance.
 
-MedGemma is a planned candidate engine, not MedNexus-owned intelligence. Unified medical understanding-and-generation systems such as MedUAG remain research-watch and future benchmark/adapter candidates pending independent verification of availability, license, commercial rights, reproducibility, runtime, privacy, and MedNexus-specific performance. No external model is authorized to own document identity, privacy decisions, persistent extraction, terminology mapping, analytics, or indicators.
+MedGemma is a planned candidate engine, not MRJ-owned intelligence. Unified medical understanding-and-generation systems such as MedUAG remain research-watch and future benchmark/adapter candidates pending independent verification of availability, license, commercial rights, reproducibility, runtime, privacy, and MRJ-specific performance. No external model is authorized to own document identity, privacy decisions, persistent extraction, terminology mapping, analytics, or indicators.
 
-The strategy preserves MEDNEXUS⁷ and the frozen stage boundaries. It proposes future Radiology document and imaging planes, followed by MedNexus-owned evidence arbitration and review-oriented image-report concordance. Public Health compatibility is preserved without starting a Public Health multi-engine implementation. Current accepted working regression baseline before this architecture-only task: **950 passed, 8 warnings, 0 failures**; tests were not re-run and the baseline is unchanged. MedNexus is awaiting responses or approval from external real-world Radiology dataset providers; no provider outcome or date is inferred.
+The strategy preserves MRJ seven-stage journey and the frozen stage boundaries. It proposes future Radiology document and imaging planes, followed by MRJ-owned evidence arbitration and review-oriented image-report concordance. Public Health compatibility is preserved without starting a Public Health multi-engine implementation. Current accepted working regression baseline before this architecture-only task: **950 passed, 8 warnings, 0 failures**; tests were not re-run and the baseline is unchanged. MRJ is awaiting responses or approval from external real-world Radiology dataset providers; no provider outcome or date is inferred.
 
-Future engine approval is exact-artifact, adapter, contract, configuration, terms, validation-scope, and use-scope specific. Fusion remains stage-scoped and acyclic; correlated evidence is not independent corroboration, raw engine confidence is distinct from MedNexus-calibrated support, and downstream evidence cannot silently rewrite upstream authority. Future concordance explicitly supports concordant, discordant, unsupported-assertion, possible-omission, and indeterminate review outcomes without automatically rewriting reports or creating clinical facts.
+Future engine approval is exact-artifact, adapter, contract, configuration, terms, validation-scope, and use-scope specific. Fusion remains stage-scoped and acyclic; correlated evidence is not independent corroboration, raw engine confidence is distinct from MRJ-calibrated support, and downstream evidence cannot silently rewrite upstream authority. Future concordance explicitly supports concordant, discordant, unsupported-assertion, possible-omission, and indeterminate review outcomes without automatically rewriting reports or creating clinical facts.
 
-The accepted historical [MedGemma M1.1 technical-spike checkpoint](docs/experiments/MedNexus_MedGemma_Technical_Spike_M1.1.md) is safely paused at the official Hugging Face access/terms gate; this is not an inference failure. “M1.1” is a historical experiment identifier from the prior strategy sequence, not roadmap milestone M1 of accepted Strategy v1.1; controlled MedGemma resumption is roadmap M6. No immutable revision was guessed, no GPU or runtime was measured, no model or dependency was installed locally, no clinical inference occurred, and no PHI or unopened holdout was used. `MG-RAD-CANDIDATE-v0.2` remains an experimental exact-quote, no-model-offset candidate contract with deterministic MedNexus grounding.
+The accepted historical [MedGemma M1.1 technical-spike checkpoint](docs/experiments/MedNexus_MedGemma_Technical_Spike_M1.1.md) is safely paused at the official Hugging Face access/terms gate; this is not an inference failure. “M1.1” is a historical experiment identifier from the prior strategy sequence, not roadmap milestone M1 of accepted Strategy v1.1; controlled MedGemma resumption is roadmap M6. No immutable revision was guessed, no GPU or runtime was measured, no model or dependency was installed locally, no clinical inference occurred, and no PHI or unopened holdout was used. `MG-RAD-CANDIDATE-v0.2` remains an experimental exact-quote, no-model-offset candidate contract with deterministic MRJ grounding.
 
-The light, clinical UI/UX Blueprint v1.0 is accepted, but no frontend redesign has been implemented. Near-term work now begins with a visual Landing Page prototype/mockup, followed only after review by the approved UX foundation, Landing, Radiology UNDERSTAND, PROTECT, and responsive/accessibility/regression implementation sequence. Hardware migration and controlled MedGemma resumption remain later roadmap work.
+The UI/UX Blueprint v1.0 retains its accepted structural guidance, with MRJ identity superseding its former MedNexus branding. Current uncommitted UI work is preserved; further visual implementation follows separately authorized UX foundation, Landing, Radiology UNDERSTAND, PROTECT, and responsive/accessibility/regression stages. Hardware migration and controlled MedGemma resumption remain later roadmap work.
 
 ### Radiology UNDERSTAND v1 Current Baseline
 
@@ -68,14 +86,14 @@ The canonical Radiology taxonomy remains `CT`, `MRI`, `X_RAY`, `ULTRASOUND`, `MA
 
 ## Local Development Startup
 
-Start MedNexus Main from the repository root using the verified recovered Python 3.10.11 runtime and retained site-packages:
+Start MRJ Main from the repository root using the verified recovered Python 3.10.11 runtime and retained site-packages:
 
 ```powershell
 cd D:\MedNexus\07_Source_Code
 .\start_backend.ps1
 ```
 
-Open `http://127.0.0.1:8001`. Local development port convention: MedNexus Main uses `127.0.0.1:8001`; the separate MedNexus Public Health workspace reserves `127.0.0.1:8002`.
+Open `http://127.0.0.1:8001`. Local development port convention: MRJ Main uses `127.0.0.1:8001`; the separate MRJ Public Health workspace reserves `127.0.0.1:8002`.
 
 The Clinical Privacy Policy Engine combines:
 
@@ -83,9 +101,9 @@ The Clinical Privacy Policy Engine combines:
 - Deterministic identifier detection
 - Healthcare-aware role and context validation
 - Purpose-based clinical privacy policies
-- MedNexus-owned output construction
+- MRJ-owned output construction
 
-OpenMed is a candidate detector only. Its detections are treated as suggestions and its `deidentified_text` is non-authoritative. MedNexus owns intelligence decisions, false-positive rejection, purpose-based policy application, and construction of the final de-identified text.
+OpenMed is a candidate detector only. Its detections are treated as suggestions and its `deidentified_text` is non-authoritative. MRJ owns intelligence decisions, false-positive rejection, purpose-based policy application, and construction of the final de-identified text.
 
 ---
 
@@ -112,7 +130,7 @@ The MedNexus Intelligence Core currently includes:
 - `MedNexusIntelligenceOrchestrator`
 - `MedNexusOutputBuilder`
 
-The MedNexus Deterministic Identifier Detector is integrated into the real de-identification service alongside the OpenMed candidate path. MedNexus merges and evaluates detections before producing the final output.
+The MedNexus Deterministic Identifier Detector is integrated into the real de-identification service alongside the OpenMed candidate path. MRJ merges and evaluates detections before producing the final output.
 
 The purpose-based policy model uses `PolicyRule` and `PolicyDefinition` and currently provides four canonical profiles:
 
@@ -137,7 +155,7 @@ The implemented document-processing path supports:
 - `FileProcessingService`
 - The `/api/v1/document/deidentify/file` upload and de-identification endpoint
 
-Extracted text enters the same MedNexus-owned De-identification Intelligence pipeline used for direct text processing. Scanned or image-based PDF OCR and image extraction are not implemented yet.
+Extracted text enters the same MRJ-owned De-identification Intelligence pipeline used for direct text processing. Scanned or image-based PDF OCR and image extraction are not implemented yet.
 
 ## Medical Document Understanding & Recognition
 
@@ -163,7 +181,7 @@ The active POC product page is `/understanding`, supporting pasted text and TXT/
 
 The result workspace uses progressive disclosure for a broad audience: a dominant human-readable recognition summary comes first, followed by detected structure, plain-language evidence, and the recommended journey. Raw enums, offsets, evidence weights/matches, and routing identifiers remain available in collapsed technical details. Primary-language detection favors the dominant clinical content rather than short second-script labels or technical footers.
 
-Radiology recognition is backed by an offline MedNexus-owned compositional knowledge and reasoning package. Typed concepts with stable IDs feed an exact-offset `DocumentEvidenceFrame`; semantic roles and explicit eligibility determine which evidence supports current identity, report composition, context only, or no authoritative score. Recommendation, comparison, history, and findings-only secondary context remains preserved for provenance without inflating current-study identity. LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 are reference/provenance families only; they do not supply runtime decisions.
+Radiology recognition is backed by an offline MRJ-owned compositional knowledge and reasoning package. Typed concepts with stable IDs feed an exact-offset `DocumentEvidenceFrame`; semantic roles and explicit eligibility determine which evidence supports current identity, report composition, context only, or no authoritative score. Recommendation, comparison, history, and findings-only secondary context remains preserved for provenance without inflating current-study identity. LOINC Document Ontology, DICOM/Structured Reporting, RSNA RadLex/Playbook/RadReport, SNOMED CT, HL7 CDA/C-CDA, and WHO ICD-10/ICD-11 are reference/provenance families only; they do not supply runtime decisions.
 
 The primary UNDERSTAND output is `MedNexusDocumentContext`, not classification alone. UNDERSTAND is intentionally bounded to document identity, small high-value context, semantic structure/relationships, provenance/confidence, review requirements, and routing. Radiology currently derives document-level modality, study anatomy/examination, contrast, selected technique or view context, and semantic composition without claiming lesion, diagnosis, exact measurement, recommendation-text, or other clinical-fact extraction.
 
@@ -175,10 +193,10 @@ The frontend includes a reusable Progressive Result Reveal convention for substa
 
 ## Current Product Experience
 
-- `/app` — MEDNEXUS⁷ Enterprise Medical Document Intelligence homepage and seven-transformation product journey.
+- `/app` — MRJ Medical Report Journey homepage and seven-stage product journey.
 - `/privacy` — functional Clinical Privacy Policy Engine POC.
 
-The current frontend is an accepted working design baseline, not final brand or visual polish. Public Health Intelligence is active parallel domain work aligned to the shared document journey; it is not represented as production-complete.
+The accepted frontend checkpoint and the current uncommitted UI changes are distinct. Phase 0 migrates public identity while preserving those changes for review; it is not final visual acceptance. Public Health Intelligence is active parallel domain work aligned to the shared document journey; it is not represented as production-complete.
 
 ---
 
@@ -205,7 +223,7 @@ Completed and integrated:
 - MedNexus Intelligence Core
 - OpenMed candidate adaptation
 - Deterministic identifier detection in the real service
-- MedNexus-owned final output construction
+- MRJ-owned final output construction
 - TXT, DOCX, and text-based PDF extraction
 - Unified document extraction contract and extractor registry/factory
 - File-processing service and upload/de-identification API path
