@@ -14,119 +14,149 @@
   <link rel="apple-touch-icon" href="/assets/brand/mrj/app_icon/png/MRJ_app_icon_180.png">
 </head>
 <body data-product-brand="mrj">
-<header class="mn-site-header">
-  <div class="mn-shell mn-shell--wide mn-nav-wrap">
-    <a class="mn-brand" href="/app" aria-label="MRJ journey home">
-      <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="48" height="48" alt="">
-      <span class="mrj-wordmark"><b>MRJ</b><small>Medical Report Journey</small></span>
-    </a>
-    <nav class="mn-nav" aria-label="Workspace navigation">
-      <a href="/app">Platform</a>
-      <a aria-current="page" href="/understanding">Radiology / Understand</a>
-      <a href="/privacy">Privacy / Protect</a>
-      <a class="mn-button mn-button--primary" href="#workspace">Analyze Document</a>
-    </nav>
-  </div>
-</header>
-
-<main>
-  <section class="understanding-hero">
-    <div class="mn-shell mn-shell--wide hero-layout">
-      <div>
-        <p class="mn-eyebrow">Document Understanding</p>
-        <h1>Understand clinical documents <span>before acting on them.</span></h1>
-        <p>MRJ recognizes document type, structure, and context so clinical teams can move from documents to trusted intelligence with confidence.</p>
-      </div>
-      <aside class="hero-status" aria-label="Current MRJ stage">
-        <span class="status-index">01</span>
-        <div><small>ACTIVE TRANSFORMATION</small><b>UNDERSTAND</b><p>Document identity and context</p></div>
-      </aside>
+  <header class="mn-site-header">
+    <div class="mn-shell mn-shell--wide mn-nav-wrap">
+      <a class="mn-brand" href="/app" aria-label="MRJ journey home">
+        <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="48" height="48" alt="">
+        <span class="mrj-wordmark"><b>MRJ</b><small>Medical Report Journey</small></span>
+      </a>
+      <nav class="mn-nav" aria-label="Workspace navigation">
+        <a href="/app">Platform</a>
+        <a aria-current="page" href="/understanding">Radiology / Understand</a>
+        <a href="/privacy">Privacy / Protect</a>
+        <a class="mn-button mn-button--primary" href="#workspace">Analyze Report</a>
+      </nav>
     </div>
-  </section>
+  </header>
 
-  <section class="mn-seven-progress" aria-label="MRJ journey journey">
-    <div class="mn-shell mn-shell--wide stage-progress">
-      <div class="active"><i>01</i><span>UNDERSTAND</span></div>
-      <b>→</b><div><i>02</i><span>PROTECT</span></div>
-      <b>→</b><div><i>03</i><span>EXTRACT</span></div>
-      <b>→</b><div><i>04</i><span>STANDARDIZE</span></div>
-      <b>→</b><div><i>05</i><span>ANALYZE</span></div>
-      <b>→</b><div><i>06</i><span>VISUALIZE</span></div>
-      <b>→</b><div><i>07</i><span>INDICATORS</span></div>
-    </div>
-  </section>
-
-  <section class="workspace mn-shell mn-shell--wide" id="workspace">
-    <div class="workspace-card-header">
-      <div><p class="mn-eyebrow">Document Input</p><h2>What should MRJ understand?</h2><p>Paste clinical text or upload one of the currently supported document formats.</p></div>
-      <div class="format-badges" aria-label="Supported file formats"><span>TXT</span><span>DOCX</span><span>TEXT PDF</span></div>
-    </div>
-    <div class="input-card">
-      <div class="tabs" role="tablist" aria-label="Document input mode">
-        <button class="active" id="textTab" type="button" role="tab">Paste Medical Text</button>
-        <button id="fileTab" type="button" role="tab">Upload Document</button>
+  <main>
+    <section class="understanding-hero">
+      <div class="mn-shell mn-shell--wide hero-layout">
+        <div class="hero-copy">
+          <p class="mn-eyebrow">Document Understanding</p>
+          <h1>Understand clinical documents <span>before acting on them.</span></h1>
+          <p>MRJ recognizes document identity, structure, and clinical context so teams can move from reports to trusted intelligence with confidence.</p>
+        </div>
+        <aside class="active-stage-card" aria-label="Current MRJ transformation">
+          <span class="active-stage-number">01</span>
+          <div><small>Active Transformation</small><strong>UNDERSTAND</strong><p>Document identity and context</p></div>
+        </aside>
       </div>
-      <div id="textMode" class="text-mode">
-        <label for="textInput">Medical document text</label>
-        <textarea id="textInput" placeholder="Paste a radiology, laboratory, emergency, admission, discharge or public-health document…"></textarea>
+    </section>
+
+    <section class="journey-band" aria-label="MRJ seven-stage journey">
+      <div class="mn-shell mn-shell--wide journey-track" id="journeyRail">
+        <div class="journey-stage active" data-stage="UNDERSTAND"><i>01</i><span>UNDERSTAND</span><small id="railUnderstand">Active</small></div>
+        <div class="journey-stage" data-stage="PROTECT"><i>02</i><span>PROTECT</span><small id="railProtect">Not started</small></div>
+        <div class="journey-stage" data-stage="EXTRACT"><i>03</i><span>EXTRACT</span><small id="railExtract">Not started</small></div>
+        <div class="journey-stage" data-stage="STANDARDIZE"><i>04</i><span>STANDARDIZE</span><small id="railStandardize">Not started</small></div>
+        <div class="journey-stage" data-stage="ANALYZE"><i>05</i><span>ANALYZE</span><small id="railAnalyze">Not started</small></div>
+        <div class="journey-stage" data-stage="VISUALIZE"><i>06</i><span>VISUALIZE</span><small id="railVisualize">Not started</small></div>
+        <div class="journey-stage" data-stage="INDICATORS"><i>07</i><span>INDICATORS</span><small id="railIndicators">Not started</small></div>
       </div>
-      <label class="upload" id="fileMode" for="fileInput">
-        <span class="upload-icon" aria-hidden="true">↑</span>
-        <b>Choose a supported medical document</b>
-        <small>TXT, DOCX or text-based PDF · scanned PDFs are not supported</small>
-        <em id="fileName">No file selected</em>
-        <input id="fileInput" type="file" accept=".txt,.docx,.pdf">
-      </label>
-      <div class="action-row">
-        <button class="analyze mn-button mn-button--primary" id="analyzeBtn" type="button">Analyze Document <span aria-hidden="true">→</span></button>
-        <p class="status" id="status" aria-live="polite"></p>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="results" id="results" aria-live="polite">
-    <div class="mn-shell mn-shell--wide">
-      <header class="results-head"><div><p class="mn-eyebrow">Authoritative Result</p><h2>What MRJ understood</h2></div><button class="mn-button mn-button--secondary" id="anotherBtn" type="button">Analyze another document</button></header>
+    <section class="workspace mn-shell mn-shell--wide" id="workspace">
+      <header class="workspace-intro">
+        <div><p class="mn-eyebrow">Report Workspace</p><h2>Choose how you want to work.</h2><p>Analyze one report or process a group of reports through the MRJ journey.</p></div>
+        <div class="format-badges" aria-label="Supported file formats"><span>TXT</span><span>DOCX</span><span>TEXT PDF</span></div>
+      </header>
 
-      <article class="recognition-summary" id="recognitionSummary">
-        <div class="domain-result"><small>DOCUMENT RECOGNITION</small><strong id="domainValue">—</strong><p id="documentSummary">—</p></div>
-        <dl class="identity-facts" id="identityFacts"></dl>
-        <div class="confidence-line"><small>RECOGNITION CONFIDENCE</small><strong id="confidenceValue">—</strong><b id="confidenceBand">—</b><span id="confidenceNote"></span></div>
-      </article>
-
-      <article class="semantic-card" id="semanticCard" hidden>
-        <header><div><small>DOCUMENT CONTEXT</small><h3 id="contextTitle">Recognized Radiology context</h3><p id="contextDescription">Bounded document-level context for the next MRJ stages.</p></div></header>
-        <div class="semantic-layout"><dl class="semantic-list" id="semanticList"></dl></div>
-        <p class="semantic-note" id="semanticNote" hidden></p>
-      </article>
-
-      <div class="result-grid">
-        <article class="result-card structure-card"><header><div><small>DETECTED DOCUMENT STRUCTURE</small><h3>Recognized Structure</h3><p>Semantic regions detected in document order.</p></div></header><div class="structure-list" id="sectionList"></div></article>
-        <article class="result-card explanation-card"><header><div><small>DECISION EXPLANATION</small><h3>Why MRJ recognized this document</h3><p>Plain-language explanations backed by actual recognition evidence.</p></div></header><div class="simple-list" id="recognitionReasons"></div></article>
+      <div class="mode-selector" role="tablist" aria-label="Understanding workflow mode">
+        <button class="mode-card active" id="singleModeTab" type="button" role="tab" aria-selected="true" aria-controls="singleWorkspace"><i aria-hidden="true">01</i><span><b>Single Report</b><small>One focused medical report.</small></span></button>
+        <button class="mode-card" id="batchModeTab" type="button" role="tab" aria-selected="false" aria-controls="batchWorkspace"><i aria-hidden="true">02</i><span><b>Batch Reports</b><small>Analyze up to 10 reports together.</small></span></button>
       </div>
 
-      <section class="journey-card">
-        <div class="journey-copy"><small>PROCESSING READINESS</small><h3 id="journeyTitle">Document context established.</h3><p id="routeNote"></p></div>
-        <div class="readiness-list" id="readinessList"></div>
-        <button class="continue-btn mn-button mn-button--primary" id="continueBtn" type="button">Continue to Privacy Protection <span aria-hidden="true">→</span></button>
+      <section class="mode-workspace" id="singleWorkspace" role="tabpanel" aria-labelledby="singleModeTab">
+        <header class="mode-heading"><div><p class="mn-eyebrow">Single Report</p><h3>Start one report journey.</h3></div><p>Upload a report or paste medical text.</p></header>
+        <div class="single-input-card">
+          <div class="input-tabs" role="tablist" aria-label="Single report input method">
+            <button class="active" id="fileTab" type="button" role="tab" aria-selected="true" aria-controls="fileMode">Upload Report</button>
+            <button id="textTab" type="button" role="tab" aria-selected="false" aria-controls="textMode">Paste Medical Text</button>
+          </div>
+          <div class="paste-panel" id="textMode" role="tabpanel" aria-labelledby="textTab" hidden>
+            <label for="textInput">Medical Report Text</label>
+            <textarea id="textInput" placeholder="Paste a radiology, laboratory, emergency, admission, discharge, or public-health report…"></textarea>
+          </div>
+          <label class="single-dropzone active" id="fileMode" for="fileInput" role="tabpanel" aria-labelledby="fileTab" tabindex="0">
+            <span class="dropzone-icon" aria-hidden="true">↑</span><strong>Upload a medical report</strong><p>Drag &amp; drop a report here</p><span class="dropzone-or">or</span><span class="mn-button mn-button--secondary">Choose Report</span><small>TXT <i>·</i> DOCX <i>·</i> TEXT PDF</small>
+            <input id="fileInput" type="file" accept=".txt,.docx,.pdf">
+          </label>
+          <div class="selected-file-card" id="selectedFileCard" hidden>
+            <span class="selected-file-icon" id="selectedFileIcon">FILE</span>
+            <span class="selected-file-copy"><b id="fileName">No report selected</b><small id="selectedFileMeta"></small></span>
+            <span class="status-badge complete">Ready</span>
+            <button class="text-action" id="removeSingleFileBtn" type="button">Remove</button>
+          </div>
+          <div class="primary-action-row"><button class="mn-button mn-button--primary primary-action" id="analyzeBtn" type="button">Analyze Report <span aria-hidden="true">→</span></button><p class="inline-status" id="status" aria-live="polite"></p></div>
+        </div>
       </section>
 
-      <aside class="warnings" id="warnings" role="status"></aside>
-
-      <details class="technical-details">
-        <summary><span><b>Technical details</b><small>Canonical identifiers, offsets, evidence weights and routing</small></span><i aria-hidden="true">+</i></summary>
-        <div class="technical-grid">
-          <section><h4>Canonical and compatibility context</h4><pre id="machineDetails"></pre></section>
-          <section><h4>Semantic regions and offsets</h4><div id="technicalSections"></div></section>
-          <section><h4>Knowledge evidence</h4><div id="technicalEvidence"></div></section>
-          <section><h4>Symbolic routing</h4><pre id="technicalRouting"></pre></section>
+      <section class="mode-workspace" id="batchWorkspace" role="tabpanel" aria-labelledby="batchModeTab" hidden>
+        <div id="batchSetup">
+          <header class="mode-heading"><div><p class="mn-eyebrow">Batch Reports</p><h3>Analyze up to 10 clinical reports together.</h3></div><p>Select reports, review the queue, then analyze.</p></header>
+          <div class="batch-input-layout">
+            <label class="batch-dropzone" id="batchDropzone" for="batchFileInput" tabindex="0">
+              <span class="dropzone-icon" aria-hidden="true">↑</span><strong>Drop up to 10 reports here</strong><span class="dropzone-or">or</span><span class="mn-button mn-button--secondary">Select Reports</span><small>TXT <i>·</i> DOCX <i>·</i> TEXT PDF</small>
+              <input id="batchFileInput" type="file" accept=".txt,.docx,.pdf" multiple>
+            </label>
+            <section class="prequeue-card" aria-labelledby="prequeueTitle">
+              <header><div><p class="mn-eyebrow">Reports Selected</p><h3 id="prequeueTitle">Review your batch</h3></div><strong id="batchCount">0 / 10</strong></header>
+              <div class="queue-head" aria-hidden="true"><span>#</span><span>File</span><span>Type</span><span>Size</span><span>Status</span><span>Action</span></div>
+              <ol class="prequeue" id="batchPreQueue"><li class="empty-state">No reports selected yet.</li></ol>
+              <div class="primary-action-row batch-actions"><button class="mn-button mn-button--primary primary-action" id="analyzeBatchBtn" type="button" disabled>Analyze Reports <span aria-hidden="true">→</span></button><button class="text-action" id="clearBatchBtn" type="button" disabled>Clear queue</button></div>
+              <p class="inline-status" id="batchStatus" aria-live="polite"></p>
+            </section>
+          </div>
         </div>
-      </details>
-    </div>
-  </section>
-</main>
+        <section class="batch-dashboard" id="batchDashboard" hidden aria-live="polite">
+          <header class="batch-progress-header"><div><p class="mn-eyebrow" id="batchSummaryEyebrow">Understanding Batch</p><h3 id="batchSummaryTitle">Analyzing reports</h3></div><div class="batch-progress-copy"><strong id="batchProgressText">Preparing batch</strong><div class="progress-track" aria-hidden="true"><span id="batchProgressBar"></span></div></div></header>
+          <p class="processing-activity" id="processingActivity" hidden><span class="activity-dots" aria-hidden="true"><i></i><i></i><i></i></span><span id="processingActivityText">Analyzing report…</span></p>
+          <ol class="batch-live-queue" id="batchLiveQueue" aria-label="Live batch progress"></ol>
+          <div class="summary-metrics" id="batchMetrics" hidden></div>
+        </section>
+      </section>
+    </section>
 
-<footer class="workspace-footer"><div class="mn-shell mn-shell--wide"><span class="mrj-wordmark"><b>MRJ</b><small>Medical Report Journey</small></span><p>UNDERSTAND</p><a href="/app">Back to platform</a></div></footer>
-<script src="/understanding.js"></script>
+    <section class="results" id="results" aria-live="polite">
+      <div class="mn-shell mn-shell--wide">
+        <header class="results-heading"><div><p class="mn-eyebrow">Report Result</p><h2>What MRJ understood</h2></div><button class="mn-button mn-button--secondary" id="anotherBtn" type="button">Analyze another report</button></header>
+        <div class="batch-result-layout">
+          <aside class="batch-report-browser" id="batchReportBrowser" aria-labelledby="reportListTitle" hidden>
+            <header><div><p class="mn-eyebrow">Reports</p><h3 id="reportListTitle">Report Navigator</h3><small>Select a report to review.</small></div><button class="text-action" id="newBatchBtn" type="button">New batch</button></header>
+            <div class="batch-result-list" id="batchResultList" role="list"></div>
+            <section class="batch-handoff" id="batchHandoff"><small>Next Transformation</small><h4>Continue Batch to Privacy Protection</h4><p id="batchHandoffNote">Batch privacy processing is not yet enabled.</p><button class="mn-button mn-button--secondary" id="batchProtectBtn" type="button" disabled aria-disabled="true">Batch handoff unavailable</button></section>
+          </aside>
+          <div class="selected-result-view">
+            <nav class="report-navigation" id="reportNavigation" aria-label="Batch report navigation" hidden><button id="previousReportBtn" type="button">← Previous Report</button><span id="reportCounter">1 of 1</span><button id="nextReportBtn" type="button">Next Report →</button></nav>
+            <article class="report-card" id="reportCard" aria-labelledby="reportModality" tabindex="-1">
+              <header class="report-card-header">
+                <div class="report-source"><span id="reportNumber">Report</span><p id="resultFileName"></p></div>
+                <div class="report-identity">
+                  <div><p class="report-domain" id="domainValue"></p><h3 id="reportModality">—</h3><p class="report-type" id="reportType"></p></div>
+                  <div class="report-confidence" id="reportConfidence"><strong id="confidenceValue">—</strong><span id="confidenceBand"></span></div>
+                </div>
+                <div class="report-state-line"><span class="status-badge" id="resultStatus"></span><p id="confidenceNote"></p></div>
+              </header>
+              <div class="report-card-body">
+                <dl class="report-metadata" id="reportMetadata" aria-label="Report context"></dl>
+                <p class="report-review-note" id="reportReviewNote" hidden></p>
+                <section class="report-structure" id="reportStructure" aria-labelledby="structureTitle"><h4 id="structureTitle">Recognized Structure</h4><div class="structure-list" id="sectionList"></div></section>
+                <details class="recognition-evidence" id="recognitionEvidence">
+                  <summary><span>Recognition Evidence <small id="evidenceCount"></small></span><i aria-hidden="true">+</i></summary>
+                  <div class="explanation-list" id="recognitionReasons"></div>
+                </details>
+                <aside class="warnings" id="warnings" role="status"></aside>
+              </div>
+              <footer class="report-readiness"><p id="readinessMessage"></p><button class="mn-button mn-button--primary" id="continueBtn" type="button" hidden>Continue to Privacy Protection <span aria-hidden="true">→</span></button></footer>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="workspace-footer"><div class="mn-shell mn-shell--wide"><span class="mrj-wordmark"><b>MRJ</b><small>Medical Report Journey</small></span><p>UNDERSTAND</p><a href="/app">Back to platform</a></div></footer>
+  <script src="/understanding.js"></script>
 </body>
 </html>

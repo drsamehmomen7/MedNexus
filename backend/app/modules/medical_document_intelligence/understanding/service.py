@@ -83,11 +83,19 @@ class DocumentUnderstandingService:
         return self.analyze_text(document.text, metadata=metadata, warnings=document.warnings)
 
     def build_context(
-        self, document: DocumentContent, result: DocumentUnderstandingResult | None = None
+        self,
+        document: DocumentContent,
+        result: DocumentUnderstandingResult | None = None,
+        *,
+        document_id: str | None = None,
     ) -> MedNexusDocumentContext:
         if not isinstance(document, DocumentContent):
             raise TypeError("document must be a DocumentContent instance.")
-        return DocumentContextBuilder.build(result or self.analyze_document(document), document)
+        return DocumentContextBuilder.build(
+            result or self.analyze_document(document),
+            document,
+            document_id=document_id,
+        )
 
     @staticmethod
     def text_document(text: str) -> DocumentContent:

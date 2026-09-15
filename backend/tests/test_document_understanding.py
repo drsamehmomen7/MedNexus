@@ -303,14 +303,13 @@ def test_understanding_frontend_route_and_assets_are_available():
     assert "/api/v1/understanding/analyze-text" in script.text
     assert "/api/v1/understanding/analyze-file" in script.text
     assert "Recognized Structure" in page.text
-    assert "DOCUMENT CONTEXT" in page.text
-    assert "Why MRJ recognized this document" in page.text
-    assert "PROCESSING READINESS" in page.text
+    assert "Recognition Evidence" in page.text
+    assert 'id="readinessMessage"' in page.text
     assert "Continue to Privacy Protection" in page.text
-    assert "Technical details" in page.text
-    assert "<details class=\"technical-details\">" in page.text
+    assert "technical details" not in page.text.casefold()
+    assert 'id="reportCard"' in page.text
     assert "Radiology Report" in script.text
-    assert "DOCUMENT RECOGNITION" in page.text
+    assert 'id="reportModality"' in page.text
 
 
 def test_understanding_frontend_uses_canonical_backend_authority_and_bounded_context():
@@ -319,11 +318,11 @@ def test_understanding_frontend_uses_canonical_backend_authority_and_bounded_con
 
     assert "context.light_context" in script
     assert "context.semantic_regions" in script
-    assert "payload.recognition_explanations" in script
-    assert "Detailed recognition explanation is unavailable." in script
+    assert "payload?.recognition_explanations" in script
+    assert "Recognition explanation is unavailable." in script
     assert "function recognitionReasons" not in script
     assert "clinical.modality" not in script
-    assert "payload.document_subtype" in script  # Technical compatibility display only.
+    assert "payload.document_subtype" not in script  # No technical compatibility UI.
     assert "RADIOLOGY_CONTEXT_RENDERERS" in script
     for subdomain in (
         "CT", "MRI", "X_RAY", "ULTRASOUND", "MAMMOGRAPHY",
@@ -342,8 +341,9 @@ def test_understanding_frontend_uses_canonical_backend_authority_and_bounded_con
     assert "01 INGEST" not in page
     assert "02 UNDERSTAND" not in page
     assert "pathology" not in page.casefold()
-    assert '<details class="technical-details">' in page
-    assert '<details class="technical-details" open>' not in page
+    assert 'technical-details' not in page
+    assert '<details class="recognition-evidence" id="recognitionEvidence">' in page
+    assert '<details class="recognition-evidence" id="recognitionEvidence" open>' not in page
 
 
 def test_progressive_result_reveal_is_frontend_only_and_preserves_authoritative_output():
