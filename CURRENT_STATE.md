@@ -1,6 +1,6 @@
 # MRJ Current State
 
-**Authoritative date:** 15 September 2026
+**Authoritative date:** 17 September 2026
 
 ## MRJ Phase 0 public identity and documentation
 
@@ -23,6 +23,20 @@ Approved MRJ icons are installed at `frontend/assets/brand/mrj/`; original suppl
 Accepted checkpoints remain M0 `081e8b178f63850beb18f41a09494452aeacc4fc`, design `b64a8ee`, Radiology `31b22ab`, and MRJ identity/website baseline `9e96656`. The UNDERSTAND Single/Batch workspace is now an accepted checkpoint, freshly verified at **966 passed, 8 warnings, 0 failures**.
 
 MRJ Website Experience / Cinematic Hero V1 is closed. The UNDERSTAND Single + Batch Journey Foundation is also accepted and closed below. PROTECT redesign and later work remain separately authorized; no naming exploration, logo redesign, or internal-identifier migration is authorized.
+
+## Radiology Horizontal Clinical Journey Architecture R0 — Accepted
+
+Human architecture review formally accepted and closed the R0 foundation on **2026-09-17** for a Radiology-only horizontal journey across all seven public stages. The accepted package consists of:
+
+- [MRJ Horizontal Clinical Journey Architecture v1.0](docs/architecture/MRJ_Horizontal_Clinical_Journey_Architecture_v1.0.md)
+- [MRJ Domain Clinical Extraction Architecture v1.0](docs/architecture/MRJ_Domain_Clinical_Extraction_Architecture_v1.0.md)
+- [MRJ Radiology Intelligence Pack v1.0](docs/domain/radiology/MRJ_Radiology_Intelligence_Pack_v1.0.md)
+- [MRJ Clinical Journey UX Architecture v1.0](docs/design/MRJ_Clinical_Journey_UX_Architecture_v1.0.md)
+- [MRJ Seven-Stage Contracts v1.0](docs/contracts/MRJ_Seven_Stage_Contracts_v1.0.md)
+
+Every document is **ACCEPTED — R0 RADIOLOGY HORIZONTAL ARCHITECTURE CHECKPOINT**. R0 now governs horizontal Radiology implementation while remaining subordinate to the frozen UNDERSTAND v1 authority. It fixes ownership between PROTECT-produced `PatientAnalyticContext` and EXTRACT-assembled `CommonClinicalContext`; confines `RadiologyFinding` to current observations; keeps R2 V0 deliberately small; defines pre-standardization `MRJClinicalConcept`; requires structured/versioned Collection definition and membership; guarantees report-level Clinical V0 without demographics; governs duplicate analytical contributions; and defers statistical association testing. The accepted UNDERSTAND Single + Batch workspace and current Phase 1 PROTECT foundation remain the implemented baselines. Public Health is unchanged and outside this active implementation track.
+
+Roadmap: R0 architecture/contracts/UX (**accepted and closed**) → R1 PROTECT Single + Batch journey integration → R2 Radiology EXTRACT V0 → R3 Radiology STANDARDIZE V0 → R4 Radiology Collection V0 → R5 ANALYZE V0 → R6 VISUALIZE V0 → R7 INDICATORS V0 → real-report Radiology Horizontal Acceptance. **R1 implementation has not started.** MedGemma remains future-compatible and is not required for R1. The last verified regression remains **966 passed, 8 warnings, 0 failures** and was not rerun for this documentation-only acceptance closure.
 
 ## MRJ Website Experience / Cinematic Hero V1 — Closed
 

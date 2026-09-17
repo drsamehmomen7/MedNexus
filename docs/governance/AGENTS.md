@@ -168,3 +168,22 @@ Experimental `MG-RAD-CANDIDATE-v0.2` is candidate-only and not integrated. Exter
 Real-world acceptance validation remains mandatory. Synthetic data may support controlled testing but cannot replace real-world acceptance data, must carry explicit provenance, and must remain segregated from real clinical acceptance sets. Generated or transformed reports/images must never be confused with original clinical artifacts. Future benchmarks require locked-set/leakage controls, relevant modality/site/source/language slices, calibration, confidence intervals, failure-severity analysis, and model/version drift monitoring; do not claim these controls as implemented until proven. Human review and abstention remain explicit system states.
 
 Clinical documents, embedded text, image metadata, retrieved content, and external-engine responses are untrusted data, never trusted system instructions. Future adapters and orchestration must defend against prompt or instruction injection originating from clinical content.
+
+
+## 13. Accepted R0 Radiology Horizontal Implementation Governance
+
+The Radiology Horizontal Clinical Journey Architecture v1.0 was accepted and closed on 2026-09-17. The active horizontal implementation domain is Radiology; Public Health is not part of this track unless separately authorized. Implement horizontally across UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS, with INGEST internal to UNDERSTAND. Do not introduce fine-tuning or deep stage optimization unless a genuine blocker prevents the complete safe journey.
+
+Binding R0 sources:
+
+- `docs/architecture/MRJ_Horizontal_Clinical_Journey_Architecture_v1.0.md` governs horizontal strategy, Report → Collection transition, roadmap, and development rules.
+- `docs/contracts/MRJ_Seven_Stage_Contracts_v1.0.md` governs stage inputs/outputs and stage ownership.
+- `docs/architecture/MRJ_Domain_Clinical_Extraction_Architecture_v1.0.md` governs Common Clinical Context, Domain Intelligence Packs, Extraction Profiles, and cross-domain extraction principles.
+- `docs/domain/radiology/MRJ_Radiology_Intelligence_Pack_v1.0.md` governs Radiology extraction, `RadiologyFinding`, reference usage, deduplication, and analytics contracts.
+- `docs/design/MRJ_Clinical_Journey_UX_Architecture_v1.0.md` governs the continuous workspace, Journey Rail, and report-centric → collection-centric UX.
+
+PROTECT owns `PatientAnalyticContext`; EXTRACT assembles `CommonClinicalContext` without recreating removed identifiers or overriding privacy decisions. `RadiologyFinding` represents a current Radiology observation; recommendation, comparison, and history content cannot silently become current findings. EXTRACT structures source meaning as terminology-independent MRJ facts; STANDARDIZE owns terminology mapping.
+
+`ReportCollection` remains distinct from `BatchRun` and requires structured clinical scope, versioned definition, and governed membership. No stage may silently invent missing clinical data. Required Clinical V0 must complete at report level without demographics or patient linkage; advanced association testing is deferred. Models produce candidate evidence; MRJ owns validation and authority.
+
+The next implementation checkpoint is R1 — PROTECT Journey Integration; it has not started. MedGemma remains future-compatible and is not required for R1. Documentation synchronization remains mandatory after every meaningful checkpoint.
