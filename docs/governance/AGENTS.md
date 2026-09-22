@@ -8,7 +8,7 @@ MRJ (Medical Report Journey, formerly MedNexus) is an existing, continuing enter
 - Current functional modules: Clinical Privacy Policy Engine / De-identification and Medical Document Understanding & Recognition
 - Current Phase 1 status: Accepted POC Checkpoint / Paused; synthetic baseline frozen at 681 passed, 8 warnings, 0 failures
 - Current Phase 2 status: Accepted Document Context & Journey Foundation Checkpoint at `fa1a8ba68d66a3d40f40c8af3bf644f3b909191a`; baseline 742 passed, 8 warnings, 0 failures
-- Current Radiology UNDERSTAND v1 status: architecture frozen and implementation evolving under controlled milestones; current accepted working baseline 950 passed, 8 warnings, 0 failures
+- Current Radiology UNDERSTAND v1 status: architecture frozen and implementation evolving under controlled milestones; current accepted working baseline 999 passed, 8 warnings, 0 failures
 
 ## Public identity governance — 13 September 2026
 
@@ -186,4 +186,6 @@ PROTECT owns `PatientAnalyticContext`; EXTRACT assembles `CommonClinicalContext`
 
 `ReportCollection` remains distinct from `BatchRun` and requires structured clinical scope, versioned definition, and governed membership. No stage may silently invent missing clinical data. Required Clinical V0 must complete at report level without demographics or patient linkage; advanced association testing is deferred. Models produce candidate evidence; MRJ owns validation and authority.
 
-The next implementation checkpoint is R1 — PROTECT Journey Integration; it has not started. MedGemma remains future-compatible and is not required for R1. Documentation synchronization remains mandatory after every meaningful checkpoint.
+R1 — PROTECT Journey Integration was accepted and closed on 2026-09-22. PROTECT eligibility is stage-specific: readable, privacy-processable `UNKNOWN` or `OTHER` reports may proceed while UNDERSTAND remains `NEEDS_REVIEW`; this does not imply EXTRACT eligibility. Known high-risk PHI remaining unprotected must block downstream-safe artifact exposure. PDF-origin Journey reports preserve a report-owned protected PDF, and privacy-review states must remain safely explainable without exposing raw PHI or engine internals.
+
+The next checkpoint is R2.0 — Radiology Extraction Engine Evaluation, followed by R2 — Radiology Clinical EXTRACT V0; neither has started. MedGemma remains future-compatible and was not required for R1. Documentation synchronization remains mandatory after every meaningful checkpoint.

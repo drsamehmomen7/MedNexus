@@ -50,7 +50,11 @@ class DeterministicIdentifierDetector:
     resolving overlaps between MedNexus and external-engine detections.
     """
 
-    _VALUE_SEPARATOR = r"\s*(?:[:#=]|[-–—])?\s*"
+    # Field-rule matching must never cross a line boundary. Adjacent-line and
+    # table-extracted headers are handled by LabeledHeaderFieldDetector, which
+    # preserves explicit field/value structure instead of guessing that the
+    # next header label is an identifier value.
+    _VALUE_SEPARATOR = r"[ \t]*(?:[:#=]|[-–—])?[ \t]*"
 
     _PHONE_VALUE = (
         r"(?P<value>"

@@ -146,6 +146,14 @@ def _rules(
                 encounter_date,
                 "Unclassified exact date.",
             ),
+            CandidateEntityType.AGE.value: _rule(
+                PolicyAction.KEEP,
+                "Clinical age attribute; derivation and age bands remain planned.",
+            ),
+            CandidateEntityType.GENDER.value: _rule(
+                PolicyAction.KEEP,
+                "Clinical sex or gender attribute retained by current policies.",
+            ),
             CandidateEntityType.ORGANIZATION.value: _rule(
                 organization,
                 "Facility identity; coding remains a planned extension.",

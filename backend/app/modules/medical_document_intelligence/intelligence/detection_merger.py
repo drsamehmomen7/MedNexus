@@ -78,6 +78,8 @@ class DetectionMerger:
         CandidateEntityType.ORGANIZATION: 40,
         CandidateEntityType.LOCATION: 40,
         CandidateEntityType.GENERAL_DATE: 40,
+        CandidateEntityType.AGE: 80,
+        CandidateEntityType.GENDER: 80,
         CandidateEntityType.UNKNOWN: 10,
     }
 
@@ -270,6 +272,25 @@ class DetectionMerger:
         """
         Choose the strongest of two competing candidates.
         """
+
+        first_authority = first.metadata.get("authority")
+        second_authority = second.metadata.get("authority")
+        authoritative_contexts = {
+            "explicit_labeled_field",
+            "pre_redacted_placeholder",
+        }
+
+        if (
+            first_authority in authoritative_contexts
+            and second_authority not in authoritative_contexts
+        ):
+            return first
+
+        if (
+            second_authority in authoritative_contexts
+            and first_authority not in authoritative_contexts
+        ):
+            return second
 
         first_score = cls._candidate_score(
             first

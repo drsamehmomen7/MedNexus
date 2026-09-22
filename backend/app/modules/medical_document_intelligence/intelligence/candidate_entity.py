@@ -94,6 +94,9 @@ class CandidateEntityType(str, Enum):
     EXAM_DATE = "exam_date"
     GENERAL_DATE = "general_date"
 
+    AGE = "age"
+    GENDER = "gender"
+
     ORGANIZATION = "organization"
     LOCATION = "location"
     PROFESSIONAL_ROLE = "professional_role"

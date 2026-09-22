@@ -5,8 +5,10 @@ import tempfile
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from backend.app.modules.medical_document_intelligence.policies.policy_profiles import resolve_policy_profile
@@ -36,6 +38,14 @@ class UnderstandingTextRequest(BaseModel):
 
 class JourneyProtectRequest(BaseModel):
     policy: str = "mednexus_clinical"
+    document_ids: list[str] | None = Field(
+        default=None,
+        max_length=10,
+        description=(
+            "Optional retained report IDs to protect. Omit to process every "
+            "eligible report in the same JourneyRun."
+        ),
+    )
 
 
 class JourneyRunRequest(BaseModel):
@@ -50,7 +60,12 @@ def _result_payload(document, result, context, journey: dict[str, Any]) -> dict[
     return payload
 
 
-def _journey_payload(document, result) -> dict[str, Any]:
+def _journey_payload(
+    document,
+    result,
+    *,
+    source_artifact: bytes | None = None,
+) -> dict[str, Any]:
     context = service.build_context(document, result)
     journey_id = context.document.document_id
     payload = _result_payload(
@@ -64,7 +79,12 @@ def _journey_payload(document, result) -> dict[str, Any]:
             "continue_to_protect": f"/privacy?journey_id={journey_id}#workspace",
         },
     )
-    journey_store.retain(document, context, payload)
+    journey_store.retain(
+        document,
+        context,
+        payload,
+        source_artifact=source_artifact,
+    )
     return payload
 
 
@@ -146,7 +166,11 @@ async def analyze_file(file: UploadFile = File(...)) -> dict[str, Any]:
         if not content:
             raise HTTPException(status_code=400, detail="The uploaded file is empty.")
         document = _extract_uploaded_content(original_filename, suffix, content)
-        return _journey_payload(document, service.analyze_document(document))
+        return _journey_payload(
+            document,
+            service.analyze_document(document),
+            source_artifact=content if suffix == ".pdf" else None,
+        )
     except HTTPException:
         raise
     except (FileNotFoundError, LookupError, ValueError) as exc:
@@ -215,6 +239,7 @@ async def _process_batch_upload(
             document=document,
             context=context,
             result=payload,
+            source_artifact=content if suffix == ".pdf" else None,
         )
     except (LookupError, ValueError) as exc:
         if item is None:
@@ -275,6 +300,94 @@ def get_journey_run(run_id: str) -> dict[str, Any]:
         return journey_store.run_payload(run_id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/journey-runs/{run_id}/protect")
+def protect_journey_run(run_id: str, request: JourneyProtectRequest) -> dict[str, Any]:
+    """Continue one existing Single or Batch JourneyRun through PROTECT."""
+
+    try:
+        policy = resolve_policy_profile(request.policy)
+        document_ids = (
+            tuple(request.document_ids) if request.document_ids is not None else None
+        )
+        journey_store.protect_run(
+            run_id,
+            policy,
+            privacy_service,
+            document_ids=document_ids,
+        )
+        return journey_store.run_payload(run_id)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/journey-runs/{run_id}/documents/{document_id}/compare-source")
+def get_compare_source(run_id: str, document_id: str) -> JSONResponse:
+    """Return ephemeral original text only after an explicit Compare action."""
+
+    try:
+        source_text = journey_store.source_text_for_compare(run_id, document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return JSONResponse(
+        content={"source_text": source_text},
+        headers={
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+def _artifact_response(artifact) -> Response:
+    return Response(
+        content=artifact.content,
+        media_type=artifact.media_type,
+        headers={
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "Expires": "0",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": (
+                "inline; filename*=UTF-8''" + quote(artifact.filename, safe="")
+            ),
+        },
+    )
+
+
+@router.get(
+    "/journey-runs/{run_id}/documents/{document_id}/protected-artifact"
+)
+def get_protected_artifact(run_id: str, document_id: str) -> Response:
+    """Return the ephemeral protected PDF without embedding it in JSON."""
+
+    try:
+        artifact = journey_store.protected_artifact_for_view(run_id, document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return _artifact_response(artifact)
+
+
+@router.post(
+    "/journey-runs/{run_id}/documents/{document_id}/compare-artifact"
+)
+def get_compare_artifact(run_id: str, document_id: str) -> Response:
+    """Return the original PDF only after an explicit Compare action."""
+
+    try:
+        artifact = journey_store.source_artifact_for_compare(run_id, document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return _artifact_response(artifact)
 
 
 @router.get("/journeys/{journey_id}")

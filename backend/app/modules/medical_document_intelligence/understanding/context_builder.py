@@ -86,7 +86,11 @@ class DocumentContextBuilder:
                 result.routing.terminology_profile,
                 capabilities,
                 review_required,
-                protect_ready="PROTECT" in capabilities and not review_required,
+                # Privacy execution depends on a readable retained document,
+                # not on certainty about its clinical family.  A reviewable
+                # UNKNOWN/OTHER result can therefore continue to PROTECT while
+                # remaining in review for domain-specific downstream stages.
+                protect_ready="PROTECT" in capabilities and not document.is_empty,
                 extract_ready="EXTRACT" in capabilities and not review_required,
                 document_review_required=review_required,
             ),

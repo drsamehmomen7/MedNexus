@@ -247,9 +247,13 @@ IMPRESSION: Multimodality assessment.
     assert other["identity"]["subdomain_or_family"] == "OTHER"
     assert other["light_context"]["family_context"]["subdomain"] == "OTHER"
     assert other["processing_context"]["document_review_required"] is True
+    assert other["processing_context"]["protect_ready"] is True
+    assert other["processing_context"]["extract_ready"] is False
     assert unknown["identity"]["domain"] == "UNKNOWN"
     assert unknown["identity"]["subdomain_or_family"] is None
     assert unknown["light_context"]["family_context"] is None
+    assert unknown["processing_context"]["protect_ready"] is True
+    assert unknown["processing_context"]["extract_ready"] is False
 
 
 def test_canonical_doppler_api_context_is_ultrasound_with_legacy_alias_only():

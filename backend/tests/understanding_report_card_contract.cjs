@@ -34,12 +34,13 @@ class Element {
   replaceChildren(...nodes) { this.children = []; this.text = ''; this.append(...nodes); }
   setAttribute(name, value) { this.attributes[name] = String(value); }
   removeAttribute(name) { delete this.attributes[name]; }
+  closest() { return this.parentElement; }
   scrollIntoView() {}
   focus() { this.focused = true; }
-  click() { if (!this.disabled) this.onclick?.(); }
+  click() { if (!this.disabled && !this.hidden) return this.onclick?.(); }
 }
 
-function verifyReportCards(input) {
+async function verifyReportCards(input) {
   const root = path.resolve(__dirname, '../..');
   const html = fs.readFileSync(path.join(root, 'frontend/understanding.html'), 'utf8');
   const source = fs.readFileSync(path.join(root, 'frontend/understanding.js'), 'utf8');
@@ -54,9 +55,22 @@ function verifyReportCards(input) {
   }
   const read = id => { assert(nodes.has(id), `renderer references missing page ID ${id}`); return nodes.get(id); };
   const navigation = [];
+  const artifactRequests = [];
   const context = vm.createContext({
     document: { getElementById: read, createElement: tag => new Element(tag) },
     location: { assign: url => navigation.push(url) },
+    fetch: async (url, options = {}) => {
+      artifactRequests.push({url, method: options.method || 'GET'});
+      return {
+        ok: true,
+        blob: async () => ({type: 'application/pdf', endpoint: url}),
+        json: async () => ({}),
+      };
+    },
+    URL: {
+      createObjectURL: blob => `blob:${blob.endpoint}`,
+      revokeObjectURL: () => {},
+    },
     input,
   });
   vm.runInContext(source, context);
@@ -84,7 +98,8 @@ function verifyReportCards(input) {
   assert(!('open' in read('recognitionEvidence').attributes));
   const handoff = run('buildReportViewModel(singlePayload).handoff');
   assert.equal(read('continueBtn').hidden, !handoff);
-  if (handoff) { read('continueBtn').click(); assert.equal(navigation.pop(), handoff); }
+  if (handoff) assert.equal(typeof read('continueBtn').onclick, 'function');
+  assert.equal(navigation.length, 0, 'Single handoff must remain inside the Journey workspace');
 
   run(`workflowMode = 'batch'; batchRun = input.run;
     batchEntries = batchRun.documents.map(item => ({file:{name:item.original_filename}, status:item.stage_status.UNDERSTAND.status}));
@@ -120,7 +135,8 @@ function verifyReportCards(input) {
     assert.deepEqual(snapshot(), cardSnapshots[index]);
   }
   assert.equal(read('nextReportBtn').disabled, true);
-  assert.equal(read('batchProtectBtn').disabled, true);
+  assert.equal(read('batchProtectBtn').disabled, !Boolean(input.run.handoff?.protect?.available));
+  assert.equal(typeof read('batchProtectBtn').onclick, 'function');
   read('continueBtn').click();
   assert.equal(navigation.length, 0, 'Batch must never silently hand off a single report');
   assert.equal(JSON.stringify(input.run), before, 'rendering must not mutate retained results');
@@ -148,11 +164,141 @@ function verifyReportCards(input) {
   assert.equal(read('processingActivity').hidden, false);
   run('batchProcessing = false; updateBatchProgress(5, 5);');
   assert.equal(read('processingActivity').hidden, true);
-  return {single, navigatorCards: count, selectedCardsVerified: cardSnapshots, navigation: 'all previous/next verified', runPreserved: true};
+
+  run(`{
+    const seed = input.run.documents[0];
+    const states = ['COMPLETE', 'NEEDS_REVIEW', 'COMPLETE', 'FAILED', 'COMPLETE'];
+    const documents = states.map((state, index) => {
+      const item = JSON.parse(JSON.stringify(seed));
+      item.document_id = 'protect-' + (index + 1);
+      item.order = index;
+      item.original_filename = 'protect-' + (index + 1) + '.pdf';
+      item.source_type = 'pdf';
+      item.current_stage = 'PROTECT';
+      item.stage_status.UNDERSTAND = {status:'COMPLETE'};
+      item.stage_status.PROTECT = {status:state};
+      item.stage_errors = state === 'FAILED' ? {PROTECT:'Privacy Protection could not process this report.'} : {};
+      item.stage_results = {UNDERSTAND:item.stage_results.UNDERSTAND};
+      if (state !== 'FAILED') {
+        const review = state === 'NEEDS_REVIEW';
+        item.stage_results.PROTECT = {
+          protected_document:{
+            report_id:item.document_id,
+            protected_text:'Protected report ' + (index + 1),
+            artifact:index === 2 ? null : {
+              filename:'protect-' + (index + 1) + '_PROTECTED.pdf', media_type:'application/pdf',
+              availability:true, page_count:1,
+            },
+          },
+          patient_analytic_context:{fields:{}, populated_fields:[]},
+          protection_result:{
+            status:state,
+            policy_display_name:'Clinical Workflow',
+            protected_entity_category_summary:index === 2 ? {Names:1} : {},
+            review_signal_summary:review ? [{
+              category:'possible_person_name',
+              human_label:'Possible person-name signal',
+              count:2,
+            }] : [],
+            review_required:review,
+            warnings:review ? ['One or more privacy candidates require review.'] : [],
+          },
+          protection_provenance:{
+            output_owner:'MedNexus',
+            external_engine_role:'candidate_detector',
+            privacy_decision_path:'unified',
+            candidate_counts:review
+              ? {total:2, accepted:0, rejected:0, review_required:2, pending:0}
+              : index === 0 ? {total:0, accepted:0, rejected:0, review_required:0, pending:0}
+              : {total:1, accepted:1, rejected:0, review_required:0, pending:0},
+          },
+        };
+      }
+      return item;
+    });
+    batchRun = {
+      run_id:'protect-contract', mode:'batch', documents,
+      protection_summary:{eligible:5, submitted:5, terminal:5, results_stored:4, complete:3, needs_review:1, failed:1, blocked:0},
+      handoff:{protect:{available:false, eligible_document_ids:[]}},
+    };
+    batchEntries = documents.map(item => ({file:{name:item.original_filename}, status:item.stage_status.PROTECT.status}));
+    workflowMode = 'batch'; activeJourneyStage = 'PROTECT'; selectedBatchDocumentId = documents[0].document_id;
+    renderBatchReportBrowser(); selectBatchDocument(selectedBatchDocumentId, false);
+  }`);
+  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(read('batchResultList').children.length, 5);
+  assert.equal(read('protectedViewBtn').attributes['aria-pressed'], 'true');
+  assert.equal(read('protectedPdfPanel').hidden, false);
+  assert.equal(read('protectedText').hidden, true);
+  assert.equal(read('textViewBtn').hidden, false);
+  assert.equal(read('comparePanel').hidden, true);
+  assert.equal(read('originalCompareText').textContent, '');
+  assert.equal(read('protectedPdfViewer').src, 'blob:/api/v1/understanding/journey-runs/protect-contract/documents/protect-1/protected-artifact');
+  assert.deepEqual(artifactRequests.at(-1), {
+    url:'/api/v1/understanding/journey-runs/protect-contract/documents/protect-1/protected-artifact',
+    method:'GET',
+  });
+  await run('showCompareView()');
+  assert.equal(read('comparePanel').hidden, false);
+  assert.equal(read('originalComparePdf').hidden, false);
+  assert.equal(read('protectedComparePdf').hidden, false);
+  assert.equal(read('originalCompareText').hidden, true);
+  assert.equal(read('protectedCompareText').hidden, true);
+  assert.equal(read('originalCompareTitle').textContent, 'Original PDF');
+  assert.equal(read('protectedCompareTitle').textContent, 'Protected PDF');
+  assert.equal(read('originalComparePdf').src, 'blob:/api/v1/understanding/journey-runs/protect-contract/documents/protect-1/compare-artifact');
+  assert.equal(read('protectedComparePdf').src, 'blob:/api/v1/understanding/journey-runs/protect-contract/documents/protect-1/protected-artifact');
+  assert.match(read('protectedEntitySummary').textContent, /No PHI detected/);
+
+  await read('batchResultList').children[1].children[0].click();
+  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(read('protectStatus').textContent, /Needs Review/);
+  assert.equal(read('protectionReview').hidden, false);
+  assert.match(read('protectionReviewMessage').textContent, /Possible person-name signal: 2/);
+  assert.equal(typeof read('reviewProtectionBtn').onclick, 'function');
+  read('originalCompareText').textContent = 'SENSITIVE ORIGINAL';
+  read('comparePanel').hidden = false;
+  read('protectedText').hidden = true;
+
+  await read('batchResultList').children[2].children[0].click();
+  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(read('originalCompareText').textContent, '');
+  assert.equal(read('comparePanel').hidden, true);
+  assert.equal(read('protectedPdfPanel').hidden, false);
+  assert.equal(read('protectedText').hidden, true);
+  assert.equal(read('protectedText').textContent, 'Protected report 3');
+  assert.equal(read('protectedPdfViewer').src, 'blob:/api/v1/understanding/journey-runs/protect-contract/documents/protect-3/protected-artifact');
+  assert.match(read('nextStageSummary').textContent, /3 reports are ready for the next stage/);
+  assert.match(read('nextStageSummary').textContent, /1 requires review/);
+  assert.match(read('continueExtractBtn').textContent, /Continue 3 Eligible Reports/);
+  assert.equal(read('continueExtractBtn').disabled, true);
+  assert.equal(read('railProtect').textContent, '5 / 5');
+
+  await read('batchResultList').children[3].children[0].click();
+  assert.equal(read('protectionError').hidden, false);
+  assert.match(read('protectionError').textContent, /could not process this report/);
+  assert.equal(read('protectionReview').hidden, true);
+
+  return {
+    single,
+    navigatorCards: count,
+    selectedCardsVerified: cardSnapshots,
+    navigation: 'all previous/next verified',
+    runPreserved: true,
+    protection: 'mixed states, selected-report PDF artifacts, compare PDFs, and sensitive DOM clearing verified',
+  };
 }
 
 module.exports = { verifyReportCards };
 if (require.main === module) {
   const input = JSON.parse(fs.readFileSync(0, 'utf8'));
-  process.stdout.write(JSON.stringify(verifyReportCards(input)));
+  verifyReportCards(input)
+    .then(result => process.stdout.write(JSON.stringify(result)))
+    .catch(error => {
+      console.error(error);
+      process.exitCode = 1;
+    });
 }

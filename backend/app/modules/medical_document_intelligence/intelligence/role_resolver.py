@@ -160,6 +160,9 @@ class RoleResolver:
                 "source_text must be a string."
             )
 
+        if candidate.metadata.get("authority") == "pre_redacted_placeholder":
+            return candidate
+
         if candidate.canonical_type in {
             CandidateEntityType.PATIENT_NAME,
             CandidateEntityType.PHYSICIAN_NAME,

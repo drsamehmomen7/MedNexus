@@ -648,6 +648,14 @@ class RadiologyReasoner:
             ) if item is not None
         }
         subdomains.update(RadiologyReasoner._component_subdomains(procedure_components))
+        if (
+            RadiologySubdomain.FLUOROSCOPY in subdomains
+            and RadiologySubdomain.X_RAY in subdomains
+        ):
+            # Fluoroscopy is a governed, more-specific dynamic X-ray family.
+            # Generic projection-radiography evidence must not turn that
+            # compatible parent/specialization pair into a false conflict.
+            subdomains.discard(RadiologySubdomain.X_RAY)
         if compatibility_subtype is DocumentSubtype.DOPPLER:
             subdomains.add(RadiologySubdomain.ULTRASOUND)
         elif compatibility_subtype is not DocumentSubtype.UNKNOWN:
@@ -1013,6 +1021,10 @@ class RadiologyReasoner:
         if dict(concept.attributes).get("part_type") == "RAD_MODALITY_MODALITY_TYPE":
             component_subdomains = RadiologyReasoner._component_subdomains((concept,))
             return next(iter(component_subdomains), None)
+        if dict(concept.attributes).get("part_type") == "RAD_MODALITY_MODALITY_SUBTYPE":
+            governed = RadiologyReasoner._governed_subtype_subdomain(concept, registry)
+            if governed is not None:
+                return governed
         dicom_codes = {
             mapping.external_id.upper()
             for mapping in concept.external_mappings
@@ -1034,6 +1046,7 @@ class RadiologyReasoner:
             "computed tomography": RadiologySubdomain.CT,
             "magnetic resonance imaging": RadiologySubdomain.MRI,
             "radiography": RadiologySubdomain.X_RAY,
+            "projection radiography": RadiologySubdomain.X_RAY,
             "computed radiography": RadiologySubdomain.X_RAY,
             "digital radiography": RadiologySubdomain.X_RAY,
             "ultrasound": RadiologySubdomain.ULTRASOUND,
@@ -1045,6 +1058,33 @@ class RadiologyReasoner:
             "single photon emission computed tomography": RadiologySubdomain.NUCLEAR_MEDICINE,
             "fluoroscopy": RadiologySubdomain.FLUOROSCOPY,
         }.get(name)
+
+    @staticmethod
+    def _governed_subtype_subdomain(concept, registry) -> RadiologySubdomain | None:
+        """Infer one family only when every governed composing procedure agrees."""
+
+        supported: set[RadiologySubdomain] = set()
+        procedures = registry.composing_procedures((concept.mednexus_concept_id,))
+        if not procedures:
+            return None
+        for procedure in procedures:
+            components = []
+            for relationship in procedure.relationships:
+                if relationship.relationship_type.value != "CAN_COMPOSE":
+                    continue
+                try:
+                    components.append(
+                        registry.concept(relationship.target_concept_id)
+                    )
+                except KeyError:
+                    continue
+            procedure_subdomains = RadiologyReasoner._component_subdomains(components)
+            if len(procedure_subdomains) != 1:
+                return None
+            supported.update(procedure_subdomains)
+            if len(supported) > 1:
+                return None
+        return next(iter(supported), None)
 
     @staticmethod
     def _nuclear_hybrid_family(components) -> NuclearMedicineStudyFamily | None:

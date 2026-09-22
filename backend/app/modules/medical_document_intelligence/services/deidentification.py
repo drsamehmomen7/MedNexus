@@ -14,6 +14,9 @@ from backend.app.modules.medical_document_intelligence.intelligence.context_rule
 from backend.app.modules.medical_document_intelligence.intelligence.intelligence_orchestrator import (
     MedNexusIntelligenceOrchestrator,
 )
+from backend.app.modules.medical_document_intelligence.intelligence.labeled_header_field_detector import (
+    LabeledHeaderFieldDetector,
+)
 from backend.app.modules.medical_document_intelligence.intelligence.output_builder import (
     MedNexusOutputBuilder,
 )
@@ -26,6 +29,12 @@ from backend.app.modules.medical_document_intelligence.policies.context_rules im
 from backend.app.modules.medical_document_intelligence.policies.policy_profiles import (
     PolicyProfile,
     get_policy_definition,
+)
+from backend.app.modules.medical_document_intelligence.policies.policy_actions import (
+    PolicyAction,
+)
+from backend.app.modules.medical_document_intelligence.policies.policy_engine import (
+    PolicyEngine,
 )
 
 
@@ -150,6 +159,12 @@ class DeidentificationService(BaseService):
             )
         )
 
+        labeled_field_candidates = (
+            LabeledHeaderFieldDetector.detect(
+                detection_text
+            )
+        )
+
         engine_result = (
             self.engine_manager.deidentify(
                 detection_text
@@ -178,7 +193,8 @@ class DeidentificationService(BaseService):
                 source_text=detection_text,
                 context_candidates=context_candidates,
                 mednexus_candidates=(
-                    deterministic_candidates
+                    *labeled_field_candidates,
+                    *deterministic_candidates,
                 ),
             )
         )
@@ -212,6 +228,16 @@ class DeidentificationService(BaseService):
             )
         )
 
+        (
+            protection_complete,
+            protection_blockers,
+        ) = self._assess_protection_completeness(
+            labeled_field_candidates=labeled_field_candidates,
+            intelligence_result=intelligence_result,
+            mednexus_output=mednexus_output,
+            policy=policy,
+        )
+
         # --------------------------------------------------
         # Step 5: Restore protected clinical terminology
         # --------------------------------------------------
@@ -236,6 +262,7 @@ class DeidentificationService(BaseService):
             not intelligence_result
             .is_safe_for_automatic_output
             or mednexus_output.requires_review
+            or not protection_complete
         )
 
         if requires_review:
@@ -283,6 +310,10 @@ class DeidentificationService(BaseService):
                     candidate.to_dict()
                     for candidate in deterministic_candidates
                 ],
+                "labeled_field_candidates": [
+                    candidate.to_dict()
+                    for candidate in labeled_field_candidates
+                ],
                 "clinical_context_mapping": (
                     clinical_mapping
                 ),
@@ -303,8 +334,17 @@ class DeidentificationService(BaseService):
                     mednexus_output.to_dict()
                 ),
                 "requires_review": requires_review,
+                "protection_complete": protection_complete,
+                "protection_blockers": protection_blockers,
                 "review_warnings": list(
                     mednexus_output.warnings
+                ) + (
+                    [
+                        "Protection is incomplete because a known high-risk "
+                        "identity field was not transformed."
+                    ]
+                    if not protection_complete
+                    else []
                 ),
 
                 # ------------------------------------------
@@ -314,6 +354,9 @@ class DeidentificationService(BaseService):
                     "context": len(context_candidates),
                     "deterministic": len(
                         deterministic_candidates
+                    ),
+                    "labeled_fields": len(
+                        labeled_field_candidates
                     ),
                     "total": (
                         intelligence_result.total_count
@@ -342,3 +385,95 @@ class DeidentificationService(BaseService):
                 },
             },
         )
+
+    @staticmethod
+    def _assess_protection_completeness(
+        *,
+        labeled_field_candidates,
+        intelligence_result,
+        mednexus_output,
+        policy: PolicyProfile,
+    ) -> tuple[bool, list[dict[str, object]]]:
+        """Ensure known direct identifiers required by policy were transformed."""
+
+        high_risk_roles = {
+            "patient_name",
+            "patient_id",
+            "mrn",
+            "visit_id",
+            "accession_number",
+            "report_number",
+        }
+        direct_identity_types = {
+            "patient_name",
+            "physician_name",
+            "nurse_name",
+        }
+        replacement_keys = {
+            (
+                int(item["start"]),
+                int(item["end"]),
+                str(item["entity_type"]),
+            )
+            for item in mednexus_output.replacements
+        }
+        accepted_keys = {
+            (
+                candidate.start,
+                candidate.end,
+                candidate.canonical_type.value,
+            )
+            for candidate in intelligence_result.accepted
+        }
+        blockers: list[dict[str, object]] = []
+        seen: set[tuple[int, int, str]] = set()
+
+        def require_transformation(candidate, semantic_role: str) -> None:
+            key = (
+                candidate.start,
+                candidate.end,
+                candidate.canonical_type.value,
+            )
+            if key in seen:
+                return
+            seen.add(key)
+            action = PolicyEngine.get_action(
+                candidate.canonical_type,
+                policy,
+                require_mapping=True,
+            )
+            if action is PolicyAction.KEEP:
+                return
+            if key in accepted_keys and key in replacement_keys:
+                return
+            blockers.append(
+                {
+                    "semantic_role": semantic_role,
+                    "canonical_type": candidate.canonical_type.value,
+                    "start": candidate.start,
+                    "end": candidate.end,
+                    "required_action": action.value,
+                    "reason": "Known high-risk field was not transformed by policy output.",
+                }
+            )
+
+        for candidate in labeled_field_candidates:
+            semantic_role = str(candidate.metadata.get("semantic_role", ""))
+            if semantic_role in high_risk_roles:
+                require_transformation(candidate, semantic_role)
+
+        for candidate in (
+            *intelligence_result.review_required,
+            *intelligence_result.pending,
+        ):
+            semantic_role = str(candidate.metadata.get("semantic_role", ""))
+            if (
+                semantic_role in high_risk_roles
+                or candidate.canonical_type.value in direct_identity_types
+            ):
+                require_transformation(
+                    candidate,
+                    semantic_role or candidate.canonical_type.value,
+                )
+
+        return not blockers, blockers

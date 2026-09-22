@@ -96,6 +96,11 @@ class RadiologyEvidenceFrameBuilder:
         r"\b(?:exam(?:ination)?|modality|procedure|radiograph(?:y|ic)?|x[- ]?ray|study|views?)\b",
         re.IGNORECASE,
     )
+    _IDENTIFIER_FIELD_LABEL = re.compile(
+        r"(?:patient|visit|accession|document|report)\s+(?:id|number|no)"
+        r"|medical\s+record\s+number|mrn|identifier",
+        re.IGNORECASE,
+    )
     _CURRENT_STUDY_STATEMENT = re.compile(
         r"\b(?:performed|obtained|acquired|completed|exam(?:ination)?|study)\b",
         re.IGNORECASE,
@@ -146,6 +151,12 @@ class RadiologyEvidenceFrameBuilder:
             else:
                 matches = cls._matches(text, concept)
             for matched, start, end in matches:
+                if (
+                    concept.category is RecognitionConceptCategory.MODALITY
+                    and cls._ambiguous_short_modality(matched)
+                    and not cls._governed_short_modality_context(text, start, end)
+                ):
+                    continue
                 key = (concept.concept_id, start, end)
                 if key in seen:
                     continue
@@ -487,7 +498,46 @@ class RadiologyEvidenceFrameBuilder:
     @classmethod
     def _governed_short_modality_context(cls, text: str, start: int, end: int) -> bool:
         line = cls._context(text, start, end)
-        return bool(cls._title_like(line) or cls._STUDY_CONTEXT.search(line))
+        line_start = text.rfind("\n", 0, start) + 1
+        line_end = text.find("\n", end)
+        if line_end < 0:
+            line_end = len(text)
+
+        prefix = text[line_start:start]
+        previous_lines = [
+            value.strip()
+            for value in text[:line_start].splitlines()
+            if value.strip()
+        ]
+        previous_line = previous_lines[-1] if previous_lines else ""
+        if (
+            cls._IDENTIFIER_FIELD_LABEL.search(prefix)
+            or cls._IDENTIFIER_FIELD_LABEL.fullmatch(previous_line.rstrip(":"))
+        ):
+            return False
+
+        before = text[start - 1] if start > line_start else ""
+        after = text[end] if end < line_end else ""
+        identifier_separator = {"-", "_", "/"}
+        if (
+            (before in identifier_separator or after in identifier_separator)
+            and any(character.isdigit() for character in line)
+        ):
+            return False
+
+        if cls._STUDY_CONTEXT.search(line):
+            return True
+
+        relative_start = start - line_start
+        relative_end = end - line_start
+        remainder = f"{line[:relative_start]} {line[relative_end:]}"
+        companion_words = re.findall(r"[^\W\d_]{3,}", remainder, re.UNICODE)
+        return bool(companion_words)
+
+    @staticmethod
+    def _ambiguous_short_modality(value: str) -> bool:
+        normalized = "".join(character for character in value if character.isalnum())
+        return len(normalized) <= 2
 
     @classmethod
     def _governed_view_context(cls, text: str, start: int, end: int) -> bool:

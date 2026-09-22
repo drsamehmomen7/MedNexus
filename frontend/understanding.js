@@ -9,16 +9,27 @@ const JOURNEY_STAGES = ['UNDERSTAND', 'PROTECT', 'EXTRACT', 'STANDARDIZE', 'ANAL
 let inputMode = 'file';
 let workflowMode = 'single';
 let singlePayload = null;
+let singleRun = null;
 let singleSelectedFile = null;
 let batchEntries = [];
 let batchRun = null;
 let selectedBatchDocumentId = null;
 let batchProcessing = false;
 let batchSubmittedCount = 0;
+let activeJourneyStage = 'UNDERSTAND';
+let protectProcessing = false;
+let protectionSubmittedCount = 0;
+let activeCompareTarget = null;
+let compareRequestVersion = 0;
+let artifactRequestVersion = 0;
+let protectedArtifactUrl = null;
+let originalArtifactUrl = null;
+let activeProtectionView = { pdfOrigin: false, protectedText: '' };
 
 const LABELS = {
   UNKNOWN: 'Not determined', NEEDS_REVIEW: 'Needs Review', NOT_STARTED: 'Not Started',
-  PROCESSING: 'Analyzing', OTHER: 'Other / Requires Review',
+  QUEUED: 'Queued', PROCESSING: 'Processing', COMPLETE: 'Complete', FAILED: 'Failed',
+  BLOCKED: 'Blocked', OTHER: 'Other / Requires Review',
   ADMISSION_DISCHARGE: 'Admission / Discharge',
   RADIOLOGY_REPORT: 'Radiology Report',
   LABORATORY_REPORT: 'Laboratory Report',
@@ -67,9 +78,24 @@ const OTHER_REASON_LABELS = {
   INTERVENTIONAL_PROCEDURE: 'This Radiology procedure does not belong to a supported diagnostic imaging family.',
 };
 
+const PROTECTION_CATEGORY_LABELS = {
+  Names: 'Names',
+  Identifiers: 'Patient identifiers',
+  Dates: 'Dates',
+  'Contact Details': 'Contact details',
+  'Locations and Facilities': 'Locations and facilities',
+  'Other Identity Signals': 'Other identity signals',
+};
+
 function label(value) {
   const key = String(value || 'UNKNOWN');
   return LABELS[key] || key.toLowerCase().replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase());
+}
+
+function publicPolicyLabel(value) {
+  return String(value || 'Selected privacy workflow')
+    .replace(/^MedNexus\s+/i, '')
+    .replace(/^MRJ\s+/i, '');
 }
 
 function isPresent(value) {
@@ -96,7 +122,11 @@ function getRunDocumentById(run, documentId) {
 }
 
 function getRunDocumentResult(run, documentId) {
-  return getRunDocumentById(run, documentId)?.stage_results?.UNDERSTAND || null;
+  return getRunDocumentStageResult(run, documentId, 'UNDERSTAND');
+}
+
+function getRunDocumentStageResult(run, documentId, stage) {
+  return getRunDocumentById(run, documentId)?.stage_results?.[stage] || null;
 }
 
 function adjacentRunDocumentId(run, documentId, offset) {
@@ -110,20 +140,24 @@ function activeWorkflowResult(nextMode, singleResult, run, selectedDocumentId) {
   return nextMode === 'single' ? (singleResult || null) : getRunDocumentResult(run, selectedDocumentId);
 }
 
-function buildBatchReportRows(run) {
+function buildBatchReportRows(run, stage = 'UNDERSTAND') {
   return (run?.documents || []).map(runDocument => {
-    const result = runDocument.stage_results?.UNDERSTAND || null;
-    const state = runDocument.stage_status?.UNDERSTAND?.status || 'WAITING';
-    const model = buildReportViewModel(result, { state });
+    const result = runDocument.stage_results?.[stage] || null;
+    const state = runDocument.stage_status?.[stage]?.status || 'NOT_STARTED';
+    const model = stage === 'PROTECT'
+      ? buildProtectionViewModel(result, { state })
+      : buildReportViewModel(result, { state });
     return {
       documentId: runDocument.document_id,
       order: runDocument.order,
       filename: runDocument.original_filename,
-      recognition: result ? [model.modality, model.bodyRegion].filter(Boolean).join(' · ') : 'No result',
-      confidence: model.confidence,
-      confidenceBand: model.confidenceBand,
+      recognition: stage === 'PROTECT'
+        ? (result ? model.policy : label(state))
+        : result ? [model.modality, model.bodyRegion].filter(Boolean).join(' · ') : 'No result',
+      confidence: stage === 'PROTECT' ? '' : model.confidence,
+      confidenceBand: stage === 'PROTECT' ? '' : model.confidenceBand,
       state, result,
-      error: runDocument.error || null,
+      error: runDocument.stage_errors?.[stage] || runDocument.error || null,
     };
   });
 }
@@ -142,6 +176,28 @@ function createBatchDataTrace({ selectedCount, submittedCount, run }) {
     frontendResultsStored: results,
     reportRowsGenerated: rows.length,
   };
+}
+
+function createProtectionDataTrace({ selectedCount, submittedCount, run }) {
+  const runDocuments = run?.documents || [];
+  const eligible = run?.protection_summary?.eligible || 0;
+  const terminal = runDocuments.filter(runDocument =>
+    TERMINAL_STATES.has(runDocument.stage_status?.PROTECT?.status),
+  ).length;
+  const results = runDocuments.filter(runDocument => Boolean(runDocument.stage_results?.PROTECT)).length;
+  return {
+    selected: selectedCount,
+    understandResults: runDocuments.filter(runDocument => Boolean(runDocument.stage_results?.UNDERSTAND)).length,
+    protectEligible: eligible,
+    protectSubmitted: submittedCount,
+    protectTerminal: terminal,
+    protectionResultsStored: results,
+    navigatorResults: buildBatchReportRows(run, 'PROTECT').length,
+  };
+}
+
+function protectionEligibleDocumentIds(run) {
+  return [...(run?.handoff?.protect?.eligible_document_ids || [])];
 }
 
 async function processSequentialBatch(entries, processEntry, presentAfterEntry) {
@@ -186,8 +242,10 @@ function setSingleFile(file) {
 }
 
 function setWorkflowMode(nextMode) {
-  if (batchProcessing) return;
+  if (batchProcessing || protectProcessing) return;
+  resetCompareView();
   workflowMode = nextMode;
+  activeJourneyStage = 'UNDERSTAND';
   const singleActive = nextMode === 'single';
   getElement('singleModeTab').classList.toggle('active', singleActive);
   getElement('batchModeTab').classList.toggle('active', !singleActive);
@@ -204,7 +262,11 @@ function setWorkflowMode(nextMode) {
   } else {
     getElement('results').classList.remove('show', 'batch-view');
   }
-  updateJourneyRail(singleActive ? null : batchRun, singleActive ? singlePayload?.document_context : null);
+  updateActiveStagePresentation();
+  updateJourneyRail(
+    singleActive ? singleRun : batchRun,
+    singleActive ? singlePayload?.document_context : null,
+  );
 }
 
 function renderList(target, items, renderer, emptyMessage) {
@@ -263,6 +325,7 @@ function buildReportViewModel(payload, options = {}) {
   // A mismatched family is not allowed to lend context to the selected identity.
   const current = family?.subdomain === subdomain ? family : null;
   const processing = context.processing_context || {};
+  const protectReady = Boolean(processing.protect_ready);
   const review = unknown || subdomain === 'OTHER' ||
     (processing.document_review_required ?? processing.manual_review_required ?? true);
   const failed = !payload;
@@ -305,12 +368,359 @@ function buildReportViewModel(payload, options = {}) {
     structures: [...new Set(regions)], explanations,
     warnings: payload?.warnings || [],
     readiness: failed ? 'Retry this report from the navigator. Other results are preserved.'
-      : review ? 'Manual review required before continuing.'
-      : processing.protect_ready ? 'Ready for Privacy Protection.'
+      : protectReady && review
+        ? 'Recognition needs review, but this readable report is ready for Privacy Protection.'
+      : protectReady ? 'Ready for Privacy Protection.'
       : 'Privacy Protection is not ready for this report.',
-    handoff: !review && processing.protect_ready ? payload?.journey?.continue_to_protect : null,
+    handoff: protectReady ? payload?.journey?.continue_to_protect : null,
     context,
   };
+}
+
+function buildProtectionViewModel(payload, options = {}) {
+  const state = options.state || payload?.protection_result?.status || 'NOT_STARTED';
+  const result = payload?.protection_result || {};
+  const protectedDocument = payload?.protected_document || {};
+  const artifact = protectedDocument.artifact || null;
+  const sourceName = String(options.sourceName || '');
+  const sourceType = String(options.sourceType || '').toLowerCase();
+  const pdfOrigin = sourceType === 'pdf' || sourceName.toLowerCase().endsWith('.pdf');
+  const patientContext = payload?.patient_analytic_context || {};
+  const provenance = payload?.protection_provenance || {};
+  const populated = new Set(patientContext.populated_fields || []);
+  const analyticContext = Object.entries(patientContext.fields || {})
+    .filter(([name, field]) => populated.has(name) && field?.state === 'KNOWN' && isPresent(field.value))
+    .map(([name, field]) => [label(name), Array.isArray(field.value) ? field.value.map(label).join(' · ') : String(field.value)]);
+  const categorySummary = Object.entries(result.protected_entity_category_summary || {});
+  const candidateCounts = provenance.candidate_counts || {};
+  const count = name => Number.isFinite(candidateCounts[name]) ? candidateCounts[name] : 0;
+  const candidateTotal = Number.isFinite(candidateCounts.total)
+    ? candidateCounts.total
+    : count('accepted') + count('rejected') + count('review_required') + count('pending');
+  const unresolvedCount = count('review_required') + count('pending');
+  const reviewSignals = Array.isArray(result.review_signal_summary)
+    ? result.review_signal_summary
+      .filter(item => item && item.human_label && Number(item.count) > 0)
+      .map(item => ({
+        category: String(item.category || ''),
+        humanLabel: String(item.human_label),
+        count: Number(item.count),
+      }))
+    : [];
+  const failed = state === 'FAILED' || state === 'BLOCKED';
+  const processing = state === 'PROCESSING' || state === 'QUEUED';
+  const reviewRequired = Boolean(result.review_required);
+  const zeroPhi = !failed && !processing && !reviewRequired && candidateTotal === 0;
+  const transformedCount = categorySummary.reduce((total, [, value]) => total + Number(value || 0), 0);
+  const summaryRows = zeroPhi
+    ? [['PHI detection', 'No PHI detected']]
+    : [
+        ['Automatic transformations', transformedCount ? `${transformedCount} applied` : 'None applied'],
+        ...categorySummary
+          .filter(([, value]) => Number(value) > 0)
+          .map(([name, value]) => [
+            PROTECTION_CATEGORY_LABELS[name] || label(name),
+            `${value} protected`,
+          ]),
+        ...(unresolvedCount > 0 ? [['Requires review', `${unresolvedCount} ${unresolvedCount === 1 ? 'signal' : 'signals'}`]] : []),
+      ];
+  const reviewMessage = reviewRequired
+    ? reviewSignals.length
+      ? reviewSignals
+        .map(item => `${item.humanLabel}: ${item.count}`)
+        .join(' · ')
+      : unresolvedCount > 0
+      ? `${unresolvedCount} unresolved identity ${unresolvedCount === 1 ? 'signal requires' : 'signals require'} human review.`
+      : 'One or more identity signals require human review.'
+    : '';
+  return {
+    state,
+    failed,
+    processing,
+    policy: publicPolicyLabel(result.policy_display_name || options.policyLabel),
+    categorySummary,
+    summaryRows,
+    analyticContext,
+    protectedText: protectedDocument.protected_text || '',
+    artifact,
+    pdfOrigin,
+    hasPdfArtifact: Boolean(
+      artifact?.availability && artifact?.media_type === 'application/pdf',
+    ),
+    protectedFilename: artifact?.filename
+      || (sourceName.toLowerCase().endsWith('.pdf')
+        ? `${sourceName.slice(0, -4)}_PROTECTED.pdf`
+        : 'MRJ_PROTECTED.pdf'),
+    warnings: result.warnings || protectedDocument.warnings || [],
+    reviewRequired,
+    zeroPhi,
+    candidateTotal,
+    unresolvedCount,
+    reviewSignals,
+    reviewMessage,
+    error: options.error || '',
+  };
+}
+
+function buildCompareLines(value, counterpart) {
+  const lines = String(value || '').split('\n');
+  const otherLines = String(counterpart || '').split('\n');
+  return lines.map((text, index) => ({
+    text,
+    changed: text !== (otherLines[index] ?? ''),
+  }));
+}
+
+function renderComparePane(target, value, counterpart) {
+  const lines = buildCompareLines(value, counterpart);
+  target.replaceChildren(...lines.map((line, index) => {
+    const item = makeElement('span');
+    item.className = `compare-line${line.changed ? ' changed' : ''}`;
+    item.textContent = `${line.text}${index < lines.length - 1 ? '\n' : ''}`;
+    return item;
+  }));
+}
+
+function buildNextStagePresentation(run, protectionModel) {
+  const documents = run?.documents || [];
+  if (documents.length > 1 || run?.mode === 'batch') {
+    const summary = run?.protection_summary || {};
+    const ready = summary.complete || 0;
+    const review = summary.needs_review || 0;
+    const unavailable = (summary.failed || 0) + (summary.blocked || 0);
+    const parts = [
+      `${ready} ${ready === 1 ? 'report is' : 'reports are'} ready for the next stage`,
+    ];
+    if (review) parts.push(`${review} ${review === 1 ? 'requires' : 'require'} review`);
+    if (unavailable) parts.push(`${unavailable} ${unavailable === 1 ? 'is' : 'are'} unavailable`);
+    return {
+      message: `${parts.join(' · ')}. Unaffected reports remain eligible to continue.`,
+      buttonLabel: ready
+        ? `Continue ${ready} Eligible ${ready === 1 ? 'Report' : 'Reports'} — Coming next`
+        : 'Continue to EXTRACT — Coming next',
+    };
+  }
+  if (protectionModel.state === 'COMPLETE') {
+    return {
+      message: 'This report is ready for the next stage.',
+      buttonLabel: 'Continue 1 Eligible Report — Coming next',
+    };
+  }
+  if (protectionModel.reviewRequired) {
+    return {
+      message: 'Resolve the protection review before this report continues.',
+      buttonLabel: 'Continue to EXTRACT — Coming next',
+    };
+  }
+  return {
+    message: 'Clinical extraction begins in a future checkpoint.',
+    buttonLabel: 'Continue to EXTRACT — Coming next',
+  };
+}
+
+function compareTargetKey(target) {
+  return target ? `${target.runId}:${target.documentId}` : '';
+}
+
+function revokeArtifactUrl(name) {
+  const value = name === 'protected' ? protectedArtifactUrl : originalArtifactUrl;
+  if (value) globalThis.URL?.revokeObjectURL(value);
+  if (name === 'protected') protectedArtifactUrl = null;
+  else originalArtifactUrl = null;
+}
+
+function clearPdfFrame(id) {
+  const frame = getElement(id);
+  if (frame) frame.src = 'about:blank';
+}
+
+function releaseOriginalArtifact() {
+  clearPdfFrame('originalComparePdf');
+  revokeArtifactUrl('original');
+}
+
+function releaseAllArtifactUrls() {
+  releaseOriginalArtifact();
+  clearPdfFrame('protectedPdfViewer');
+  clearPdfFrame('protectedComparePdf');
+  revokeArtifactUrl('protected');
+}
+
+function protectedArtifactEndpoint(target) {
+  return `/api/v1/understanding/journey-runs/${encodeURIComponent(target.runId)}/documents/${encodeURIComponent(target.documentId)}/protected-artifact`;
+}
+
+function originalArtifactEndpoint(target) {
+  return `/api/v1/understanding/journey-runs/${encodeURIComponent(target.runId)}/documents/${encodeURIComponent(target.documentId)}/compare-artifact`;
+}
+
+async function artifactBlob(endpoint, method, fallback) {
+  const response = await fetch(endpoint, { method, cache: 'no-store' });
+  if (!response.ok) {
+    let detail = fallback;
+    try {
+      detail = (await response.json()).detail || detail;
+    } catch (_) {
+      // The response had no JSON error body.
+    }
+    throw Error(detail);
+  }
+  const blob = await response.blob();
+  if (blob.type !== 'application/pdf') throw Error(fallback);
+  return blob;
+}
+
+async function loadProtectedPdf(target, artifact) {
+  if (!target) return;
+  const requestVersion = ++artifactRequestVersion;
+  const targetKey = compareTargetKey(target);
+  getElement('protectedPdfStatus').textContent = 'Preparing protected document…';
+  try {
+    const blob = await artifactBlob(
+      protectedArtifactEndpoint(target),
+      'GET',
+      'The protected PDF is unavailable.',
+    );
+    if (requestVersion !== artifactRequestVersion || targetKey !== compareTargetKey(activeCompareTarget)) return;
+    revokeArtifactUrl('protected');
+    protectedArtifactUrl = globalThis.URL.createObjectURL(blob);
+    getElement('protectedPdfViewer').src = protectedArtifactUrl;
+    getElement('protectedPdfDownloadBtn').href = protectedArtifactUrl;
+    getElement('protectedPdfDownloadBtn').download = artifact?.filename || 'MRJ_PROTECTED.pdf';
+    getElement('protectedPdfDownloadBtn').hidden = false;
+    getElement('protectedPdfStatus').textContent = '';
+    getElement('compareViewBtn').disabled = !activeCompareTarget;
+  } catch (failure) {
+    if (requestVersion !== artifactRequestVersion || targetKey !== compareTargetKey(activeCompareTarget)) return;
+    clearPdfFrame('protectedPdfViewer');
+    getElement('protectedPdfDownloadBtn').hidden = true;
+    getElement('compareViewBtn').disabled = true;
+    getElement('protectedPdfStatus').textContent = failure.message || 'The protected PDF is unavailable.';
+  }
+}
+
+function setProtectViewButton(activeId) {
+  ['protectedViewBtn', 'compareViewBtn', 'textViewBtn'].forEach(id => {
+    const active = id === activeId;
+    getElement(id).classList.toggle('active', active);
+    getElement(id).setAttribute('aria-pressed', String(active));
+  });
+}
+
+function resetCompareView(target = null, protectedOutput = '', pdfOrigin = false, artifact = null) {
+  compareRequestVersion += 1;
+  artifactRequestVersion += 1;
+  releaseAllArtifactUrls();
+  activeCompareTarget = target;
+  activeProtectionView = { pdfOrigin, protectedText: protectedOutput };
+  getElement('originalCompareText').textContent = '';
+  getElement('protectedCompareText').textContent = protectedOutput;
+  getElement('originalCompareText').hidden = pdfOrigin;
+  getElement('protectedCompareText').hidden = pdfOrigin;
+  getElement('comparePanel').hidden = true;
+  getElement('protectedPdfPanel').hidden = !pdfOrigin;
+  getElement('protectedText').hidden = pdfOrigin;
+  getElement('compareStatus').hidden = true;
+  getElement('compareStatus').textContent = '';
+  getElement('protectedPdfStatus').textContent = pdfOrigin ? 'Preparing protected document…' : '';
+  getElement('protectedPdfDownloadBtn').hidden = true;
+  getElement('protectedViewBtn').textContent = pdfOrigin ? 'Protected PDF' : 'Protected Report';
+  getElement('textViewBtn').hidden = !pdfOrigin;
+  setProtectViewButton('protectedViewBtn');
+  getElement('compareViewBtn').disabled = pdfOrigin
+    ? true
+    : !target || !protectedOutput;
+  if (pdfOrigin) loadProtectedPdf(target, artifact);
+}
+
+function showProtectedView() {
+  compareRequestVersion += 1;
+  releaseOriginalArtifact();
+  getElement('originalCompareText').textContent = '';
+  getElement('comparePanel').hidden = true;
+  getElement('protectedPdfPanel').hidden = !activeProtectionView.pdfOrigin;
+  getElement('protectedText').hidden = activeProtectionView.pdfOrigin;
+  getElement('compareStatus').hidden = true;
+  getElement('compareStatus').textContent = '';
+  setProtectViewButton('protectedViewBtn');
+  getElement('compareViewBtn').disabled = !activeCompareTarget
+    || (activeProtectionView.pdfOrigin ? !protectedArtifactUrl : !activeProtectionView.protectedText);
+}
+
+function showTextView() {
+  compareRequestVersion += 1;
+  releaseOriginalArtifact();
+  getElement('comparePanel').hidden = true;
+  getElement('protectedPdfPanel').hidden = true;
+  getElement('protectedText').hidden = false;
+  getElement('compareStatus').hidden = true;
+  getElement('compareStatus').textContent = '';
+  setProtectViewButton('textViewBtn');
+}
+
+async function showCompareView() {
+  const target = activeCompareTarget;
+  if (!target || (!activeProtectionView.protectedText && !activeProtectionView.pdfOrigin)) return;
+  if (activeProtectionView.pdfOrigin && !protectedArtifactUrl) return;
+  const targetKey = compareTargetKey(target);
+  const requestVersion = ++compareRequestVersion;
+  releaseOriginalArtifact();
+  getElement('compareViewBtn').disabled = true;
+  getElement('compareStatus').hidden = false;
+  getElement('compareStatus').textContent = 'Loading the retained source for this temporary comparison…';
+  try {
+    if (activeProtectionView.pdfOrigin) {
+      const originalBlob = await artifactBlob(
+        originalArtifactEndpoint(target),
+        'POST',
+        'MRJ could not open the original PDF for comparison.',
+      );
+      if (requestVersion !== compareRequestVersion || targetKey !== compareTargetKey(activeCompareTarget)) return;
+      originalArtifactUrl = globalThis.URL.createObjectURL(originalBlob);
+      getElement('originalComparePdf').src = originalArtifactUrl;
+      getElement('protectedComparePdf').src = protectedArtifactUrl || 'about:blank';
+      getElement('originalComparePdf').hidden = false;
+      getElement('protectedComparePdf').hidden = false;
+      getElement('originalCompareText').hidden = true;
+      getElement('protectedCompareText').hidden = true;
+      getElement('originalCompareTitle').textContent = 'Original PDF';
+      getElement('protectedCompareTitle').textContent = 'Protected PDF';
+    } else {
+      const response = await fetch(
+        `/api/v1/understanding/journey-runs/${encodeURIComponent(target.runId)}/documents/${encodeURIComponent(target.documentId)}/compare-source`,
+        { method: 'POST', cache: 'no-store' },
+      );
+      const payload = await responsePayload(response, 'MRJ could not open the original report for comparison.');
+      if (requestVersion !== compareRequestVersion || targetKey !== compareTargetKey(activeCompareTarget)) return;
+      const originalText = payload.source_text || '';
+      const protectedText = activeProtectionView.protectedText;
+      renderComparePane(getElement('originalCompareText'), originalText, protectedText);
+      renderComparePane(getElement('protectedCompareText'), protectedText, originalText);
+      getElement('originalComparePdf').hidden = true;
+      getElement('protectedComparePdf').hidden = true;
+      getElement('originalCompareText').hidden = false;
+      getElement('protectedCompareText').hidden = false;
+      getElement('originalCompareTitle').textContent = 'Original Text';
+      getElement('protectedCompareTitle').textContent = 'Protected Text';
+    }
+    getElement('protectedPdfPanel').hidden = true;
+    getElement('protectedText').hidden = true;
+    getElement('comparePanel').hidden = false;
+    setProtectViewButton('compareViewBtn');
+    getElement('compareStatus').textContent = 'Sensitive original shown temporarily for this review. It is not stored by the browser.';
+  } catch (failure) {
+    if (requestVersion !== compareRequestVersion || targetKey !== compareTargetKey(activeCompareTarget)) return;
+    getElement('originalCompareText').textContent = '';
+    getElement('comparePanel').hidden = true;
+    getElement('protectedPdfPanel').hidden = !activeProtectionView.pdfOrigin;
+    getElement('protectedText').hidden = activeProtectionView.pdfOrigin;
+    getElement('compareStatus').hidden = false;
+    getElement('compareStatus').textContent = failure.message || 'The original report is unavailable for comparison.';
+  } finally {
+    if (requestVersion === compareRequestVersion && targetKey === compareTargetKey(activeCompareTarget)) {
+      getElement('compareViewBtn').disabled = false;
+    }
+  }
 }
 
 function prepareResultsWorkspace(batchView) {
@@ -319,12 +729,135 @@ function prepareResultsWorkspace(batchView) {
   getElement('reportNavigation').hidden = !batchView;
 }
 
+function updateActiveStagePresentation() {
+  const protectActive = activeJourneyStage === 'PROTECT';
+  getElement('activeStageNumber').textContent = protectActive ? '02' : '01';
+  getElement('activeStageName').textContent = protectActive ? 'PROTECT' : 'UNDERSTAND';
+  getElement('activeStageDescription').textContent = protectActive
+    ? 'Purpose-based privacy protection'
+    : 'Document identity and context';
+  getElement('resultsEyebrow').textContent = protectActive ? 'Protection Result' : 'Report Result';
+  getElement('resultsTitle').textContent = protectActive ? 'What MRJ protected' : 'What MRJ understood';
+  getElement('anotherBtn').textContent = protectActive
+    ? 'Review UNDERSTAND'
+    : workflowMode === 'batch' ? 'Back to batch overview' : 'Analyze another report';
+}
+
+function renderProtectionResult(payload, options = {}) {
+  const model = buildProtectionViewModel(payload, options);
+  const batchView = workflowMode === 'batch' && Boolean(batchRun);
+  prepareResultsWorkspace(batchView);
+  activeJourneyStage = 'PROTECT';
+  updateActiveStagePresentation();
+  getElement('reportCard').hidden = true;
+  getElement('protectionCard').hidden = false;
+  getElement('protectionCard').className = `protection-card ${statusClass(model.state)}`;
+  getElement('protectReportNumber').textContent = options.number
+    ? `Report ${String(options.number).padStart(2, '0')}`
+    : 'Report';
+  getElement('protectStatus').className = `status-badge ${statusClass(model.state)}`;
+  getElement('protectStatus').textContent = `${liveStatusSymbol(model.state)} ${label(model.state)}`;
+  getElement('protectPolicy').textContent = `${model.policy} workflow`;
+  getElement('protectionTitle').textContent = options.sourceName || 'Retained medical report';
+  const transformedCount = model.categorySummary.reduce(
+    (total, [, value]) => total + Number(value || 0),
+    0,
+  );
+  getElement('protectStatusMessage').textContent = model.processing
+    ? 'Protection in progress.'
+    : model.failed ? 'Privacy Protection could not complete for this report.'
+      : model.reviewRequired
+        ? model.reviewMessage
+        : model.zeroPhi ? 'No PHI detected. Clinical content remains available.'
+          : `${transformedCount} automatic ${transformedCount === 1 ? 'transformation' : 'transformations'} applied.`;
+
+  const resultAvailable = Boolean(payload);
+  const compareTarget = resultAvailable && options.runId && options.documentId
+    ? { runId: options.runId, documentId: options.documentId }
+    : null;
+  getElement('protectedEntitiesTitle').closest('section').hidden = !resultAvailable;
+  getElement('analyticContextTitle').closest('section').hidden = !resultAvailable;
+  getElement('protectedDocumentSection').hidden = !resultAvailable;
+  renderRows(
+    getElement('protectedEntitySummary'),
+    model.summaryRows,
+  );
+  getElement('protectedEntitiesTitle').textContent = model.zeroPhi
+      ? 'No additional de-identification required'
+      : 'Protected identity information';
+  getElement('protectionReview').hidden = !resultAvailable || !model.reviewRequired;
+  getElement('protectionReviewMessage').textContent = model.reviewMessage;
+  getElement('reviewProtectionBtn').textContent = model.unresolvedCount
+    ? `Review ${model.unresolvedCount} ${model.unresolvedCount === 1 ? 'Signal' : 'Signals'}`
+    : 'Review Protection';
+  getElement('reviewProtectionBtn').disabled = !compareTarget
+    || (!model.protectedText && !model.pdfOrigin);
+  getElement('reviewProtectionBtn').onclick = showCompareView;
+  renderRows(getElement('analyticContextSummary'), model.analyticContext);
+  getElement('analyticContextSummary').hidden = !model.analyticContext.length;
+  getElement('analyticContextEmpty').hidden = Boolean(model.analyticContext.length);
+  getElement('protectedText').textContent = model.protectedText;
+  getElement('protectedDocumentTitle').textContent = model.pdfOrigin
+    ? `${model.protectedFilename}${model.artifact?.page_count ? ` · ${model.artifact.page_count} ${model.artifact.page_count === 1 ? 'page' : 'pages'}` : ''}`
+    : 'Protected report text';
+  resetCompareView(
+    compareTarget,
+    model.protectedText,
+    model.pdfOrigin,
+    model.artifact,
+  );
+  getElement('protectedViewBtn').onclick = showProtectedView;
+  getElement('compareViewBtn').onclick = showCompareView;
+  getElement('textViewBtn').onclick = showTextView;
+  const displayWarnings = model.warnings.filter(
+    warning => warning !== 'One or more privacy candidates require review.',
+  );
+  getElement('protectWarnings').classList.toggle('show', displayWarnings.length > 0);
+  getElement('protectWarnings').textContent = displayWarnings.length
+    ? `Please note: ${displayWarnings.join(' · ')}`
+    : '';
+  getElement('protectionError').hidden = !model.failed;
+  getElement('protectionError').textContent = model.failed
+    ? model.error || 'This report could not be protected. Other eligible reports continued.'
+    : '';
+  const nextStage = buildNextStagePresentation(batchView ? batchRun : null, model);
+  getElement('nextStageSummary').textContent = nextStage.message;
+  getElement('continueExtractBtn').textContent = nextStage.buttonLabel;
+  getElement('continueExtractBtn').disabled = true;
+  getElement('continueExtractBtn').setAttribute('aria-disabled', 'true');
+  getElement('copyProtectedBtn').disabled = !model.protectedText;
+  getElement('copyProtectedBtn').onclick = async () => {
+    if (!model.protectedText) return;
+    try {
+      await globalThis.navigator.clipboard.writeText(model.protectedText);
+      getElement('copyProtectedBtn').textContent = 'Copied';
+      globalThis.setTimeout(() => { getElement('copyProtectedBtn').textContent = 'Copy protected text'; }, 1000);
+    } catch (_) {
+      getElement('copyProtectedBtn').textContent = 'Copy unavailable';
+    }
+  };
+  getElement('results').classList.add('show');
+  if (batchView) renderBatchRows();
+  configureReportNavigation();
+  updateJourneyRail(batchView ? batchRun : singleRun);
+  if (options.scroll !== false) {
+    getElement('protectionCard').focus({ preventScroll: true });
+    const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    getElement('protectionCard').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+  }
+}
+
 // Exactly one card and one render model serve Single and selected Batch reports.
 function renderReportResult(payload, options = {}) {
+  resetCompareView();
   const model = buildReportViewModel(payload, options);
   const batchView = workflowMode === 'batch' && Boolean(batchRun);
   prepareResultsWorkspace(batchView);
+  activeJourneyStage = 'UNDERSTAND';
+  updateActiveStagePresentation();
   getElement('singleWorkspace').hidden = true;
+  getElement('reportCard').hidden = false;
+  getElement('protectionCard').hidden = true;
   getElement('reportCard').className = `report-card ${statusClass(model.state)}`;
   getElement('reportNumber').textContent = options.number ? `Report ${String(options.number).padStart(2, '0')}` : 'Report';
   getElement('resultFileName').textContent = model.filename;
@@ -364,13 +897,12 @@ function renderReportResult(payload, options = {}) {
   getElement('warnings').textContent = model.warnings.length ? `Please note: ${model.warnings.join(' · ')}` : '';
   getElement('readinessMessage').textContent = model.readiness;
   const handoff = !batchView && workflowMode === 'single' ? model.handoff : null;
+  getElement('singleProtectActions').hidden = !handoff;
   getElement('continueBtn').hidden = !handoff;
-  getElement('continueBtn').onclick = () => {
-    if (handoff) globalThis.location.assign(handoff);
-  };
+  getElement('continueBtn').onclick = () => beginProtectJourney();
   getElement('results').classList.add('show');
   configureReportNavigation();
-  updateJourneyRail(batchView ? batchRun : null, model.context);
+  updateJourneyRail(batchView ? batchRun : singleRun, model.context);
   if (options.scroll !== false) {
     getElement('reportCard').focus({ preventScroll: true });
     const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -400,6 +932,8 @@ async function responsePayload(response, fallback) {
 
 async function analyzeSingle() {
   try {
+    activeJourneyStage = 'UNDERSTAND';
+    singleRun = null;
     getElement('analyzeBtn').disabled = true;
     getElement('status').textContent = 'Analyzing report…';
     getElement('status').classList.add('analyzing');
@@ -468,7 +1002,7 @@ function statusClass(state) {
   if (state === 'PROCESSING') return 'processing';
   if (state === 'COMPLETE') return 'complete';
   if (state === 'NEEDS_REVIEW') return 'review';
-  if (state === 'FAILED' || state === 'UNSUPPORTED') return 'failed';
+  if (state === 'FAILED' || state === 'UNSUPPORTED' || state === 'BLOCKED') return 'failed';
   return '';
 }
 
@@ -546,17 +1080,21 @@ function liveStatusSymbol(state) {
   return '○';
 }
 
-function renderLiveBatchQueue() {
+function renderLiveBatchQueue(stage = 'UNDERSTAND') {
   const rows = batchEntries.map((entry, index) => {
+    const runDocument = batchRun?.documents?.[index];
+    const stageState = stage === 'PROTECT'
+      ? runDocument?.stage_status?.PROTECT?.status || 'NOT_STARTED'
+      : entry.status;
     const row = makeElement('li');
     const icon = makeElement('span');
     const filename = makeElement('b');
     const status = makeElement('span');
-    icon.className = `live-icon ${statusClass(entry.status)}`;
-    icon.textContent = liveStatusSymbol(entry.status);
+    icon.className = `live-icon ${statusClass(stageState)}`;
+    icon.textContent = liveStatusSymbol(stageState);
     filename.textContent = entry.file.name;
-    status.className = `status-badge ${statusClass(entry.status)}`;
-    status.textContent = label(entry.status);
+    status.className = `status-badge ${statusClass(stageState)}`;
+    status.textContent = label(stageState);
     row.append(icon, filename, status);
     return row;
   });
@@ -615,6 +1153,7 @@ function safelyRenderBatchState() {
 
 async function analyzeBatch() {
   if (batchProcessing || !batchEntries.length || batchEntries.length > MAX_BATCH_REPORTS) return;
+  activeJourneyStage = 'UNDERSTAND';
   batchProcessing = true;
   batchRun = null;
   selectedBatchDocumentId = null;
@@ -673,15 +1212,20 @@ function renderBatchReportBrowser() {
   if (!batchRun) return;
   prepareResultsWorkspace(true);
   renderBatchRows();
+  getElement('batchHandoff').hidden = activeJourneyStage !== 'UNDERSTAND';
   const handoff = batchRun.handoff?.protect || {};
   getElement('batchProtectBtn').disabled = !handoff.available;
   getElement('batchProtectBtn').setAttribute('aria-disabled', String(!handoff.available));
-  getElement('batchHandoffNote').textContent = handoff.available ? 'This batch is ready for Privacy Protection.' : 'Batch privacy processing is not yet enabled.';
+  getElement('batchProtectBtn').textContent = 'Continue to PROTECT';
+  getElement('batchProtectBtn').onclick = () => beginProtectJourney();
+  getElement('batchHandoffNote').textContent = handoff.available
+    ? `${handoff.eligible_count} ${handoff.eligible_count === 1 ? 'report is' : 'reports are'} ready for Privacy Protection.`
+    : handoff.reason || 'No report is currently eligible for Privacy Protection.';
 }
 
 function renderBatchRows() {
   if (!batchRun) return;
-  const rows = buildBatchReportRows(batchRun).map(model => {
+  const rows = buildBatchReportRows(batchRun, activeJourneyStage).map(model => {
     const row = makeElement('div');
     const selection = makeElement('button');
     const number = makeElement('span');
@@ -704,12 +1248,13 @@ function renderBatchRows() {
     reportCopy.append(filename, recognition);
     confidence.className = 'report-confidence';
     confidence.textContent = model.confidence;
+    confidence.hidden = !model.confidence;
     status.className = `status-badge ${statusClass(model.state)}`;
     status.textContent = `${liveStatusSymbol(model.state)} ${label(model.state)}`;
     selection.append(number, reportCopy, confidence, status);
     selection.onclick = () => selectBatchDocument(model.documentId);
     row.append(selection);
-    if (model.state === 'FAILED') {
+    if (model.state === 'FAILED' && activeJourneyStage === 'UNDERSTAND') {
       const retry = makeElement('button');
       retry.type = 'button';
       retry.className = 'retry-report';
@@ -731,8 +1276,21 @@ function selectBatchDocument(documentId, scroll = true) {
   selectedBatchDocumentId = documentId;
   renderBatchRows();
   const position = batchRun.documents.indexOf(runDocument) + 1;
-  const result = getRunDocumentResult(batchRun, documentId);
-  if (result) {
+  const stage = activeJourneyStage;
+  const result = getRunDocumentStageResult(batchRun, documentId, stage);
+  if (stage === 'PROTECT') {
+    renderProtectionResult(result, {
+      runId: batchRun.run_id,
+      documentId: runDocument.document_id,
+      sourceName: runDocument.original_filename,
+      sourceType: runDocument.source_type,
+      state: runDocument.stage_status.PROTECT.status,
+      number: position,
+      error: runDocument.stage_errors?.PROTECT || runDocument.error,
+      policyLabel: label(getElement('batchPolicySelect').value),
+      scroll,
+    });
+  } else if (result) {
     renderReportResult(result, {
       sourceName: runDocument.original_filename,
       state: runDocument.stage_status.UNDERSTAND.status,
@@ -747,7 +1305,7 @@ function selectBatchDocument(documentId, scroll = true) {
 function configureReportNavigation() {
   const batchView = workflowMode === 'batch' && Boolean(batchRun?.documents?.length);
   getElement('reportNavigation').hidden = !batchView;
-  getElement('anotherBtn').textContent = batchView ? 'Back to batch overview' : 'Analyze another report';
+  updateActiveStagePresentation();
   if (!batchView) return;
   const index = batchRun.documents.findIndex(runDocument => runDocument.document_id === selectedBatchDocumentId);
   const previousDocumentId = adjacentRunDocumentId(batchRun, selectedBatchDocumentId, -1);
@@ -792,34 +1350,258 @@ async function retryBatchDocument(documentId) {
   }
 }
 
+function selectedPolicy() {
+  return workflowMode === 'batch'
+    ? getElement('batchPolicySelect').value
+    : getElement('singlePolicySelect').value;
+}
+
+function selectedPolicyLabel() {
+  const select = workflowMode === 'batch'
+    ? getElement('batchPolicySelect')
+    : getElement('singlePolicySelect');
+  return select.options?.[select.selectedIndex]?.text || label(select.value);
+}
+
+function setLocalProtectStatus(run, documentId, state) {
+  const runDocument = getRunDocumentById(run, documentId);
+  if (!runDocument) return;
+  runDocument.current_stage = 'PROTECT';
+  runDocument.stage_status.PROTECT.status = state;
+}
+
+function renderProtectionBatchProgress(current, total) {
+  const summary = batchRun?.protection_summary || {};
+  const eligible = summary.eligible ?? total;
+  const terminal = summary.terminal ?? 0;
+  const complete = eligible > 0 && terminal === eligible;
+  getElement('batchSetup').hidden = true;
+  getElement('batchDashboard').hidden = false;
+  getElement('batchSummaryEyebrow').textContent = complete ? 'Protection Complete' : 'Protecting Batch';
+  getElement('batchSummaryTitle').textContent = complete
+    ? `${terminal} ${terminal === 1 ? 'report' : 'reports'} processed`
+    : `Protecting report ${Math.min(current, total)} of ${total}`;
+  getElement('batchProgressBar').style.width = `${eligible ? (terminal / eligible) * 100 : 0}%`;
+  getElement('batchProgressText').hidden = complete;
+  getElement('batchProgressText').textContent = complete ? '' : `${terminal} of ${eligible} terminal`;
+  getElement('batchProgressBar').parentElement.hidden = complete;
+  getElement('processingActivity').hidden = !protectProcessing;
+  getElement('processingActivityText').textContent = protectProcessing
+    ? 'Applying the selected privacy workflow and preparing protected documents…'
+    : 'Privacy Protection complete.';
+  renderLiveBatchQueue('PROTECT');
+  getElement('batchLiveQueue').hidden = complete;
+  getElement('batchMetrics').hidden = !complete;
+  if (complete) {
+    const metrics = [
+      ['Complete', summary.complete || 0],
+      ['Needs Review', summary.needs_review || 0],
+      ['Failed', summary.failed || 0],
+      ['Blocked', summary.blocked || 0],
+    ];
+    getElement('batchMetrics').replaceChildren(...metrics.map(([name, value]) => {
+      const item = makeElement('div');
+      const count = makeElement('strong');
+      const title = makeElement('span');
+      item.className = 'summary-metric';
+      count.textContent = value;
+      title.textContent = name;
+      item.append(count, title);
+      return item;
+    }));
+  }
+  updateJourneyRail(batchRun);
+}
+
+async function requestProtection(runId, policy, documentIds = null) {
+  const body = { policy };
+  if (documentIds) body.document_ids = documentIds;
+  const response = await fetch(
+    `/api/v1/understanding/journey-runs/${encodeURIComponent(runId)}/protect`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+  return responsePayload(response, 'MRJ could not continue this journey through Privacy Protection.');
+}
+
+async function beginProtectJourney() {
+  if (protectProcessing) return;
+  const policy = selectedPolicy();
+  const policyLabel = selectedPolicyLabel();
+  protectProcessing = true;
+  protectionSubmittedCount = 0;
+  activeJourneyStage = 'PROTECT';
+  updateActiveStagePresentation();
+  try {
+    if (workflowMode === 'single') {
+      const runId = singlePayload?.journey?.run_id;
+      if (!runId) throw Error('The retained Single Report journey is unavailable.');
+      renderProtectionResult(null, {
+        sourceName: singlePayload?.document_context?.document?.source_name,
+        sourceType: singlePayload?.document_context?.document?.source_type,
+        state: 'PROCESSING',
+        policyLabel,
+        scroll: false,
+      });
+      protectionSubmittedCount = 1;
+      singleRun = await requestProtection(runId, policy);
+      const runDocument = singleRun.documents[0];
+      renderProtectionResult(runDocument?.stage_results?.PROTECT || null, {
+        runId: singleRun.run_id,
+        documentId: runDocument?.document_id,
+        sourceName: runDocument?.original_filename,
+        sourceType: runDocument?.source_type,
+        state: runDocument?.stage_status?.PROTECT?.status || 'FAILED',
+        number: 1,
+        error: runDocument?.stage_errors?.PROTECT || runDocument?.error,
+        policyLabel,
+      });
+      return;
+    }
+
+    const runId = batchRun?.run_id;
+    const documentIds = protectionEligibleDocumentIds(batchRun);
+    if (!runId || !documentIds.length) {
+      throw Error(batchRun?.handoff?.protect?.reason || 'No retained report is eligible for Privacy Protection.');
+    }
+    activeJourneyStage = 'PROTECT';
+    selectedBatchDocumentId = documentIds[0];
+    renderBatchReportBrowser();
+    for (let index = 0; index < documentIds.length; index += 1) {
+      const documentId = documentIds[index];
+      setLocalProtectStatus(batchRun, documentId, 'PROCESSING');
+      protectionSubmittedCount += 1;
+      renderProtectionBatchProgress(index + 1, documentIds.length);
+      selectBatchDocument(documentId, false);
+      try {
+        batchRun = await requestProtection(runId, policy, [documentId]);
+      } catch (failure) {
+        setLocalProtectStatus(batchRun, documentId, 'FAILED');
+        const runDocument = getRunDocumentById(batchRun, documentId);
+        if (runDocument) {
+          runDocument.stage_errors = runDocument.stage_errors || {};
+          runDocument.stage_errors.PROTECT = failure.message;
+        }
+      }
+      renderProtectionBatchProgress(index + 1, documentIds.length);
+      renderBatchReportBrowser();
+      selectBatchDocument(documentId, false);
+    }
+    const firstDocument = batchRun.documents[0];
+    if (firstDocument) selectBatchDocument(firstDocument.document_id, false);
+  } catch (failure) {
+    if (workflowMode === 'single') {
+      renderProtectionResult(null, {
+        sourceName: singlePayload?.document_context?.document?.source_name,
+        sourceType: singlePayload?.document_context?.document?.source_type,
+        state: 'FAILED',
+        error: failure.message,
+        policyLabel,
+      });
+    } else {
+      getElement('batchHandoffNote').textContent = failure.message;
+    }
+  } finally {
+    protectProcessing = false;
+    if (workflowMode === 'batch' && batchRun) {
+      renderProtectionBatchProgress(
+        batchRun.protection_summary?.terminal || 0,
+        batchRun.protection_summary?.eligible || 0,
+      );
+    }
+    updateJourneyRail(workflowMode === 'batch' ? batchRun : singleRun);
+  }
+}
+
+function stageDisplay(run, stage, context = null) {
+  const documents = run?.documents || [];
+  if (!documents.length) {
+    if (stage === 'UNDERSTAND') {
+      const review = context?.processing_context?.document_review_required
+        ?? context?.processing_context?.manual_review_required;
+      if (context) return { label: review ? 'Needs Review' : 'Complete', state: review ? 'NEEDS_REVIEW' : 'COMPLETE' };
+      return { label: 'Ready', state: 'NOT_STARTED' };
+    }
+    if (stage === 'PROTECT' && protectProcessing) return { label: 'Processing', state: 'PROCESSING' };
+    return { label: 'Not Started', state: 'NOT_STARTED' };
+  }
+  const statuses = documents.map(runDocument => runDocument.stage_status?.[stage]?.status || 'NOT_STARTED');
+  const terminal = statuses.filter(state => ['COMPLETE', 'NEEDS_REVIEW', 'FAILED', 'BLOCKED'].includes(state)).length;
+  const processing = statuses.some(state => state === 'PROCESSING');
+  const queued = statuses.some(state => state === 'QUEUED');
+  const state = processing ? 'PROCESSING'
+    : queued ? 'QUEUED'
+    : statuses.every(value => value === 'COMPLETE') ? 'COMPLETE'
+    : statuses.some(value => value === 'NEEDS_REVIEW') ? 'NEEDS_REVIEW'
+    : statuses.some(value => value === 'FAILED') ? 'FAILED'
+    : statuses.every(value => value === 'BLOCKED') ? 'BLOCKED'
+    : 'NOT_STARTED';
+  if (documents.length === 1) return { label: label(statuses[0]), state: statuses[0] };
+  if (terminal || processing || queued) return { label: `${terminal} / ${documents.length}`, state };
+  return { label: 'Not Started', state };
+}
+
 function updateJourneyRail(run = null, context = null) {
-  const batchView = workflowMode === 'batch';
-  const total = batchView ? Math.max(batchEntries.length, run?.summary?.total || 0) : 0;
-  const processed = Math.max(batchTerminalCount(), run?.summary?.analyzed || 0);
-  const review = context?.processing_context?.document_review_required ?? context?.processing_context?.manual_review_required;
-  getElement('railUnderstand').textContent = batchView
-    ? total ? `${processed} / ${total}` : 'Ready'
-    : context ? review ? 'Needs Review' : 'Complete' : 'Ready';
-  JOURNEY_STAGES.slice(1).forEach(stage => {
-    const target = getElement(`rail${stage.charAt(0)}${stage.slice(1).toLowerCase()}`);
-    if (target) target.textContent = 'Not Started';
+  JOURNEY_STAGES.forEach(stage => {
+    const suffix = stage.charAt(0) + stage.slice(1).toLowerCase();
+    const target = getElement(`rail${suffix}`);
+    const stageNode = getElement(`stage${suffix}`);
+    const pendingBatchRun = stage === 'UNDERSTAND'
+      && workflowMode === 'batch'
+      && batchProcessing
+      && batchEntries.length
+      && !(run?.documents?.length)
+      ? {
+          documents: batchEntries.map(entry => ({
+            stage_status: {
+              UNDERSTAND: {
+                status: entry.status === 'WAITING' ? 'NOT_STARTED' : entry.status,
+              },
+            },
+          })),
+        }
+      : run;
+    const display = stageDisplay(pendingBatchRun, stage, context);
+    target.textContent = display.label;
+    stageNode.className = `journey-stage${stage === activeJourneyStage ? ' active' : ''} ${statusClass(display.state)}`.trim();
   });
 }
 
 function resetBatch() {
-  if (batchProcessing) return;
+  if (batchProcessing || protectProcessing) return;
+  resetCompareView();
   batchEntries = [];
   batchRun = null;
   selectedBatchDocumentId = null;
   batchSubmittedCount = 0;
+  protectionSubmittedCount = 0;
+  activeJourneyStage = 'UNDERSTAND';
   getElement('batchSetup').hidden = false;
   getElement('batchDashboard').hidden = true;
   getElement('batchStatus').textContent = '';
   getElement('results').classList.remove('show', 'batch-view');
   getElement('batchReportBrowser').hidden = true;
   renderPreQueue();
+  updateActiveStagePresentation();
   updateJourneyRail();
   getElement('batchDropzone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function showUnderstandStage() {
+  activeJourneyStage = 'UNDERSTAND';
+  updateActiveStagePresentation();
+  if (workflowMode === 'batch' && batchRun?.documents?.length) {
+    const documentId = selectedBatchDocumentId || batchRun.documents[0].document_id;
+    renderBatchReportBrowser();
+    selectBatchDocument(documentId);
+  } else if (singlePayload) {
+    renderReportResult(singlePayload, {
+      sourceName: singlePayload.document_context?.document?.source_name,
+    });
+  }
 }
 
 function initializeUnderstandingWorkspace() {
@@ -872,6 +1654,10 @@ function initializeUnderstandingWorkspace() {
   getElement('clearBatchBtn').onclick = resetBatch;
   getElement('newBatchBtn').onclick = resetBatch;
   getElement('anotherBtn').onclick = () => {
+    if (activeJourneyStage === 'PROTECT') {
+      showUnderstandStage();
+      return;
+    }
     if (workflowMode === 'batch') {
       getElement('batchDashboard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
@@ -882,6 +1668,7 @@ function initializeUnderstandingWorkspace() {
   };
 
   renderPreQueue();
+  updateActiveStagePresentation();
   updateJourneyRail();
   setInputMode('file');
 }
@@ -892,10 +1679,17 @@ if (typeof module !== 'undefined' && module.exports) {
     activeWorkflowResult,
     adjacentRunDocumentId,
     buildBatchReportRows,
+    buildCompareLines,
+    buildNextStagePresentation,
+    buildProtectionViewModel,
     buildReportViewModel,
     createBatchDataTrace,
+    createProtectionDataTrace,
+    getRunDocumentStageResult,
     getRunDocumentResult,
     processSequentialBatch,
+    protectionEligibleDocumentIds,
+    stageDisplay,
     terminalState,
   };
 }

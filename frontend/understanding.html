@@ -38,21 +38,21 @@
           <p>MRJ recognizes document identity, structure, and clinical context so teams can move from reports to trusted intelligence with confidence.</p>
         </div>
         <aside class="active-stage-card" aria-label="Current MRJ transformation">
-          <span class="active-stage-number">01</span>
-          <div><small>Active Transformation</small><strong>UNDERSTAND</strong><p>Document identity and context</p></div>
+          <span class="active-stage-number" id="activeStageNumber">01</span>
+          <div><small>Active Transformation</small><strong id="activeStageName">UNDERSTAND</strong><p id="activeStageDescription">Document identity and context</p></div>
         </aside>
       </div>
     </section>
 
     <section class="journey-band" aria-label="MRJ seven-stage journey">
       <div class="mn-shell mn-shell--wide journey-track" id="journeyRail">
-        <div class="journey-stage active" data-stage="UNDERSTAND"><i>01</i><span>UNDERSTAND</span><small id="railUnderstand">Active</small></div>
-        <div class="journey-stage" data-stage="PROTECT"><i>02</i><span>PROTECT</span><small id="railProtect">Not started</small></div>
-        <div class="journey-stage" data-stage="EXTRACT"><i>03</i><span>EXTRACT</span><small id="railExtract">Not started</small></div>
-        <div class="journey-stage" data-stage="STANDARDIZE"><i>04</i><span>STANDARDIZE</span><small id="railStandardize">Not started</small></div>
-        <div class="journey-stage" data-stage="ANALYZE"><i>05</i><span>ANALYZE</span><small id="railAnalyze">Not started</small></div>
-        <div class="journey-stage" data-stage="VISUALIZE"><i>06</i><span>VISUALIZE</span><small id="railVisualize">Not started</small></div>
-        <div class="journey-stage" data-stage="INDICATORS"><i>07</i><span>INDICATORS</span><small id="railIndicators">Not started</small></div>
+        <div class="journey-stage active" id="stageUnderstand" data-stage="UNDERSTAND"><i>01</i><span>UNDERSTAND</span><small id="railUnderstand">Active</small></div>
+        <div class="journey-stage" id="stageProtect" data-stage="PROTECT"><i>02</i><span>PROTECT</span><small id="railProtect">Not started</small></div>
+        <div class="journey-stage" id="stageExtract" data-stage="EXTRACT"><i>03</i><span>EXTRACT</span><small id="railExtract">Not started</small></div>
+        <div class="journey-stage" id="stageStandardize" data-stage="STANDARDIZE"><i>04</i><span>STANDARDIZE</span><small id="railStandardize">Not started</small></div>
+        <div class="journey-stage" id="stageAnalyze" data-stage="ANALYZE"><i>05</i><span>ANALYZE</span><small id="railAnalyze">Not started</small></div>
+        <div class="journey-stage" id="stageVisualize" data-stage="VISUALIZE"><i>06</i><span>VISUALIZE</span><small id="railVisualize">Not started</small></div>
+        <div class="journey-stage" id="stageIndicators" data-stage="INDICATORS"><i>07</i><span>INDICATORS</span><small id="railIndicators">Not started</small></div>
       </div>
     </section>
 
@@ -120,12 +120,12 @@
 
     <section class="results" id="results" aria-live="polite">
       <div class="mn-shell mn-shell--wide">
-        <header class="results-heading"><div><p class="mn-eyebrow">Report Result</p><h2>What MRJ understood</h2></div><button class="mn-button mn-button--secondary" id="anotherBtn" type="button">Analyze another report</button></header>
+        <header class="results-heading"><div><p class="mn-eyebrow" id="resultsEyebrow">Report Result</p><h2 id="resultsTitle">What MRJ understood</h2></div><button class="mn-button mn-button--secondary" id="anotherBtn" type="button">Analyze another report</button></header>
         <div class="batch-result-layout">
           <aside class="batch-report-browser" id="batchReportBrowser" aria-labelledby="reportListTitle" hidden>
             <header><div><p class="mn-eyebrow">Reports</p><h3 id="reportListTitle">Report Navigator</h3><small>Select a report to review.</small></div><button class="text-action" id="newBatchBtn" type="button">New batch</button></header>
             <div class="batch-result-list" id="batchResultList" role="list"></div>
-            <section class="batch-handoff" id="batchHandoff"><small>Next Transformation</small><h4>Continue Batch to Privacy Protection</h4><p id="batchHandoffNote">Batch privacy processing is not yet enabled.</p><button class="mn-button mn-button--secondary" id="batchProtectBtn" type="button" disabled aria-disabled="true">Batch handoff unavailable</button></section>
+            <section class="batch-handoff" id="batchHandoff"><small>Next Transformation</small><h4>Continue to PROTECT</h4><p id="batchHandoffNote">Eligible reports continue in this same JourneyRun.</p><label class="policy-field" for="batchPolicySelect">Privacy workflow<select id="batchPolicySelect"><option value="mednexus_clinical">Clinical Workflow</option><option value="mednexus_research">Research</option><option value="mednexus_analytics_public_health">Analytics / Public Health</option><option value="mednexus_strict_privacy">Strict Privacy</option></select></label><button class="mn-button mn-button--secondary" id="batchProtectBtn" type="button" disabled aria-disabled="true">Continue to PROTECT</button></section>
           </aside>
           <div class="selected-result-view">
             <nav class="report-navigation" id="reportNavigation" aria-label="Batch report navigation" hidden><button id="previousReportBtn" type="button">← Previous Report</button><span id="reportCounter">1 of 1</span><button id="nextReportBtn" type="button">Next Report →</button></nav>
@@ -148,7 +148,49 @@
                 </details>
                 <aside class="warnings" id="warnings" role="status"></aside>
               </div>
-              <footer class="report-readiness"><p id="readinessMessage"></p><button class="mn-button mn-button--primary" id="continueBtn" type="button" hidden>Continue to Privacy Protection <span aria-hidden="true">→</span></button></footer>
+              <footer class="report-readiness"><p id="readinessMessage"></p><div class="single-protect-actions" id="singleProtectActions" hidden><label class="policy-field" for="singlePolicySelect">Privacy workflow<select id="singlePolicySelect"><option value="mednexus_clinical">Clinical Workflow</option><option value="mednexus_research">Research</option><option value="mednexus_analytics_public_health">Analytics / Public Health</option><option value="mednexus_strict_privacy">Strict Privacy</option></select></label><button class="mn-button mn-button--primary" id="continueBtn" type="button">Continue to Privacy Protection <span aria-hidden="true">→</span></button></div></footer>
+            </article>
+            <article class="protection-card" id="protectionCard" aria-labelledby="protectionTitle" tabindex="-1" hidden>
+              <header class="protection-card-header">
+                <div class="report-source"><span>Privacy Protection</span><p id="protectReportNumber">Report</p></div>
+                <div class="protection-title-row"><div><p class="report-domain" id="protectPolicy"></p><h3 id="protectionTitle">Protected clinical report</h3><p id="protectStatusMessage"></p></div><span class="status-badge" id="protectStatus"></span></div>
+              </header>
+              <div class="protection-card-body">
+                <section class="protected-document" id="protectedDocumentSection" aria-labelledby="protectedDocumentTitle">
+                  <div class="protected-document-head">
+                    <div class="section-copy"><p class="mn-eyebrow">Protected Document</p><h4 id="protectedDocumentTitle">Protected clinical report</h4></div>
+                    <div class="protected-document-actions">
+                      <div class="protect-view-toggle" role="group" aria-label="Protected report view">
+                        <button class="active" id="protectedViewBtn" type="button" aria-pressed="true">Protected PDF</button>
+                        <button id="compareViewBtn" type="button" aria-pressed="false">Compare</button>
+                        <button id="textViewBtn" type="button" aria-pressed="false">Text View</button>
+                      </div>
+                      <a class="mn-button mn-button--secondary" id="protectedPdfDownloadBtn" href="#" download hidden>Download protected PDF</a>
+                    </div>
+                  </div>
+                  <p class="compare-status" id="compareStatus" role="status" hidden></p>
+                  <div class="pdf-viewer-panel" id="protectedPdfPanel" hidden>
+                    <iframe id="protectedPdfViewer" title="Protected PDF"></iframe>
+                    <p id="protectedPdfStatus" role="status"></p>
+                  </div>
+                  <pre id="protectedText" tabindex="0" hidden></pre>
+                  <div class="compare-panel" id="comparePanel" hidden>
+                    <section class="compare-pane sensitive" aria-labelledby="originalCompareTitle"><div><p class="mn-eyebrow">Sensitive Source</p><h5 id="originalCompareTitle">Original PDF</h5></div><iframe id="originalComparePdf" title="Original PDF"></iframe><pre id="originalCompareText" tabindex="0" hidden></pre></section>
+                    <section class="compare-pane" aria-labelledby="protectedCompareTitle"><div><p class="mn-eyebrow">Protected Document</p><h5 id="protectedCompareTitle">Protected PDF</h5></div><iframe id="protectedComparePdf" title="Protected PDF"></iframe><pre id="protectedCompareText" tabindex="0" hidden></pre></section>
+                  </div>
+                  <div class="protected-text-utility"><button class="text-action" id="copyProtectedBtn" type="button">Copy protected text</button></div>
+                </section>
+                <section class="protection-summary" aria-labelledby="protectedEntitiesTitle"><div class="section-copy"><p class="mn-eyebrow">Protection Summary</p><h4 id="protectedEntitiesTitle">Protected identity information</h4></div><dl id="protectedEntitySummary"></dl></section>
+                <section class="protection-review" id="protectionReview" aria-labelledby="protectionReviewTitle" hidden>
+                  <div class="section-copy"><p class="mn-eyebrow">Review Required</p><h4 id="protectionReviewTitle">Human review is required</h4></div>
+                  <p id="protectionReviewMessage"></p>
+                  <button class="mn-button mn-button--secondary" id="reviewProtectionBtn" type="button">Review Protection</button>
+                </section>
+                <section class="analytic-context" aria-labelledby="analyticContextTitle"><div class="section-copy"><p class="mn-eyebrow">Analytical Context Retained</p><h4 id="analyticContextTitle">Policy-safe patient context</h4></div><dl id="analyticContextSummary"></dl><p id="analyticContextEmpty">No analytical patient context retained.</p></section>
+                <aside class="warnings" id="protectWarnings" role="status"></aside>
+                <p class="protection-error" id="protectionError" hidden></p>
+              </div>
+              <footer class="protection-next"><div><p class="mn-eyebrow">Next Transformation</p><h4>EXTRACT</h4><p id="nextStageSummary">Clinical extraction begins in the next checkpoint.</p></div><button class="mn-button mn-button--secondary" id="continueExtractBtn" type="button" disabled aria-disabled="true">Continue to EXTRACT — Coming next</button></footer>
             </article>
           </div>
         </div>

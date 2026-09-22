@@ -9,6 +9,9 @@ from backend.app.modules.medical_document_intelligence.intelligence.candidate_en
     CandidateSource,
     MedNexusCandidateEntity,
 )
+from backend.app.modules.medical_document_intelligence.intelligence.labeled_header_field_detector import (
+    LabeledHeaderFieldDetector,
+)
 
 
 class ContextValidator:
@@ -241,6 +244,8 @@ class ContextValidator:
             person
             |
             name
+            |
+            redacted
         )
         \]
         $
@@ -344,6 +349,28 @@ class ContextValidator:
             return (
                 CandidateDecision.REJECT,
                 "Raw external-engine placeholders are not valid source entities.",
+            )
+
+        conflicting_field = cls._conflicting_explicit_field(
+            candidate=candidate,
+            source_text=source_text,
+        )
+        if conflicting_field is not None:
+            return (
+                CandidateDecision.REJECT,
+                (
+                    "Generic candidate conflicts with authoritative labeled "
+                    f"field context '{conflicting_field.metadata.get('semantic_role')}'."
+                ),
+            )
+
+        if canonical_type in {
+            CandidateEntityType.AGE,
+            CandidateEntityType.GENDER,
+        }:
+            return (
+                CandidateDecision.ACCEPT,
+                f"Explicit clinical attribute confirmed as '{canonical_type.value}'.",
             )
 
         if canonical_type in cls.STRONG_IDENTIFIER_TYPES:
@@ -712,6 +739,63 @@ class ContextValidator:
                 value.strip()
             )
         )
+
+    @classmethod
+    def _conflicting_explicit_field(
+        cls,
+        *,
+        candidate: MedNexusCandidateEntity,
+        source_text: str,
+    ) -> MedNexusCandidateEntity | None:
+        """Return an overlapping incompatible authoritative field, if any."""
+
+        if candidate.source not in {
+            CandidateSource.OPENMED,
+            CandidateSource.EXTERNAL_ENGINE,
+            CandidateSource.UNKNOWN,
+        }:
+            return None
+
+        name_types = {
+            CandidateEntityType.PERSON_NAME,
+            CandidateEntityType.PATIENT_NAME,
+            CandidateEntityType.PHYSICIAN_NAME,
+            CandidateEntityType.NURSE_NAME,
+            CandidateEntityType.GUARDIAN_NAME,
+            CandidateEntityType.RELATIVE_NAME,
+            CandidateEntityType.EMPLOYEE_NAME,
+            CandidateEntityType.STUDENT_NAME,
+        }
+        date_types = {
+            CandidateEntityType.DATE_OF_BIRTH,
+            CandidateEntityType.ADMISSION_DATE,
+            CandidateEntityType.DISCHARGE_DATE,
+            CandidateEntityType.COLLECTION_DATE,
+            CandidateEntityType.EXAM_DATE,
+            CandidateEntityType.GENERAL_DATE,
+        }
+
+        for explicit in LabeledHeaderFieldDetector.explicit_fields(source_text):
+            if not (
+                candidate.start < explicit.end
+                and candidate.end > explicit.start
+            ):
+                continue
+            if candidate.canonical_type == explicit.canonical_type:
+                continue
+            if (
+                candidate.canonical_type in name_types
+                and explicit.canonical_type in name_types
+            ):
+                continue
+            if (
+                candidate.canonical_type in date_types
+                and explicit.canonical_type in date_types
+            ):
+                continue
+            return explicit
+
+        return None
 
     @staticmethod
     def _normalize_text(
