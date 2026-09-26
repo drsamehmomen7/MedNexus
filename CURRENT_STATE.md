@@ -1,6 +1,6 @@
 # MRJ Current State
 
-**Authoritative date:** 21 September 2026
+**Authoritative date:** 25 September 2026
 
 ## MRJ Phase 0 public identity and documentation
 
@@ -36,7 +36,7 @@ Human architecture review formally accepted and closed the R0 foundation on **20
 
 Every document is **ACCEPTED — R0 RADIOLOGY HORIZONTAL ARCHITECTURE CHECKPOINT**. R0 now governs horizontal Radiology implementation while remaining subordinate to the frozen UNDERSTAND v1 authority. It fixes ownership between PROTECT-produced `PatientAnalyticContext` and EXTRACT-assembled `CommonClinicalContext`; confines `RadiologyFinding` to current observations; keeps R2 V0 deliberately small; defines pre-standardization `MRJClinicalConcept`; requires structured/versioned Collection definition and membership; guarantees report-level Clinical V0 without demographics; governs duplicate analytical contributions; and defers statistical association testing. The accepted UNDERSTAND Single + Batch workspace and current Phase 1 PROTECT foundation remain the implemented baselines. Public Health is unchanged and outside this active implementation track.
 
-Roadmap: R0 architecture/contracts/UX (**accepted and closed**) → R1 PROTECT Single + Batch journey integration (**accepted and closed**) → R2.0A Clinical Fact/EXTRACT UX/evaluation specification (**accepted and closed**) → R2.0B Radiology Ground Truth Dataset (**not started**) → R2.0C evaluation harness → R2.0D benchmark → R2.0E engine decision → R2 Radiology Clinical EXTRACT V0 (**not started**) → R3 Radiology STANDARDIZE V0 → R4 Radiology Collection V0 → R5 ANALYZE V0 → R6 VISUALIZE V0 → R7 INDICATORS V0 → real-report Radiology Horizontal Acceptance. MedGemma remains future-compatible and was not required for R1. The current verified regression is **999 passed, 8 warnings, 0 failures**.
+Roadmap: R0 architecture/contracts/UX (**accepted and closed**) → R1 PROTECT Single + Batch journey integration (**accepted and closed**) → R2.0A Clinical Fact/EXTRACT UX/evaluation specification (**accepted and closed**) → R2.0B Radiology Ground Truth Dataset (**in progress — cohort frozen / human annotation pending**) → R2.0C evaluation harness → R2.0D benchmark → R2.0E engine decision → R2 Radiology Clinical EXTRACT V0 (**not started**) → R3 Radiology STANDARDIZE V0 → R4 Radiology Collection V0 → R5 ANALYZE V0 → R6 VISUALIZE V0 → R7 INDICATORS V0 → real-report Radiology Horizontal Acceptance. MedGemma remains future-compatible and was not required for R1. The current verified regression is **999 passed, 8 warnings, 0 failures**.
 
 ## R1 — PROTECT Journey Integration — Accepted and Closed
 
@@ -56,7 +56,7 @@ R2.0A was formally **ACCEPTED AND CLOSED** on **2026-09-24**. The authoritative 
 
 The accepted specification remains subordinate to R0 and keeps `RadiologyFinding` as the current-observation object. It defines a four-value V0 semantic class, authoritative assertion model, source-bound anatomy/laterality and measurements, explicit-source-only bounded relations, structured `ClinicalContextFact` for indications/symptoms/history/events, a logical `RadiologyClinicalFactGraph`, privacy-safe `CommonClinicalContext` assembly, field-level evidence/provenance, and a source-linked clinical workspace that retains the protected report as the protagonist. It defines future ground-truth and engine-evaluation targets without choosing or installing an engine.
 
-No R2 runtime, API, frontend behavior, database, dependency, model, dataset, ground truth, evaluation harness, benchmark, STANDARDIZE, or analytics implementation has started. R1 remains accepted and closed. The next checkpoint is **R2.0B — Radiology Ground Truth Dataset**, followed by R2.0C Evaluation Harness, R2.0D Benchmark, R2.0E Engine Decision, and R2 Radiology Clinical EXTRACT V0.
+No R2 runtime, API, frontend behavior, database, dependency, model, evaluation harness, benchmark, STANDARDIZE, or analytics implementation has started. R1 remains accepted and closed. **R2.0B is IN PROGRESS — COHORT FROZEN / SECTION-AWARE FRAMEWORK HUMAN-REVIEWED AND ACCEPTED / HUMAN CLINICAL ANNOTATION PENDING.** The [R2.0B cohort record](docs/evaluation/MRJ_R2_0B_Ground_Truth_Cohort_v1.0.md) governs 24 stable report IDs, production-created protected PDF/canonical text pairs, integrity manifests, and an empty human annotation/review framework held outside Git. Its summary-first, whole-report-aware method includes canonical section roles, Clinical Salience, multi-section Evidence Anchors, and internal-report-conflict handling. No clinical labels have been pre-populated. R2.0C Evaluation Harness, R2.0D Benchmark, R2.0E Engine Decision, and R2 Radiology Clinical EXTRACT V0 have not started.
 
 ## MRJ Website Experience / Cinematic Hero V1 — Closed
 
