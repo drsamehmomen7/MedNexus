@@ -25,6 +25,8 @@ let artifactRequestVersion = 0;
 let protectedArtifactUrl = null;
 let originalArtifactUrl = null;
 let activeProtectionView = { pdfOrigin: false, protectedText: '' };
+let extractArtifactUrl = null;
+let extractArtifactRequestVersion = 0;
 
 const LABELS = {
   UNKNOWN: 'Not determined', NEEDS_REVIEW: 'Needs Review', NOT_STARTED: 'Not Started',
@@ -144,18 +146,20 @@ function buildBatchReportRows(run, stage = 'UNDERSTAND') {
   return (run?.documents || []).map(runDocument => {
     const result = runDocument.stage_results?.[stage] || null;
     const state = runDocument.stage_status?.[stage]?.status || 'NOT_STARTED';
-    const model = stage === 'PROTECT'
+    const model = stage === 'EXTRACT' ? null : stage === 'PROTECT'
       ? buildProtectionViewModel(result, { state })
       : buildReportViewModel(result, { state });
     return {
       documentId: runDocument.document_id,
       order: runDocument.order,
       filename: runDocument.original_filename,
-      recognition: stage === 'PROTECT'
+      recognition: stage === 'EXTRACT'
+        ? (result ? `${extractFindingList(result).length} clinical findings` : 'Clinical extraction not run')
+        : stage === 'PROTECT'
         ? (result ? model.policy : label(state))
         : result ? [model.modality, model.bodyRegion].filter(Boolean).join(' · ') : 'No result',
-      confidence: stage === 'PROTECT' ? '' : model.confidence,
-      confidenceBand: stage === 'PROTECT' ? '' : model.confidenceBand,
+      confidence: stage === 'PROTECT' || stage === 'EXTRACT' ? '' : model.confidence,
+      confidenceBand: stage === 'PROTECT' || stage === 'EXTRACT' ? '' : model.confidenceBand,
       state, result,
       error: runDocument.stage_errors?.[stage] || runDocument.error || null,
     };
@@ -462,6 +466,306 @@ function buildProtectionViewModel(payload, options = {}) {
   };
 }
 
+// Presentation adapter for the accepted R2.0A fact shape. This is not an extractor.
+function extractFindingList(result) {
+  return result?.radiology_findings || result?.clinical_fact_graph?.radiology_findings || result?.findings || [];
+}
+
+function extractRelationshipList(result) {
+  return result?.radiology_finding_relationships || result?.clinical_fact_graph?.radiology_finding_relationships || result?.relationships || [];
+}
+
+function extractContextFacts(result) {
+  return result?.clinical_context_facts || result?.clinical_fact_graph?.clinical_context_facts || [];
+}
+
+function extractValue(value) {
+  if (value == null || value === '') return '';
+  if (typeof value === 'object') {
+    if (value.state && value.state !== 'KNOWN') return value.state === 'RESTRICTED'
+      ? 'Not retained for privacy reasons' : label(value.state);
+    return extractValue(value.display || value.label || value.value || value.source_expression || value.name);
+  }
+  return String(value);
+}
+
+function extractEvidence(item) {
+  const anchors = item?.evidence_anchors || item?.evidence_spans || item?.evidence_span || [];
+  return (Array.isArray(anchors) ? anchors : [anchors]).filter(Boolean);
+}
+
+const EVIDENCE_ROLE_LABELS = {
+  SUMMARY_ASSERTION: 'Summary evidence', DETAIL_SUPPORT: 'Supporting detail',
+  ATTRIBUTE_SUPPORT: 'Attribute evidence', RELATION_SUPPORT: 'Relationship evidence',
+  CONTEXT_SUPPORT: 'Clinical context evidence', NEGATION_SUPPORT: 'Negation evidence',
+  COMPARISON_SUPPORT: 'Comparison evidence',
+};
+
+const ASSERTION_LABELS = {
+  PRESENT: 'Present', ABSENT_NEGATED: 'Absent / Not observed', ABSENT: 'Absent / Not observed',
+  UNCERTAIN: 'Possible / Uncertain', CONDITIONAL: 'Conditional',
+  UNKNOWN: 'Assertion unresolved — review required',
+};
+
+function extractNeedsReview(item) {
+  return item?.validation_state === 'NEEDS_REVIEW'
+    || item?.review_state === 'NEEDS_REVIEW'
+    || item?.review_state?.required === true;
+}
+
+function extractCounts(result) {
+  const findings = extractFindingList(result);
+  return {
+    findings: findings.length,
+    diagnoses: findings.filter(item => item.semantic_class === 'DIAGNOSIS').length,
+    negated: findings.filter(item => ['ABSENT_NEGATED', 'ABSENT'].includes(item.assertion_state)).length,
+    measured: findings.filter(item => (item.measurements || []).length > 0).length,
+    review: findings.filter(extractNeedsReview).length,
+  };
+}
+
+function buildExtractInputSafety(protectPayload, protectState, pdfOrigin) {
+  const protectionStatus = protectPayload?.protection_result?.status;
+  const protectedDocument = protectPayload?.protected_document || {};
+  if (!['COMPLETE', 'NEEDS_REVIEW'].includes(protectState)
+    || !['COMPLETE', 'NEEDS_REVIEW'].includes(protectionStatus)) {
+    return { ready: false, reason: 'Privacy Protection has not produced a safe downstream representation.' };
+  }
+  if (!String(protectedDocument.protected_text || '').trim()) {
+    return { ready: false, reason: 'A usable protected text representation is unavailable.' };
+  }
+  if (pdfOrigin) {
+    const artifact = protectedDocument.artifact;
+    if (!artifact?.availability || artifact.media_type !== 'application/pdf'
+      || !artifact.integrity_sha256) {
+      return { ready: false, reason: 'A verified protected PDF is unavailable.' };
+    }
+  }
+  return { ready: true, reason: '' };
+}
+
+function appendExtractField(target, name, value) {
+  const displayed = extractValue(value);
+  if (!displayed) return;
+  const row = makeElement('div');
+  const term = makeElement('dt');
+  const description = makeElement('dd');
+  term.textContent = name;
+  description.textContent = displayed;
+  row.append(term, description);
+  target.append(row);
+}
+
+function extractAnchorLocation(anchor, protectedText) {
+  const quote = String(anchor.quote || anchor.text || '');
+  const start = Number(anchor.start_offset ?? anchor.start);
+  const end = Number(anchor.end_offset ?? anchor.end);
+  if (!quote || !protectedText) return null;
+  if (Number.isInteger(start) && Number.isInteger(end) && start >= 0
+    && end <= protectedText.length && end > start
+    && protectedText.slice(start, end) === quote) return { start, end };
+  const first = protectedText.indexOf(quote);
+  return first >= 0 && protectedText.indexOf(quote, first + 1) === -1
+    ? { start: first, end: first + quote.length } : null;
+}
+
+function highlightExtractEvidence(anchor, protectedText) {
+  const anchorPosition = extractAnchorLocation(anchor, protectedText);
+  const source = getElement('extractProtectedText');
+  getElement('extractPdfPanel').hidden = true;
+  source.hidden = false;
+  setExtractSourceView('text');
+  source.replaceChildren();
+  if (!anchorPosition) {
+    source.textContent = protectedText;
+    getElement('extractEvidenceStatus').textContent = 'The exact evidence location is unavailable in the protected text.';
+    getElement('extractEvidenceStatus').hidden = false;
+    return false;
+  }
+  const before = makeElement('span');
+  const marked = makeElement('mark');
+  const after = makeElement('span');
+  before.textContent = protectedText.slice(0, anchorPosition.start);
+  marked.textContent = protectedText.slice(anchorPosition.start, anchorPosition.end);
+  after.textContent = protectedText.slice(anchorPosition.end);
+  source.append(before, marked, after);
+  getElement('extractEvidenceStatus').textContent = 'Evidence highlighted in the protected text.';
+  getElement('extractEvidenceStatus').hidden = false;
+  marked.scrollIntoView({ block: 'center' });
+  source.focus({ preventScroll: true });
+  return true;
+}
+
+function appendExtractEvidence(target, item, protectedText) {
+  const anchors = extractEvidence(item);
+  if (!anchors.length) return;
+  const group = makeElement('div');
+  group.className = 'extract-evidence-list';
+  anchors.forEach((anchor, index) => {
+    const row = makeElement('div');
+    const description = makeElement('p');
+    const role = EVIDENCE_ROLE_LABELS[anchor.role || anchor.evidence_role]
+      || (index === 0 ? 'Source evidence' : 'Additional evidence');
+    const quote = String(anchor.quote || anchor.text || '');
+    const grounded = extractAnchorLocation(anchor, protectedText);
+    description.textContent = `${role}${anchor.source_section ? ` · ${label(anchor.source_section)}` : ''}`;
+    row.append(description);
+    if (quote && grounded) {
+      const button = makeElement('button');
+      button.type = 'button';
+      button.className = 'extract-evidence-link';
+      button.textContent = `“${quote}”`;
+      button.setAttribute('aria-label', `Show ${role.toLowerCase()} in protected report`);
+      button.onclick = () => highlightExtractEvidence(anchor, protectedText);
+      row.append(button);
+    } else {
+      const unavailable = makeElement('small');
+      unavailable.textContent = 'Protected source location unavailable';
+      row.append(unavailable);
+    }
+    group.append(row);
+  });
+  target.append(group);
+}
+
+function renderExtractFinding(item, protectedText) {
+  const card = makeElement('article');
+  const heading = makeElement('h6');
+  const badges = makeElement('div');
+  const fields = makeElement('dl');
+  const assertion = item.assertion_state || 'UNKNOWN';
+  card.className = `extract-finding assertion-${assertion.toLowerCase()}`;
+  heading.textContent = extractValue(item.finding_concept) || extractValue(item.source_expression) || 'Clinical finding';
+  badges.className = 'extract-finding-badges';
+  [item.semantic_class ? label(item.semantic_class) : '',
+    (item.clinical_salience || item.salience) ? label(item.clinical_salience || item.salience) : '',
+    ASSERTION_LABELS[assertion] || label(assertion), extractNeedsReview(item) ? 'Needs Review' : '']
+    .filter(Boolean).forEach(value => {
+      const badge = makeElement('span');
+      badge.textContent = value;
+      badges.append(badge);
+    });
+  appendExtractField(fields, 'Anatomy', item.anatomic_site);
+  appendExtractField(fields, 'Body Region', item.body_region);
+  appendExtractField(fields, 'Laterality', item.laterality);
+  appendExtractField(fields, 'Severity', item.severity);
+  appendExtractField(fields, 'Temporal Status', item.temporal_status);
+  appendExtractField(fields, 'Source Section', item.source_section);
+  appendExtractField(fields, 'Confidence', item.extraction_confidence?.band || item.extraction_confidence?.display);
+  const measurements = (item.measurements || []).map(value => extractValue(value.source_value)).filter(Boolean);
+  if (measurements.length) appendExtractField(fields, 'Measurement', measurements.join(' · '));
+  card.append(heading, badges, fields);
+  if (extractNeedsReview(item)) {
+    const explanation = makeElement('p');
+    explanation.className = 'extract-review-reason';
+    explanation.textContent = extractValue(item.review_reason)
+      || (assertion === 'UNCERTAIN' ? 'The source describes this finding as uncertain.' : 'This finding requires human review.');
+    card.append(explanation);
+  }
+  const conflict = item.internal_report_conflict || item.conflict;
+  if (conflict) {
+    const conflictBox = makeElement('section');
+    const title = makeElement('strong');
+    title.textContent = 'Internal Report Conflict — review both statements';
+    conflictBox.className = 'extract-conflict';
+    conflictBox.append(title);
+    [conflict.summary_assertion, conflict.detail_assertion].forEach((value, index) => {
+      if (!value) return;
+      const statement = makeElement('p');
+      statement.textContent = `${index ? 'Findings Description' : 'Diagnostic Summary'}: ${ASSERTION_LABELS[value] || label(value)}`;
+      conflictBox.append(statement);
+    });
+    card.append(conflictBox);
+  }
+  appendExtractEvidence(card, item, protectedText);
+  const firstAnchor = extractEvidence(item).find(anchor => extractAnchorLocation(anchor, protectedText));
+  if (firstAnchor) {
+    card.tabIndex = 0;
+    card.setAttribute('aria-label', `Show evidence for ${heading.textContent}`);
+    card.onclick = interaction => {
+      if (interaction?.target?.tagName?.toLowerCase() === 'button') return;
+      highlightExtractEvidence(firstAnchor, protectedText);
+    };
+    card.onkeydown = interaction => {
+      if (interaction.key === 'Enter' || interaction.key === ' ') {
+        interaction.preventDefault();
+        highlightExtractEvidence(firstAnchor, protectedText);
+      }
+    };
+  }
+  return card;
+}
+
+function renderExtractFacts(result, protectedText, stageState = 'NOT_STARTED') {
+  const counts = result ? extractCounts(result) : null;
+  const metrics = counts ? [['Clinical Findings', counts.findings], ['Diagnoses', counts.diagnoses],
+    ['Negated', counts.negated], ['Measured', counts.measured], ['Needs Review', counts.review]] : [];
+  getElement('extractMetrics').hidden = !result;
+  getElement('extractCountsNote').hidden = !result;
+  getElement('extractSummaryEmpty').hidden = Boolean(result);
+  getElement('extractSummaryEmpty').textContent = stageState === 'NOT_STARTED'
+    ? 'Not run yet — no result counts are available.'
+    : 'No clinical extraction result is available for this report.';
+  getElement('extractMetrics').replaceChildren(...metrics.map(([name, value]) => {
+    const metric = makeElement('div');
+    const number = makeElement('strong');
+    const title = makeElement('span');
+    number.textContent = String(value);
+    title.textContent = name;
+    metric.append(number, title);
+    return metric;
+  }));
+  renderList(getElement('extractFindings'), extractFindingList(result),
+    item => renderExtractFinding(item, protectedText),
+    result ? 'No clinical findings were returned for this report.'
+      : stageState === 'NOT_STARTED'
+        ? 'No clinical extraction has been run for this report yet. Findings, diagnoses, measurements and evidence will appear here when available.'
+        : 'Clinical extraction findings are unavailable for this report.');
+  renderList(getElement('extractRelationships'), extractRelationshipList(result), item => {
+    const card = makeElement('article');
+    const line = makeElement('p');
+    card.className = 'extract-relation';
+    line.textContent = `${extractValue(item.source_finding) || extractValue(item.source_finding_id) || 'Finding'} · ${label(item.relationship_type || item.type)} · ${extractValue(item.target_finding) || extractValue(item.target_finding_id) || 'Related finding'}`;
+    card.append(line);
+    appendExtractEvidence(card, item, protectedText);
+    return card;
+  }, 'No source-supported relationships are available.');
+  const contextTarget = getElement('extractContext');
+  contextTarget.replaceChildren();
+  const common = result?.common_clinical_context || result?.clinical_fact_graph?.common_clinical_context || {};
+  const demographics = common.patient_analytic_context?.fields || common.patient_analytic_context || {};
+  const contextRows = makeElement('dl');
+  [['Age', demographics.age], ['Age Band', demographics.age_band], ['Sex', demographics.sex],
+    ['Safe Study Date', demographics.safe_study_date]].forEach(([name, value]) => appendExtractField(contextRows, name, value));
+  if (contextRows.children.length) contextTarget.append(contextRows);
+  extractContextFacts(result).forEach(item => {
+    const card = makeElement('article');
+    card.className = 'extract-context-fact';
+    const title = makeElement('h6');
+    title.textContent = extractValue(item.context_concept) || 'Clinical context';
+    const role = makeElement('p');
+    role.textContent = `${label(item.context_role)} · ${ASSERTION_LABELS[item.assertion_state] || label(item.assertion_state)}`;
+    card.append(title, role);
+    appendExtractEvidence(card, item, protectedText);
+    contextTarget.append(card);
+  });
+  if (!contextTarget.children.length) {
+    const empty = makeElement('p');
+    empty.className = 'empty-state';
+    empty.textContent = 'No privacy-safe clinical context is available. MRJ will not infer age, sex, or dates.';
+    contextTarget.append(empty);
+  }
+  const technical = getElement('extractTechnicalBody');
+  technical.replaceChildren();
+  const audit = makeElement('dl');
+  [['Report ID', result?.report_id], ['Extraction Profile', result?.extraction_profile],
+    ['Pack Version', result?.pack_version], ['Validation State', result?.validation_state],
+    ['Method', result?.extraction_method]].forEach(([name, value]) => appendExtractField(audit, name, value));
+  technical.append(audit);
+  if (!audit.children.length) technical.textContent = 'No extraction provenance is available yet.';
+  getElement('extractTechnical').removeAttribute('open');
+}
+
 function buildCompareLines(value, counterpart) {
   const lines = String(value || '').split('\n');
   const otherLines = String(counterpart || '').split('\n');
@@ -481,7 +785,7 @@ function renderComparePane(target, value, counterpart) {
   }));
 }
 
-function buildNextStagePresentation(run, protectionModel) {
+function buildNextStagePresentation(run, protectionModel, inputSafety) {
   const documents = run?.documents || [];
   if (documents.length > 1 || run?.mode === 'batch') {
     const summary = run?.protection_summary || {};
@@ -489,32 +793,36 @@ function buildNextStagePresentation(run, protectionModel) {
     const review = summary.needs_review || 0;
     const unavailable = (summary.failed || 0) + (summary.blocked || 0);
     const parts = [
-      `${ready} ${ready === 1 ? 'report is' : 'reports are'} ready for the next stage`,
+      `${ready} ${ready === 1 ? 'report has' : 'reports have'} completed Privacy Protection`,
     ];
     if (review) parts.push(`${review} ${review === 1 ? 'requires' : 'require'} review`);
     if (unavailable) parts.push(`${unavailable} ${unavailable === 1 ? 'is' : 'are'} unavailable`);
     return {
-      message: `${parts.join(' · ')}. Unaffected reports remain eligible to continue.`,
-      buttonLabel: ready
-        ? `Continue ${ready} Eligible ${ready === 1 ? 'Report' : 'Reports'} — Coming next`
-        : 'Continue to EXTRACT — Coming next',
+      message: `${parts.join(' · ')}. Open the read-only EXTRACT workspace to review each report; clinical extraction has not run.`,
+      buttonLabel: 'Open EXTRACT Workspace',
+    };
+  }
+  if (!inputSafety.ready) {
+    return {
+      message: 'A safe protected representation is unavailable for clinical extraction. Open EXTRACT to review the input status.',
+      buttonLabel: 'Open EXTRACT Workspace',
     };
   }
   if (protectionModel.state === 'COMPLETE') {
     return {
-      message: 'This report is ready for the next stage.',
-      buttonLabel: 'Continue 1 Eligible Report — Coming next',
+      message: 'Protection is complete. The EXTRACT workspace is available for review; clinical extraction has not run.',
+      buttonLabel: 'Open EXTRACT Workspace',
     };
   }
-  if (protectionModel.reviewRequired) {
+  if (protectionModel.state === 'NEEDS_REVIEW') {
     return {
-      message: 'Resolve the protection review before this report continues.',
-      buttonLabel: 'Continue to EXTRACT — Coming next',
+      message: 'Privacy review may remain open while protected input is safe. Open EXTRACT to see this report’s input status; clinical extraction has not run.',
+      buttonLabel: 'Open EXTRACT Workspace',
     };
   }
   return {
-    message: 'Clinical extraction begins in a future checkpoint.',
-    buttonLabel: 'Continue to EXTRACT — Coming next',
+    message: 'Clinical extraction is unavailable for this report. The workspace is available read-only.',
+    buttonLabel: 'Open EXTRACT Workspace',
   };
 }
 
@@ -731,19 +1039,159 @@ function prepareResultsWorkspace(batchView) {
 
 function updateActiveStagePresentation() {
   const protectActive = activeJourneyStage === 'PROTECT';
-  getElement('activeStageNumber').textContent = protectActive ? '02' : '01';
-  getElement('activeStageName').textContent = protectActive ? 'PROTECT' : 'UNDERSTAND';
-  getElement('activeStageDescription').textContent = protectActive
-    ? 'Purpose-based privacy protection'
-    : 'Document identity and context';
-  getElement('resultsEyebrow').textContent = protectActive ? 'Protection Result' : 'Report Result';
-  getElement('resultsTitle').textContent = protectActive ? 'What MRJ protected' : 'What MRJ understood';
-  getElement('anotherBtn').textContent = protectActive
-    ? 'Review UNDERSTAND'
-    : workflowMode === 'batch' ? 'Back to batch overview' : 'Analyze another report';
+  const extractActive = activeJourneyStage === 'EXTRACT';
+  getElement('results').classList.toggle('extract-view', extractActive);
+  getElement('activeStageNumber').textContent = extractActive ? '03' : protectActive ? '02' : '01';
+  getElement('activeStageName').textContent = activeJourneyStage;
+  getElement('activeStageDescription').textContent = extractActive ? 'Clinical extraction workspace'
+    : protectActive ? 'Purpose-based privacy protection' : 'Document identity and context';
+  getElement('resultsEyebrow').textContent = extractActive ? 'Extraction Workspace' : protectActive ? 'Protection Result' : 'Report Result';
+  getElement('resultsTitle').textContent = extractActive ? 'Review clinical extraction' : protectActive ? 'What MRJ protected' : 'What MRJ understood';
+  getElement('anotherBtn').textContent = extractActive ? 'Review PROTECT' : protectActive
+    ? 'Review UNDERSTAND' : workflowMode === 'batch' ? 'Back to batch overview' : 'Analyze another report';
+}
+
+function setExtractSourceView(view) {
+  const pdf = view === 'pdf';
+  getElement('extractPdfBtn').classList.toggle('active', pdf);
+  getElement('extractTextBtn').classList.toggle('active', !pdf);
+  getElement('extractPdfBtn').setAttribute('aria-pressed', String(pdf));
+  getElement('extractTextBtn').setAttribute('aria-pressed', String(!pdf));
+}
+
+function releaseExtractArtifact() {
+  extractArtifactRequestVersion += 1;
+  getElement('extractPdfViewer').src = 'about:blank';
+  if (extractArtifactUrl) globalThis.URL?.revokeObjectURL(extractArtifactUrl);
+  extractArtifactUrl = null;
+}
+
+async function loadExtractPdf(target) {
+  if (!target) return;
+  const requestVersion = ++extractArtifactRequestVersion;
+  getElement('extractPdfStatus').textContent = 'Preparing protected PDF…';
+  try {
+    const blob = await artifactBlob(protectedArtifactEndpoint(target), 'GET', 'The protected PDF is unavailable.');
+    if (requestVersion !== extractArtifactRequestVersion) return;
+    extractArtifactUrl = globalThis.URL.createObjectURL(blob);
+    getElement('extractPdfViewer').src = extractArtifactUrl;
+    getElement('extractPdfStatus').textContent = '';
+  } catch (_) {
+    if (requestVersion !== extractArtifactRequestVersion) return;
+    getElement('extractPdfStatus').textContent = 'The protected PDF is unavailable. Use Text View when available.';
+  }
+}
+
+function renderExtractWorkspace(runDocument, runId = null, options = {}) {
+  const batchView = workflowMode === 'batch' && Boolean(batchRun);
+  const protectPayload = runDocument?.stage_results?.PROTECT || null;
+  const protectState = runDocument?.stage_status?.PROTECT?.status || 'NOT_STARTED';
+  const extractState = runDocument?.stage_status?.EXTRACT?.status || 'NOT_STARTED';
+  const documentId = runDocument?.document_id || null;
+  const sourceName = runDocument?.original_filename
+    || singlePayload?.document_context?.document?.source_name || 'Retained report';
+  const model = buildProtectionViewModel(protectPayload, { sourceName, sourceType: runDocument?.source_type, state: protectState });
+  const inputSafety = buildExtractInputSafety(protectPayload, protectState, model.pdfOrigin);
+  const sourceText = inputSafety.ready ? protectPayload.protected_document.protected_text : '';
+  const storedResult = runDocument?.stage_results?.EXTRACT || null;
+  const ownedResult = inputSafety.ready && storedResult
+    && ['COMPLETE', 'NEEDS_REVIEW'].includes(extractState)
+    && (!storedResult.report_id || storedResult.report_id === documentId)
+    ? storedResult : null;
+  prepareResultsWorkspace(batchView);
+  activeJourneyStage = 'EXTRACT';
+  updateActiveStagePresentation();
+  getElement('reportCard').hidden = true;
+  getElement('protectionCard').hidden = true;
+  getElement('extractCard').hidden = false;
+  getElement('extractReportName').textContent = sourceName;
+  getElement('extractStageStatus').className = `status-badge ${statusClass(extractState)}`;
+  getElement('extractStageStatus').textContent = extractState === 'NOT_STARTED' ? 'Not run yet' : label(extractState);
+  getElement('extractInputStatus').className = `status-badge ${inputSafety.ready ? 'ready' : 'failed'}`;
+  getElement('extractInputStatus').textContent = inputSafety.ready ? 'Protected input ready' : 'Protected input unavailable';
+  getElement('extractReadiness').textContent = !inputSafety.ready
+    ? `Extraction input blocked. ${inputSafety.reason}`
+    : extractState === 'BLOCKED'
+      ? 'Protected input is safe, but a separate document or extraction-profile prerequisite requires review.'
+      : ownedResult
+        ? 'Protected report and clinical extraction result are available.'
+        : extractState === 'NOT_STARTED'
+          ? 'Workspace ready. Clinical extraction has not been run for this report. The extraction engine is not connected yet.'
+          : 'The clinical extraction result is unavailable for this report. Review is required.';
+  getElement('extractSourceNote').textContent = !inputSafety.ready
+    ? 'A safe protected representation is required before clinical extraction can use this report.'
+    : model.pdfOrigin
+    ? 'Protected PDF and canonical protected text. Evidence navigation uses the text; PDF coordinates are not inferred.'
+    : 'Canonical protected text for source evidence review.';
+  getElement('extractProtectedText').textContent = sourceText || 'No protected report is available for this report.';
+  getElement('extractEvidenceStatus').hidden = true;
+  getElement('extractEvidenceStatus').textContent = '';
+  releaseExtractArtifact();
+  const target = inputSafety.ready && runId && documentId && model.hasPdfArtifact
+    ? { runId, documentId } : null;
+  getElement('extractPdfBtn').hidden = !target;
+  getElement('extractPdfPanel').hidden = !target;
+  getElement('extractProtectedText').hidden = Boolean(target);
+  setExtractSourceView(target ? 'pdf' : 'text');
+  getElement('extractPdfBtn').onclick = () => {
+    getElement('extractPdfPanel').hidden = false;
+    getElement('extractProtectedText').hidden = true;
+    setExtractSourceView('pdf');
+  };
+  getElement('extractTextBtn').onclick = () => {
+    getElement('extractPdfPanel').hidden = true;
+    getElement('extractProtectedText').hidden = false;
+    setExtractSourceView('text');
+  };
+  if (target) loadExtractPdf(target);
+  getElement('extractCompareBtn').hidden = !inputSafety.ready;
+  getElement('extractCompareBtn').onclick = () => showProtectStage();
+  renderExtractFacts(ownedResult, sourceText, extractState);
+  setExtractTab('findings');
+  getElement('results').classList.add('show');
+  if (batchView) renderBatchReportBrowser();
+  configureReportNavigation();
+  updateJourneyRail(batchView ? batchRun : singleRun);
+  if (options.scroll !== false) {
+    getElement('extractCard').focus({ preventScroll: true });
+    getElement('extractCard').scrollIntoView({ behavior: 'auto', block: 'start' });
+  }
+}
+
+function setExtractTab(view) {
+  [['findings', 'extractFindingsTab', 'extractFindingsPanel'],
+    ['relationships', 'extractRelationshipsTab', 'extractRelationshipsPanel'],
+    ['context', 'extractContextTab', 'extractContextPanel']].forEach(([name, tabId, panelId]) => {
+    const selected = name === view;
+    getElement(tabId).setAttribute('aria-selected', String(selected));
+    getElement(panelId).hidden = !selected;
+  });
+}
+
+function openExtractWorkspace() {
+  const run = workflowMode === 'batch' ? batchRun : singleRun;
+  const runDocument = workflowMode === 'batch'
+    ? getRunDocumentById(run, selectedBatchDocumentId)
+    : run?.documents?.[0] || null;
+  renderExtractWorkspace(runDocument, run?.run_id || null);
+}
+
+function showProtectStage(compare = false) {
+  const run = workflowMode === 'batch' ? batchRun : singleRun;
+  const runDocument = workflowMode === 'batch'
+    ? getRunDocumentById(run, selectedBatchDocumentId) : run?.documents?.[0] || null;
+  if (!runDocument) return;
+  renderProtectionResult(runDocument.stage_results?.PROTECT || null, {
+    runId: run.run_id, documentId: runDocument.document_id,
+    sourceName: runDocument.original_filename, sourceType: runDocument.source_type,
+    state: runDocument.stage_status?.PROTECT?.status || 'NOT_STARTED',
+    number: runDocument.order + 1, scroll: false,
+  });
+  if (compare) showCompareView();
 }
 
 function renderProtectionResult(payload, options = {}) {
+  releaseExtractArtifact();
   const model = buildProtectionViewModel(payload, options);
   const batchView = workflowMode === 'batch' && Boolean(batchRun);
   prepareResultsWorkspace(batchView);
@@ -751,6 +1199,7 @@ function renderProtectionResult(payload, options = {}) {
   updateActiveStagePresentation();
   getElement('reportCard').hidden = true;
   getElement('protectionCard').hidden = false;
+  getElement('extractCard').hidden = true;
   getElement('protectionCard').className = `protection-card ${statusClass(model.state)}`;
   getElement('protectReportNumber').textContent = options.number
     ? `Report ${String(options.number).padStart(2, '0')}`
@@ -820,11 +1269,13 @@ function renderProtectionResult(payload, options = {}) {
   getElement('protectionError').textContent = model.failed
     ? model.error || 'This report could not be protected. Other eligible reports continued.'
     : '';
-  const nextStage = buildNextStagePresentation(batchView ? batchRun : null, model);
+  const nextStage = buildNextStagePresentation(batchView ? batchRun : null, model,
+    buildExtractInputSafety(payload, model.state, model.pdfOrigin));
   getElement('nextStageSummary').textContent = nextStage.message;
   getElement('continueExtractBtn').textContent = nextStage.buttonLabel;
-  getElement('continueExtractBtn').disabled = true;
-  getElement('continueExtractBtn').setAttribute('aria-disabled', 'true');
+  getElement('continueExtractBtn').disabled = false;
+  getElement('continueExtractBtn').removeAttribute('aria-disabled');
+  getElement('continueExtractBtn').onclick = openExtractWorkspace;
   getElement('copyProtectedBtn').disabled = !model.protectedText;
   getElement('copyProtectedBtn').onclick = async () => {
     if (!model.protectedText) return;
@@ -849,6 +1300,7 @@ function renderProtectionResult(payload, options = {}) {
 
 // Exactly one card and one render model serve Single and selected Batch reports.
 function renderReportResult(payload, options = {}) {
+  releaseExtractArtifact();
   resetCompareView();
   const model = buildReportViewModel(payload, options);
   const batchView = workflowMode === 'batch' && Boolean(batchRun);
@@ -858,6 +1310,7 @@ function renderReportResult(payload, options = {}) {
   getElement('singleWorkspace').hidden = true;
   getElement('reportCard').hidden = false;
   getElement('protectionCard').hidden = true;
+  getElement('extractCard').hidden = true;
   getElement('reportCard').className = `report-card ${statusClass(model.state)}`;
   getElement('reportNumber').textContent = options.number ? `Report ${String(options.number).padStart(2, '0')}` : 'Report';
   getElement('resultFileName').textContent = model.filename;
@@ -1278,7 +1731,9 @@ function selectBatchDocument(documentId, scroll = true) {
   const position = batchRun.documents.indexOf(runDocument) + 1;
   const stage = activeJourneyStage;
   const result = getRunDocumentStageResult(batchRun, documentId, stage);
-  if (stage === 'PROTECT') {
+  if (stage === 'EXTRACT') {
+    renderExtractWorkspace(runDocument, batchRun.run_id, { scroll });
+  } else if (stage === 'PROTECT') {
     renderProtectionResult(result, {
       runId: batchRun.run_id,
       documentId: runDocument.document_id,
@@ -1573,6 +2028,7 @@ function updateJourneyRail(run = null, context = null) {
 function resetBatch() {
   if (batchProcessing || protectProcessing) return;
   resetCompareView();
+  releaseExtractArtifact();
   batchEntries = [];
   batchRun = null;
   selectedBatchDocumentId = null;
@@ -1605,6 +2061,9 @@ function showUnderstandStage() {
 }
 
 function initializeUnderstandingWorkspace() {
+  getElement('extractFindingsTab').onclick = () => setExtractTab('findings');
+  getElement('extractRelationshipsTab').onclick = () => setExtractTab('relationships');
+  getElement('extractContextTab').onclick = () => setExtractTab('context');
   getElement('singleModeTab').onclick = () => setWorkflowMode('single');
   getElement('batchModeTab').onclick = () => setWorkflowMode('batch');
   getElement('fileTab').onclick = () => setInputMode('file');
@@ -1654,6 +2113,10 @@ function initializeUnderstandingWorkspace() {
   getElement('clearBatchBtn').onclick = resetBatch;
   getElement('newBatchBtn').onclick = resetBatch;
   getElement('anotherBtn').onclick = () => {
+    if (activeJourneyStage === 'EXTRACT') {
+      showProtectStage();
+      return;
+    }
     if (activeJourneyStage === 'PROTECT') {
       showUnderstandStage();
       return;

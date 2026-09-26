@@ -306,7 +306,8 @@ def test_understanding_frontend_route_and_assets_are_available():
     assert "Recognition Evidence" in page.text
     assert 'id="readinessMessage"' in page.text
     assert "Continue to Privacy Protection" in page.text
-    assert "technical details" not in page.text.casefold()
+    assert '<details class="extract-technical" id="extractTechnical">' in page.text
+    assert 'open' not in page.text.split('id="extractTechnical"', 1)[1].split('>', 1)[0]
     assert 'id="reportCard"' in page.text
     assert "Radiology Report" in script.text
     assert 'id="reportModality"' in page.text

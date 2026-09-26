@@ -271,10 +271,10 @@ async function verifyReportCards(input) {
   assert.equal(read('protectedText').hidden, true);
   assert.equal(read('protectedText').textContent, 'Protected report 3');
   assert.equal(read('protectedPdfViewer').src, 'blob:/api/v1/understanding/journey-runs/protect-contract/documents/protect-3/protected-artifact');
-  assert.match(read('nextStageSummary').textContent, /3 reports are ready for the next stage/);
+  assert.match(read('nextStageSummary').textContent, /3 reports have completed Privacy Protection/);
   assert.match(read('nextStageSummary').textContent, /1 requires review/);
-  assert.match(read('continueExtractBtn').textContent, /Continue 3 Eligible Reports/);
-  assert.equal(read('continueExtractBtn').disabled, true);
+  assert.equal(read('continueExtractBtn').textContent, 'Open EXTRACT Workspace');
+  assert.equal(read('continueExtractBtn').disabled, false);
   assert.equal(read('railProtect').textContent, '5 / 5');
 
   await read('batchResultList').children[3].children[0].click();

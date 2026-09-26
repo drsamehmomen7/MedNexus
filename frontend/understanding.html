@@ -190,7 +190,33 @@
                 <aside class="warnings" id="protectWarnings" role="status"></aside>
                 <p class="protection-error" id="protectionError" hidden></p>
               </div>
-              <footer class="protection-next"><div><p class="mn-eyebrow">Next Transformation</p><h4>EXTRACT</h4><p id="nextStageSummary">Clinical extraction begins in the next checkpoint.</p></div><button class="mn-button mn-button--secondary" id="continueExtractBtn" type="button" disabled aria-disabled="true">Continue to EXTRACT — Coming next</button></footer>
+              <footer class="protection-next"><div><p class="mn-eyebrow">Next Transformation</p><h4>EXTRACT</h4><p id="nextStageSummary">Review the clinical extraction workspace for this report.</p></div><button class="mn-button mn-button--secondary" id="continueExtractBtn" type="button">Open EXTRACT Workspace</button></footer>
+            </article>
+            <article class="extract-card" id="extractCard" aria-labelledby="extractTitle" tabindex="-1" hidden>
+              <header class="extract-card-header">
+                <div><p class="mn-eyebrow">Stage 03 · EXTRACT</p><h3 id="extractTitle">Clinical Extraction</h3><p id="extractReportName"></p></div>
+                <div class="extract-state-badges"><span class="status-badge" id="extractStageStatus">Not run yet</span><span class="status-badge" id="extractInputStatus">Input not assessed</span></div>
+              </header>
+              <p class="extract-readiness" id="extractReadiness" role="status"></p>
+              <div class="extract-workspace">
+                <section class="extract-source" aria-labelledby="extractSourceTitle">
+                  <header class="extract-panel-head"><div><p class="mn-eyebrow">Source</p><h4 id="extractSourceTitle">Protected Report</h4></div><div class="protect-view-toggle" role="group" aria-label="EXTRACT protected report view"><button id="extractPdfBtn" type="button" aria-pressed="false">Protected PDF</button><button id="extractTextBtn" type="button" aria-pressed="true">Text View</button></div></header>
+                  <p class="extract-source-note" id="extractSourceNote"></p>
+                  <div class="extract-pdf" id="extractPdfPanel" hidden><iframe id="extractPdfViewer" title="EXTRACT protected PDF"></iframe><p id="extractPdfStatus" role="status"></p></div>
+                  <pre class="extract-report-text" id="extractProtectedText" tabindex="0"></pre>
+                  <p class="extract-evidence-status" id="extractEvidenceStatus" role="status" hidden></p>
+                  <button class="text-action" id="extractCompareBtn" type="button" hidden>Review PROTECT · Compare available</button>
+                </section>
+                <section class="extract-clinical" aria-labelledby="extractClinicalTitle">
+                  <header class="extract-panel-head"><div><p class="mn-eyebrow">Clinical Intelligence</p><h4 id="extractClinicalTitle">What this report says</h4></div></header>
+                  <section class="extract-summary" aria-labelledby="extractSummaryTitle"><h5 id="extractSummaryTitle">Extraction Summary</h5><p class="empty-state" id="extractSummaryEmpty">Not run yet — no result counts are available.</p><div id="extractMetrics" class="extract-metrics" hidden></div><p id="extractCountsNote" hidden>These categories may overlap; they are not additive.</p></section>
+                  <nav class="extract-tabs" role="tablist" aria-label="Clinical extraction views"><button id="extractFindingsTab" type="button" role="tab" aria-selected="true" aria-controls="extractFindingsPanel">Findings</button><button id="extractRelationshipsTab" type="button" role="tab" aria-selected="false" aria-controls="extractRelationshipsPanel">Relationships</button><button id="extractContextTab" type="button" role="tab" aria-selected="false" aria-controls="extractContextPanel">Clinical Context</button></nav>
+                  <section id="extractFindingsPanel" role="tabpanel" aria-labelledby="extractFindingsTab"><div id="extractFindings"></div></section>
+                  <section id="extractRelationshipsPanel" role="tabpanel" aria-labelledby="extractRelationshipsTab" hidden><div id="extractRelationships"></div></section>
+                  <section id="extractContextPanel" role="tabpanel" aria-labelledby="extractContextTab" hidden><div id="extractContext"></div></section>
+                  <details class="extract-technical" id="extractTechnical"><summary>Technical Details / Provenance</summary><div id="extractTechnicalBody"></div></details>
+                </section>
+              </div>
             </article>
           </div>
         </div>

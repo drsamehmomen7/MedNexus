@@ -837,7 +837,7 @@ const nextStage = buildNextStagePresentation({{
   documents,
   protection_summary: {{ complete: 3, needs_review: 1, failed: 1, blocked: 0 }},
 }}, transformedView);
-if (!nextStage.message.includes('3 reports are ready') || !nextStage.message.includes('1 requires review') || !nextStage.buttonLabel.includes('3 Eligible Reports')) {{
+if (!nextStage.message.includes('3 reports have completed Privacy Protection') || !nextStage.message.includes('1 requires review') || nextStage.buttonLabel !== 'Open EXTRACT Workspace') {{
   throw new Error('mixed batch continuation does not preserve unaffected reports');
 }}
 if (Object.values(trace).some(value => value !== 5)) throw new Error(JSON.stringify(trace));
@@ -866,7 +866,7 @@ if (stageDisplay(run, 'PROTECT').label !== '4 / 5') throw new Error('in-progress
     assert 'id="reviewProtectionBtn"' in page
     assert 'id="nextStageSummary"' in page
     assert 'id="continueExtractBtn"' in page
-    assert 'id="continueExtractBtn" type="button" disabled' in page
+    assert 'id="continueExtractBtn" type="button"' in page
     assert "MRJ-owned protected output" not in page
     assert "External engines" not in page
     assert "PROTECT unavailable" not in script

@@ -594,6 +594,9 @@ class JourneyStore:
                 serialized = output.to_dict()
                 item.stage_results[JourneyStage.PROTECT] = serialized
                 protection_blocked = output.protection_result.status == "BLOCKED"
+                extract_input_safe = self._protected_input_safe(
+                    output, item.source_type
+                )
                 item.protected_artifact = (
                     generated_pdf.content
                     if generated_pdf and not protection_blocked
@@ -622,10 +625,13 @@ class JourneyStore:
                 elif output.protection_result.review_required:
                     item.review_status = "NEEDS_REVIEW"
                     item.transition(JourneyStage.PROTECT, StageStatus.NEEDS_REVIEW)
-                    self._block_after(item, JourneyStage.PROTECT)
+                    if not extract_input_safe:
+                        self._block_after(item, JourneyStage.PROTECT)
                 else:
                     item.review_status = "CLEAR"
                     item.transition(JourneyStage.PROTECT, StageStatus.COMPLETE)
+                    if not extract_input_safe:
+                        self._block_after(item, JourneyStage.PROTECT)
                 self._touch_locked(run)
             raw_responses[document_id] = response
 
@@ -787,6 +793,24 @@ class JourneyStore:
                         "at": _timestamp(),
                     }
                 )
+
+    @staticmethod
+    def _protected_input_safe(output: Any, source_type: str) -> bool:
+        """Assess only privacy-safe input availability, not EXTRACT profile readiness."""
+
+        if output.protection_result.status not in {"COMPLETE", "NEEDS_REVIEW"}:
+            return False
+        if not output.protected_document.protected_text.strip():
+            return False
+        if source_type.lower() == "pdf":
+            artifact = output.protected_document.artifact
+            return bool(
+                artifact
+                and artifact.availability
+                and artifact.media_type == "application/pdf"
+                and artifact.integrity_sha256
+            )
+        return True
 
     @staticmethod
     def _protect_eligibility(item: JourneyDocument) -> tuple[bool, str]:

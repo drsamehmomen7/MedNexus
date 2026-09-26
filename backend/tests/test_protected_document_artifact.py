@@ -123,6 +123,15 @@ class IncompletePrivacyService:
         )
 
 
+class ReviewablePrivacyService(ControlledPrivacyService):
+    def process(self, text, policy):
+        response = super().process(text, policy)
+        response.metadata["requires_review"] = True
+        response.metadata["protection_complete"] = True
+        response.metadata["candidate_counts"]["review_required"] = 1
+        return response
+
+
 def test_review_signal_summary_is_typed_human_readable_and_phi_safe():
     response = SimpleNamespace(
         success=True,
@@ -376,6 +385,7 @@ def test_incomplete_protection_blocks_pdf_artifact_and_downstream_use(monkeypatc
     output = document["stage_results"]["PROTECT"]
 
     assert document["stage_status"]["PROTECT"]["status"] == "BLOCKED"
+    assert document["stage_status"]["EXTRACT"]["status"] == "BLOCKED"
     assert document["review_status"] == "BLOCKED"
     assert output["protection_result"]["status"] == "BLOCKED"
     assert output["protection_result"]["review_required"] is True
@@ -384,3 +394,43 @@ def test_incomplete_protection_blocks_pdf_artifact_and_downstream_use(monkeypatc
         f"/api/v1/understanding/journey-runs/{run_id}/documents/"
         f"{document_id}/protected-artifact"
     ).status_code == 409
+
+
+def test_reviewable_safe_protected_pdf_does_not_block_extract_input(monkeypatch):
+    monkeypatch.setattr(
+        understanding_api,
+        "privacy_service",
+        ReviewablePrivacyService(),
+    )
+    source = _source_pdf(
+        "RADIOLOGY REPORT",
+        "Patient Name: Nadia Hassan",
+        "MRN: 99887766",
+        "EXAMINATION: CT chest",
+        "TECHNIQUE: Axial images were obtained.",
+        "FINDINGS: The lungs are clear.",
+        "IMPRESSION: No acute finding.",
+    )
+    run_id = _create_batch()
+    added = _add_pdf(run_id, 0, "reviewable-report.pdf", source)
+    assert added.status_code == 200
+    document_id = added.json()["documents"][0]["document_id"]
+
+    protected = client.post(
+        f"/api/v1/understanding/journey-runs/{run_id}/protect",
+        json={"policy": "mednexus_clinical"},
+    )
+    assert protected.status_code == 200
+    document = protected.json()["documents"][0]
+    artifact = document["stage_results"]["PROTECT"]["protected_document"]["artifact"]
+
+    assert document["stage_status"]["UNDERSTAND"]["status"] == "COMPLETE"
+    assert document["stage_status"]["PROTECT"]["status"] == "NEEDS_REVIEW"
+    assert document["stage_status"]["EXTRACT"]["status"] == "NOT_STARTED"
+    assert "EXTRACT" not in document["stage_results"]
+    assert artifact["availability"] is True
+    assert artifact["integrity_sha256"]
+    assert client.get(
+        f"/api/v1/understanding/journey-runs/{run_id}/documents/"
+        f"{document_id}/protected-artifact"
+    ).status_code == 200
