@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import logging
+
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -18,6 +21,10 @@ from backend.app.modules.medical_document_intelligence.policies.policy_profiles 
 from backend.app.modules.medical_document_intelligence.services.deidentification import DeidentificationService
 from backend.app.modules.medical_document_intelligence.services.protected_document_builder import (
     protected_document_builder,
+)
+
+from backend.app.modules.medical_document_intelligence.services.extraction_diagnostics import (
+    ExtractionDiagnosticError, diagnostic,
 )
 
 from .context_models import MedNexusDocumentContext
@@ -94,6 +101,7 @@ class JourneyDocument:
     stage_status: dict[JourneyStage, StageStatus] = field(default_factory=dict)
     stage_results: dict[JourneyStage, dict[str, Any]] = field(default_factory=dict)
     stage_errors: dict[JourneyStage, str] = field(default_factory=dict)
+    technical_error: dict[str, Any] | None = field(default=None, repr=False)
     stage_history: list[dict[str, str]] = field(default_factory=list)
     warnings: tuple[str, ...] = ()
     review_status: str = "PENDING"
@@ -138,6 +146,7 @@ class JourneyDocument:
             "stage_errors": {
                 stage.value: error for stage, error in self.stage_errors.items()
             },
+            **({"technical_error": self.technical_error} if self.technical_error else {}),
             "stage_history": list(self.stage_history),
             "warnings": list(self.warnings),
             "review_status": self.review_status,
@@ -646,6 +655,68 @@ class JourneyStore:
         """Preserve the accepted standalone /privacy compatibility handoff."""
 
         return service.process(self.get(journey_id).document.text, policy=policy)
+
+    def extract_document(self, run_id: str, document_id: str, service=None):
+        from backend.app.modules.medical_document_intelligence.services.clinical_extraction import (
+            ClinicalExtractionService, protected_sections,
+        )
+        import hashlib
+
+        with self._lock:
+            run = self._get_run_locked(run_id)
+            item = self._find_document(run, document_id)
+            if item.stage_status[JourneyStage.EXTRACT] is StageStatus.PROCESSING:
+                raise ValueError("Clinical extraction is already processing this report.")
+            output = item.stage_results.get(JourneyStage.PROTECT, {})
+            protected = output.get("protected_document", {})
+            text = protected.get("protected_text", "")
+            artifact = protected.get("artifact") or {}
+            safe = (item.stage_status[JourneyStage.PROTECT] in {StageStatus.COMPLETE, StageStatus.NEEDS_REVIEW}
+                and output.get("protection_result", {}).get("status") in {"COMPLETE", "NEEDS_REVIEW"}
+                and text.strip() and protected.get("report_id") == document_id
+                and protected.get("integrity_sha256") == hashlib.sha256(text.encode()).hexdigest()
+                and item.context is not None and item.document is not None
+                and item.context.identity.healthcare_domain == "RADIOLOGY")
+            if item.source_type.lower() == "pdf":
+                safe = safe and artifact.get("availability") and artifact.get("media_type") == "application/pdf" and artifact.get("integrity_sha256") and bool(item.protected_artifact)
+            if not safe:
+                item.transition(JourneyStage.EXTRACT, StageStatus.BLOCKED)
+                item.stage_results.pop(JourneyStage.EXTRACT, None)
+                raise ValueError("EXTRACT requires an eligible Radiology report with authoritative safe protected input.")
+            sections, review = protected_sections(item.document.text, text, item.context)
+            if not sections:
+                item.transition(JourneyStage.EXTRACT, StageStatus.BLOCKED)
+                raise ValueError("No exactly mapped eligible protected sections are available.")
+            item.transition(JourneyStage.EXTRACT, StageStatus.PROCESSING)
+            item.stage_results.pop(JourneyStage.EXTRACT, None)
+            item.stage_errors.pop(JourneyStage.EXTRACT, None)
+            item.technical_error = None
+            self._touch_locked(run)
+        try:
+            result = (service or ClinicalExtractionService()).extract(
+                protected_text=text, sections=sections, report_id=document_id, run_id=run_id,
+                protected_document=protected, initial_review=review,
+            )
+        except Exception as exc:
+            technical = (ExtractionDiagnosticError(exc.technical).technical if isinstance(exc, ExtractionDiagnosticError)
+                         else diagnostic("SYNTHESIS_FAILURE", exception=exc, stage="synthesis"))
+            logging.getLogger(__name__).error("EXTRACT_DIAGNOSTIC %s", json.dumps({
+                "journey_id": run_id, "document_id": document_id,
+                **{key: technical[key] for key in ("code", "component", "exception_type", "message",
+                    "return_code", "timeout", "runtime_executable", "device")}}, ensure_ascii=True))
+            with self._lock:
+                item.technical_error = technical
+                item.transition(JourneyStage.EXTRACT, StageStatus.FAILED)
+                item.stage_errors[JourneyStage.EXTRACT] = "Clinical extraction failed; no clinical result was accepted."
+            return
+        with self._lock:
+            if item.stage_results.get(JourneyStage.PROTECT) is not output:
+                item.transition(JourneyStage.EXTRACT, StageStatus.FAILED)
+                return
+            item.stage_results[JourneyStage.EXTRACT] = result
+            item.transition(JourneyStage.EXTRACT, StageStatus(result["state"]))
+            run.current_stage = JourneyStage.EXTRACT
+            self._touch_locked(run)
 
     def source_text_for_compare(self, run_id: str, document_id: str) -> str:
         """Return retained source text only for an explicit post-PROTECT review."""

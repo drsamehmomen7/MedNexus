@@ -309,8 +309,8 @@ button { appearance: none; }
 .protection-next p { margin: 4px 0 0; color: var(--understand-muted); font-size: .85rem; }
 .protection-next .mn-button:disabled { cursor: not-allowed; opacity: .62; }
 
-/* 14. EXTRACT — REVIEWABLE SHELL; NO CLINICAL EXECUTION IMPLIED */
-.extract-card { overflow: hidden; border: 1px solid var(--understand-border); border-top: 4px solid var(--understand-teal); border-radius: 26px; background: var(--understand-paper); box-shadow: 0 14px 40px rgba(76, 51, 25, .09); scroll-margin-top: 100px; }
+/* 14. EXTRACT — canonical clinical synthesis with accessible source evidence */
+.extract-card { overflow: visible; border: 1px solid var(--understand-border); border-top: 4px solid var(--understand-teal); border-radius: 26px; background: var(--understand-paper); box-shadow: 0 14px 40px rgba(76, 51, 25, .09); scroll-margin-top: 100px; }
 .results.extract-view:not(.batch-view) .selected-result-view { max-width: none; }
 .extract-card-header { display: flex; justify-content: space-between; align-items: start; gap: 20px; padding: 27px 32px; border-bottom: 1px solid var(--understand-border); background: var(--understand-paper-warm); }
 .extract-card-header h3 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.4rem); letter-spacing: -.035em; }
@@ -319,9 +319,11 @@ button { appearance: none; }
 .extract-state-badges .status-badge.ready { background: var(--understand-teal-soft); color: var(--understand-teal-deep); }
 .extract-state-badges .status-badge.failed { background: var(--mn-error-soft); color: var(--mn-error); }
 .extract-readiness { margin: 0; padding: 17px 32px; border-bottom: 1px solid var(--understand-border); background: var(--understand-teal-soft); color: var(--understand-teal-deep); font-size: .9rem; }
-.extract-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+.extract-card > .btn-primary { display: block; min-height: 46px; margin: 20px 32px; padding: 11px 18px; border: 0; border-radius: 10px; background: var(--understand-teal-deep); color: white; cursor: pointer; font: 700 .9rem/1.2 "Mona Sans", "Segoe UI", Arial, sans-serif; }
+.extract-card > .btn-primary:disabled { opacity: .58; cursor: not-allowed; }
+.extract-workspace { display: grid; grid-template-columns: minmax(0, 44fr) minmax(0, 56fr); align-items: start; }
 .extract-source, .extract-clinical { min-width: 0; padding: 26px; }
-.extract-source { border-right: 1px solid var(--understand-border); }
+.extract-source { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; border-right: 1px solid var(--understand-border); }
 .extract-panel-head { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .extract-panel-head h4 { margin: 0; font-size: 1.2rem; }
 .extract-source-note { margin: 12px 0; color: var(--understand-muted); font-size: .83rem; line-height: 1.5; }
@@ -332,7 +334,7 @@ button { appearance: none; }
 .extract-report-text mark { border-radius: 3px; background: #f7d58e; color: var(--understand-ink); box-shadow: 0 0 0 3px #f7d58e; }
 .extract-summary { margin-top: 22px; padding: 18px; border: 1px solid var(--understand-border); border-radius: 16px; background: var(--understand-paper-warm); }
 .extract-summary h5 { margin: 0 0 15px; font-size: 1rem; }
-.extract-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.extract-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .extract-metrics div { display: grid; gap: 6px; min-width: 0; }
 .extract-metrics strong { color: var(--understand-teal-deep); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .extract-metrics span { color: var(--understand-muted); font-size: .73rem; }
@@ -362,7 +364,59 @@ button { appearance: none; }
 .extract-technical { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--understand-border); }
 .extract-technical summary { min-height: 44px; color: var(--understand-muted); cursor: pointer; font-size: .86rem; font-weight: 600; }
 .extract-technical > div { padding-top: 10px; }
+.extract-view-evidence { display: none; min-height: 44px; border: 1px solid var(--understand-teal); border-radius: 9px; background: white; color: var(--understand-teal-deep); padding: 8px 12px; font: 600 .83rem/1.2 "Mona Sans", "Segoe UI", Arial, sans-serif; cursor: pointer; }
+.extract-clinical-section { padding-top: 24px; }
+.extract-clinical-section h5 { margin: 0 0 12px; font-size: 1.05rem; }
+.extract-synthesis-text { margin: 0; padding: 16px 18px; border-left: 4px solid var(--understand-teal); border-radius: 0 12px 12px 0; background: var(--understand-teal-soft); line-height: 1.6; }
+.extract-clinical-row { padding: 14px 16px; margin-bottom: 9px; border: 1px solid var(--understand-border); border-radius: 12px; background: #fffdf8; }
+.extract-clinical-row h6 { margin: 0 0 10px; font-size: .98rem; line-height: 1.35; }
+.extract-clinical-row dl { display: grid; gap: 7px; margin: 10px 0 0; }
+.extract-clinical-row dl div { display: grid; grid-template-columns: minmax(95px, .35fr) minmax(0, 1fr); gap: 10px; font-size: .82rem; }
+.extract-clinical-row dt { color: var(--understand-muted); }
+.extract-clinical-row dd { margin: 0; overflow-wrap: anywhere; }
+.extract-group-key { border-left: 4px solid var(--understand-teal); }
+.extract-group-diagnostic { border-left: 4px solid var(--mn-amber); }
+.extract-group-secondary, .extract-group-negative { padding-block: 11px; background: var(--understand-paper); }
+.extract-review-summary { margin: 12px 0 0; color: var(--understand-muted); font-size: .8rem; }
+.extract-clinical-details { margin-top: 20px; border-top: 1px solid var(--understand-border); }
+.extract-clinical-details > summary, .extract-fact-evidence > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.extract-clinical-details > summary span { margin-left: 8px; color: var(--understand-muted); font-size: .8rem; }
+.extract-fact-evidence { margin-top: 10px; border-top: 1px solid var(--understand-border); }
+.extract-fact-evidence > summary { min-height: 36px; color: var(--understand-teal-deep); font-size: .8rem; }
+.extract-technical summary span { margin-left: 8px; font-weight: 400; }
+.extract-raw-evidence { max-height: 500px; overflow: auto; padding: 12px; border: 1px solid var(--understand-border); border-radius: 8px; background: #fffdf8; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .72rem; }
 .extract-card :is(button, summary, pre):focus-visible { outline: 3px solid var(--understand-teal); outline-offset: 3px; }
+.extract-source-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.extract-close-evidence, .extract-mobile-report { display: none; }
+.extract-card-header { padding-block: 20px; }
+.extract-readiness { padding-block: 11px; }
+.extract-card > .btn-primary { margin-block: 12px; }
+.extract-source, .extract-clinical { padding: 20px; }
+.extract-summary { margin-top: 15px; padding: 13px 16px; }
+.extract-summary h5 { margin-bottom: 8px; }
+.extract-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.extract-metrics div { display: flex; align-items: baseline; gap: 5px; }
+.extract-metrics strong { font-size: 1.15rem; }
+.extract-clinical-section { padding-top: 17px; }
+.extract-clinical-section h5 { margin-bottom: 8px; }
+.extract-synthesis-text { padding: 13px 15px; }
+.extract-clinical-row { margin-bottom: 6px; }
+.extract-primary-fact { padding: 13px 16px; }
+.extract-clinical-row:is(.extract-associated-fact, .extract-diagnostic-fact, .extract-secondary-fact, .extract-negative-fact) { padding: 0; border-left-width: 1px; }
+.extract-clinical-row > summary { min-height: 50px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; cursor: pointer; }
+.extract-row-main { display: grid; gap: 2px; min-width: 0; }
+.extract-row-main strong { font-size: .89rem; }
+.extract-row-main small, .extract-anchor-count { color: var(--understand-muted); font-size: .74rem; }
+.extract-anchor-count { flex: none; }
+.extract-row-detail { padding: 2px 13px 13px; border-top: 1px solid var(--understand-border); }
+.extract-diagnostic-section #extractDiagnoses { display: grid; gap: 0; }
+.extract-review-details { margin-top: 10px; color: var(--understand-muted); font-size: .82rem; }
+.extract-review-details > summary { cursor: pointer; font-weight: 600; }
+.extract-review-details > div { padding: 5px 0 0 16px; }
+.extract-review-details p { margin: 5px 0; }
+.extract-clinical-details, .extract-technical { margin-top: 11px; padding-top: 4px; }
+.extract-clinical-details > summary, .extract-technical > summary { min-height: 40px; }
+.extract-clinical-details > summary span { font-weight: 700; }
 
 /* 14. SHARED STATUS / TYPOGRAPHY */
 .status-badge { display: inline-flex; min-height: 28px; align-items: center; justify-content: center; gap: 5px; padding: 4px 9px; border-radius: 8px; background: var(--understand-sand); color: var(--understand-muted); font-size: .75rem; font-weight: 600; white-space: nowrap; }
@@ -391,8 +445,16 @@ button { appearance: none; }
   .active-stage-card { max-width: 360px; }
   .results.batch-view .batch-result-layout { grid-template-columns: 1fr; }
   .batch-result-list { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 360px; }
-  .extract-workspace { grid-template-columns: 1fr; }
-  .extract-source { border-right: 0; border-bottom: 1px solid var(--understand-border); }
+  .extract-workspace { grid-template-columns: minmax(0, 1fr); }
+  .extract-clinical { order: -1; }
+  .extract-source { display: none; position: fixed; inset: 0; z-index: 1200; max-height: none; height: 100dvh; overflow: auto; border: 0; background: var(--understand-paper); box-shadow: 0 0 0 100vmax rgba(28, 20, 12, .48); }
+  .extract-card.evidence-open .extract-source { display: block; }
+  .extract-view-evidence { display: inline-flex; align-items: center; }
+  .extract-close-evidence { display: inline-flex; min-height: 40px; align-items: center; padding: 8px 12px; border: 1px solid var(--understand-border); border-radius: 8px; background: white; color: var(--understand-ink); cursor: pointer; }
+  .extract-mobile-report { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; margin-top: 16px; padding: 14px; border: 1px solid var(--understand-border); border-radius: 12px; }
+  .extract-mobile-report > div { display: flex; gap: 7px; }
+  .extract-mobile-report button { min-height: 40px; padding: 7px 11px; border: 1px solid var(--understand-teal); border-radius: 8px; background: white; color: var(--understand-teal-deep); cursor: pointer; }
+  .extract-pdf iframe { height: calc(100dvh - 190px); min-height: 300px; }
 }
 @media (max-width: 760px) {
   .understanding-hero { padding: 36px 0; }
@@ -431,12 +493,18 @@ button { appearance: none; }
   .compare-pane iframe { height: 600px; }
 }
 @media (max-width: 520px) {
-  .extract-card-header { padding: 20px; }
+  .extract-card { min-width: 0; }
+  .extract-card-header { flex-direction: column; padding: 20px; }
+  .extract-card-header > div { min-width: 0; }
+  .extract-state-badges { justify-content: flex-start; }
   .extract-readiness { padding: 15px 20px; }
   .extract-source, .extract-clinical { padding: 20px; }
+  .extract-panel-head > div { min-width: 0; }
+  .extract-source { display: none; }
+  .extract-card.evidence-open .extract-source { display: block; }
   .extract-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 16px; }
-  .extract-finding dl div, #extractContext dl div, .extract-technical dl div { grid-template-columns: 1fr; gap: 3px; }
-  .extract-pdf iframe { min-height: 500px; }
+  .extract-clinical-row dl div, #extractContext dl div, .extract-technical dl div { grid-template-columns: 1fr; gap: 3px; }
+  .extract-pdf iframe { min-height: 300px; }
   .journey-track { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
   .mode-workspace, .single-input-card, .prequeue-card, .batch-dashboard { padding: 16px; border-radius: 20px; }
   .batch-dashboard { padding-block: 15px; }

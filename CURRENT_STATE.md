@@ -1,6 +1,24 @@
 # MRJ Current State
 
-**Authoritative date:** 26 September 2026
+**Authoritative date:** 4 October 2026
+
+## Current checkpoint — R2.0C accepted and closed
+
+**R2.0C Clinical Synthesis: ACCEPTED / CLOSED. R2.0C Cross-Radiology Generalization: ACCEPTED FOR HORIZONTAL PROGRESSION. R2.0C EXTRACT UX: ACCEPTED AS A WORKING CLINICAL SHELL.** The final Unified Journey UX is deferred until the seven-stage Journey is functionally connected. The eight-report blind Radiology holdout finished **6 PASS, 2 PARTIAL, 0 FAIL**, with zero fact collapses, no obvious noise promoted, no assertion or semantic-role errors, and no major findings missed. US_CT_07, US_X-ray_04, and IN_MRI_02 passed the regression triad; the US_CT_07 canonical projection matched its accepted hash. Final backend regression: **1131 passed, 8 warnings, 0 failures**.
+
+The two partial holdouts are accepted minor recall gaps, not progression blockers: IN_Doppler_05 retained no stenosis but did not separately canonicalize normal waveforms; US_Mammogram_01 retained benign assessment and symmetric tissue but did not separately canonicalize “no suspicious findings” as a pertinent negative. Stop vertical EXTRACT tuning. Individual report facts still require human review before becoming accepted records or eligible for analytics. The production RadGraph worker uses the explicit local cache at `D:\MedNexus\Cache\RadGraph\0.1.18` in offline mode; the old AppData junction is not required. Package/model versions and CUDA behavior are unchanged.
+
+The platform direction is **one platform, one Journey, multiple domain intelligence packs**. Radiology and Public Health share future Journey shell, lifecycle, review, batch/collection, provenance, analytics eligibility, and visual identity mechanisms while keeping domain-specific structured records. Every report should ultimately contain common report context/metadata plus a domain-specific structured record. The [R2.0C closure and platform direction](docs/design/MRJ_R2_0C_Clinical_Synthesis_and_EXTRACT_Experience.md) records the conceptual fields, Radiology slots, and the human-review analytics gate. No new shared schema or redesign is implemented here.
+
+**Next milestone: R3.0A — STANDARDIZE V0.** STANDARDIZE consumes accepted EXTRACT canonical facts and governs concept normalization; it must not rediscover findings. RadLex, SNOMED CT, LOINC / RSNA Radiology Playbook, and UCUM are possible references, not implemented dependencies.
+
+## Historical pilot checkpoint — 29 September 2026
+
+IMPLEMENTED — PENDING HUMAN CLINICAL ACCEPTANCE. RadGraph-XL is a candidate engine; production engine selected: NO. An explicit per-report Journey EXTRACT endpoint uses only authoritative protected canonical clinical sections via a controlled isolated subprocess. The UI action is explicit, with PROCESSING and NEEDS_REVIEW/FAILED/BLOCKED states and per-report ownership. Existing safe PROTECT NEEDS_REVIEW eligibility is preserved. Runtime: `D:\MedNexus\Environments\mrj-radgraph`; packages remain outside MRJ's application environment.
+
+Focused mocked extraction plus frontend contract: 25 passed. Full regression: 1025 passed, 8 warnings, 0 failures (53.89 seconds). No regression failure. JavaScript syntax and changed Python compilation passed. Pilot human review remains pending.
+
+Limits: subprocess model initialization per report; no calibrated confidence; OTHER_CLINICAL_OBSERVATION fallback; exact lexical same-fact matching only; modifiers and ambiguous measurements retained for review; no general temporal/contradiction model. All pilot facts require human clinical acceptance. R2.0B remains IN PROGRESS — HUMAN CLINICAL ANNOTATION PENDING; R2 remains open.
 
 ## MRJ Phase 0 public identity and documentation
 
@@ -409,7 +427,7 @@ Public Health Intelligence is active parallel MedNexus work aligned to the share
 
 The UNDERSTAND Single + Batch Journey Foundation is accepted and closed. PROTECT/DE-ID redesign and broader responsive/accessibility polish require explicit later authorization. Hardware migration and controlled MedGemma resumption remain later Strategy v1.1 work unless an earlier cloud experiment is explicitly authorized. Dataset-acquisition follow-up continues because sufficient real-world Radiology acceptance data remains the main validation constraint.
 
-OCR, scanned recognition, layout vision, table extraction, advanced clinical extraction, FHIR/HL7, dashboard integration, broad synthetic tuning, and ungoverned external-model integration remain deliberately deferred.
+OCR, scanned recognition, layout vision, table extraction, production-scale clinical extraction, FHIR/HL7, dashboard integration, broad synthetic tuning, and ungoverned external-model integration remain deliberately deferred.
 
 ## Privacy Handoff UX Correction
 
@@ -426,3 +444,13 @@ The UNDERSTAND → PROTECT journey now preserves the original uploaded filename 
 Progressive protected-result presentation paints its first intact chunk immediately, keeps “Show full result” available during reveal, and respects reduced-motion preferences. A localhost-only acceptance switch can force motion without changing production accessibility or the authoritative complete backend result.
 
 Correction verification: focused suite **78 passed, 8 warnings**; full repository regression **742 passed, 8 warnings, 0 failures**. Live Arabic and English browser journeys preserved source filenames, landed at `#workspace`, completed the lifecycle, and produced protected output without re-upload.
+
+### Pilot verification — 29 September 2026
+
+The single authorized synthetic PDF pilot was exercised through the normal UI UNDERSTAND → PROTECT → Run Clinical Extraction action (and repeated on the same report after the general PDF line-wrap correction). Safe PROTECT NEEDS_REVIEW proceeded. Final EXTRACT: NEEDS_REVIEW; 218 engine candidates, 41 partial/review-required findings (9 primary, 32 secondary; 29 present, 6 absent-negated, 6 uncertain), 2 linked measurements, 0 canonical relationships, 0 clinical-context facts, 67 additional review entries. Two conflict pairs affect three findings. These are observed pilot output counts, not clinical acceptance or accuracy metrics. Generic fragments, coarse engine anatomy, possible duplicate mentions, and assertion conflicts remain for human review; no production selection is implied.
+
+Final observed timings: model initialization 8.276 s, section inference 1.097 s, total EXTRACT 11.737 s; actual parameter device cuda:0; peak allocated GPU memory 2,309,837,824 bytes. Every finding evidence slice matched the protected text exactly. UI evidence navigation highlighted the protected sentence. No report content was written to Git. The result remains in the bounded in-memory Journey and expires on TTL/server restart.
+
+### R2.0C Clinical Synthesis + EXTRACT Experience — historical implementation checkpoint
+
+The pilot added a deterministic, evidence-linked `clinical_synthesis` presentation above the unchanged R2.0A-shaped findings. The EXTRACT workspace presents canonical facts and diagnostic considerations separately, with source-specific observations and targeted review; raw validated findings and all engine candidates remain in collapsed Technical Evidence. The [R2.0C synthesis and experience contract](docs/design/MRJ_R2_0C_Clinical_Synthesis_and_EXTRACT_Experience.md) defines the bounded profile and its abstention behavior. The subsequent clause-role correction and human/product decision closed R2.0C as recorded at the top of this file.

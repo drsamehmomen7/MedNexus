@@ -198,9 +198,10 @@
                 <div class="extract-state-badges"><span class="status-badge" id="extractStageStatus">Not run yet</span><span class="status-badge" id="extractInputStatus">Input not assessed</span></div>
               </header>
               <p class="extract-readiness" id="extractReadiness" role="status"></p>
+              <button class="btn-primary" id="runClinicalExtractionBtn" type="button" disabled>Run Clinical Extraction</button>
               <div class="extract-workspace">
-                <section class="extract-source" aria-labelledby="extractSourceTitle">
-                  <header class="extract-panel-head"><div><p class="mn-eyebrow">Source</p><h4 id="extractSourceTitle">Protected Report</h4></div><div class="protect-view-toggle" role="group" aria-label="EXTRACT protected report view"><button id="extractPdfBtn" type="button" aria-pressed="false">Protected PDF</button><button id="extractTextBtn" type="button" aria-pressed="true">Text View</button></div></header>
+                <section class="extract-source" id="extractSourcePanel" aria-labelledby="extractSourceTitle" tabindex="-1">
+                  <header class="extract-panel-head"><div><p class="mn-eyebrow">Source</p><h4 id="extractSourceTitle">Protected Report</h4></div><div class="extract-source-actions"><div class="protect-view-toggle" role="group" aria-label="EXTRACT protected report view"><button id="extractPdfBtn" type="button" aria-pressed="false">View PDF</button><button id="extractTextBtn" type="button" aria-pressed="true">Text View</button></div><button class="extract-close-evidence" id="extractCloseEvidenceBtn" type="button">Close report</button></div></header>
                   <p class="extract-source-note" id="extractSourceNote"></p>
                   <div class="extract-pdf" id="extractPdfPanel" hidden><iframe id="extractPdfViewer" title="EXTRACT protected PDF"></iframe><p id="extractPdfStatus" role="status"></p></div>
                   <pre class="extract-report-text" id="extractProtectedText" tabindex="0"></pre>
@@ -208,13 +209,16 @@
                   <button class="text-action" id="extractCompareBtn" type="button" hidden>Review PROTECT · Compare available</button>
                 </section>
                 <section class="extract-clinical" aria-labelledby="extractClinicalTitle">
-                  <header class="extract-panel-head"><div><p class="mn-eyebrow">Clinical Intelligence</p><h4 id="extractClinicalTitle">What this report says</h4></div></header>
-                  <section class="extract-summary" aria-labelledby="extractSummaryTitle"><h5 id="extractSummaryTitle">Extraction Summary</h5><p class="empty-state" id="extractSummaryEmpty">Not run yet — no result counts are available.</p><div id="extractMetrics" class="extract-metrics" hidden></div><p id="extractCountsNote" hidden>These categories may overlap; they are not additive.</p></section>
-                  <nav class="extract-tabs" role="tablist" aria-label="Clinical extraction views"><button id="extractFindingsTab" type="button" role="tab" aria-selected="true" aria-controls="extractFindingsPanel">Findings</button><button id="extractRelationshipsTab" type="button" role="tab" aria-selected="false" aria-controls="extractRelationshipsPanel">Relationships</button><button id="extractContextTab" type="button" role="tab" aria-selected="false" aria-controls="extractContextPanel">Clinical Context</button></nav>
-                  <section id="extractFindingsPanel" role="tabpanel" aria-labelledby="extractFindingsTab"><div id="extractFindings"></div></section>
-                  <section id="extractRelationshipsPanel" role="tabpanel" aria-labelledby="extractRelationshipsTab" hidden><div id="extractRelationships"></div></section>
-                  <section id="extractContextPanel" role="tabpanel" aria-labelledby="extractContextTab" hidden><div id="extractContext"></div></section>
-                  <details class="extract-technical" id="extractTechnical"><summary>Technical Details / Provenance</summary><div id="extractTechnicalBody"></div></details>
+                  <header class="extract-panel-head"><div><p class="mn-eyebrow">Clinical Intelligence</p><h4 id="extractClinicalTitle">What this report says</h4></div><button id="extractViewEvidenceBtn" class="extract-view-evidence" type="button" aria-controls="extractSourcePanel" aria-expanded="false">View Evidence</button></header>
+                  <section class="extract-summary" aria-labelledby="extractSummaryTitle"><h5 id="extractSummaryTitle">Clinical overview</h5><p class="empty-state" id="extractSummaryEmpty">Not run yet — no clinical synthesis is available.</p><div id="extractMetrics" class="extract-metrics" hidden></div><details id="extractReviewDetails" class="extract-review-details" hidden><summary id="extractReviewSummary" aria-expanded="false">Needs Review</summary><div id="extractReviewItems"></div></details></section>
+                  <section class="extract-clinical-section" aria-labelledby="extractSynthesisTitle"><h5 id="extractSynthesisTitle">Clinical Synthesis</h5><p id="extractSynthesisText" class="extract-synthesis-text"></p></section>
+                  <section class="extract-clinical-section" aria-labelledby="extractFindingsTitle"><h5 id="extractFindingsTitle">Key Clinical Findings</h5><div id="extractFindings"></div></section>
+                  <section class="extract-clinical-section extract-diagnostic-section" aria-labelledby="extractDiagnosesTitle"><h5 id="extractDiagnosesTitle">Diagnostic Considerations <span id="extractDiagnosisCount"></span></h5><div id="extractDiagnoses"></div></section>
+                  <details class="extract-clinical-details" id="extractSecondary"><summary id="extractSecondarySummary" aria-expanded="false">Secondary / Incidental Findings <span id="extractSecondaryCount"></span></summary><div id="extractSecondaryFacts"></div></details>
+                  <details class="extract-clinical-details" id="extractNegatives"><summary id="extractNegativesSummary" aria-expanded="false">Pertinent Negatives <span id="extractNegativeCount"></span></summary><div id="extractNegativeFacts"></div></details>
+                  <details class="extract-clinical-details" id="extractContextDetails"><summary id="extractContextSummary" aria-expanded="false">Clinical Context</summary><div id="extractContext"></div></details>
+                  <details class="extract-technical" id="extractTechnical"><summary id="extractTechnicalSummary" aria-expanded="false">Technical Evidence <span id="extractTechnicalCount"></span></summary><div id="extractTechnicalBody"></div></details>
+                  <div class="extract-mobile-report"><strong>Protected Report</strong><div><button id="extractMobilePdfBtn" type="button" aria-controls="extractSourcePanel" aria-expanded="false">View PDF</button><button id="extractMobileTextBtn" type="button" aria-controls="extractSourcePanel" aria-expanded="false">Text View</button></div></div>
                 </section>
               </div>
             </article>

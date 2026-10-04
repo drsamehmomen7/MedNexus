@@ -27,6 +27,9 @@ let originalArtifactUrl = null;
 let activeProtectionView = { pdfOrigin: false, protectedText: '' };
 let extractArtifactUrl = null;
 let extractArtifactRequestVersion = 0;
+let extractPdfTarget = null;
+let extractPdfRequested = false;
+let extractSourceOpener = null;
 
 const LABELS = {
   UNKNOWN: 'Not determined', NEEDS_REVIEW: 'Needs Review', NOT_STARTED: 'Not Started',
@@ -514,13 +517,14 @@ function extractNeedsReview(item) {
 }
 
 function extractCounts(result) {
-  const findings = extractFindingList(result);
+  const facts = result?.clinical_synthesis?.canonical_facts || [];
   return {
-    findings: findings.length,
-    diagnoses: findings.filter(item => item.semantic_class === 'DIAGNOSIS').length,
-    negated: findings.filter(item => ['ABSENT_NEGATED', 'ABSENT'].includes(item.assertion_state)).length,
-    measured: findings.filter(item => (item.measurements || []).length > 0).length,
-    review: findings.filter(extractNeedsReview).length,
+    key: facts.filter(item => item.group === 'KEY').length,
+    diagnostic: facts.filter(item => item.group === 'DIAGNOSTIC').length,
+    secondary: facts.filter(item => item.group === 'SECONDARY').length,
+    negative: facts.filter(item => item.group === 'NEGATIVE').length,
+    technical: extractFindingList(result).length,
+    candidates: result?.candidate_count || result?.raw_engine_evidence?.candidates?.length || 0,
   };
 }
 
@@ -569,12 +573,10 @@ function extractAnchorLocation(anchor, protectedText) {
     ? { start: first, end: first + quote.length } : null;
 }
 
-function highlightExtractEvidence(anchor, protectedText) {
+function highlightExtractEvidence(anchor, protectedText, opener = null) {
   const anchorPosition = extractAnchorLocation(anchor, protectedText);
   const source = getElement('extractProtectedText');
-  getElement('extractPdfPanel').hidden = true;
-  source.hidden = false;
-  setExtractSourceView('text');
+  openExtractSource('text', opener || getElement('extractViewEvidenceBtn'));
   source.replaceChildren();
   if (!anchorPosition) {
     source.textContent = protectedText;
@@ -608,7 +610,7 @@ function appendExtractEvidence(target, item, protectedText) {
       || (index === 0 ? 'Source evidence' : 'Additional evidence');
     const quote = String(anchor.quote || anchor.text || '');
     const grounded = extractAnchorLocation(anchor, protectedText);
-    description.textContent = `${role}${anchor.source_section ? ` · ${label(anchor.source_section)}` : ''}`;
+    description.textContent = `${role}${anchor.section_role || anchor.source_section ? ` · ${label(anchor.section_role || anchor.source_section)}` : ''}`;
     row.append(description);
     if (quote && grounded) {
       const button = makeElement('button');
@@ -616,7 +618,7 @@ function appendExtractEvidence(target, item, protectedText) {
       button.className = 'extract-evidence-link';
       button.textContent = `“${quote}”`;
       button.setAttribute('aria-label', `Show ${role.toLowerCase()} in protected report`);
-      button.onclick = () => highlightExtractEvidence(anchor, protectedText);
+      button.onclick = event => highlightExtractEvidence(anchor, protectedText, event.currentTarget);
       row.append(button);
     } else {
       const unavailable = makeElement('small');
@@ -628,108 +630,183 @@ function appendExtractEvidence(target, item, protectedText) {
   target.append(group);
 }
 
-function renderExtractFinding(item, protectedText) {
-  const card = makeElement('article');
+function factStatus(item) {
+  if (item.fact_type !== 'DIAGNOSTIC_HYPOTHESIS') {
+    return ASSERTION_LABELS[item.assertion_state] || label(item.assertion_state || 'UNKNOWN');
+  }
+  const statuses = item.hypothesis_statuses?.length
+    ? [...item.hypothesis_statuses].sort((a, b) => (a === 'POSSIBLE' ? -1 : b === 'POSSIBLE' ? 1 : 0))
+    : [item.hypothesis_status || 'UNRESOLVED'];
+  return statuses.map(label).join(' · ');
+}
+
+function materialReviewReasons(item) {
+  return (item.review_reason || []).filter(reason =>
+    !['DIAGNOSTIC_INTERPRETATION', 'SOURCE_SPECIFIC_LESION_COUNT'].includes(reason));
+}
+
+function appendFactObservations(fields, item) {
+  (item.anatomy || []).forEach(value => appendExtractField(fields, 'Anatomy', value));
+  appendExtractField(fields, 'Laterality', item.laterality);
+  const displayedObservations = new Set();
+  (item.observations || []).forEach(observation => {
+    const pieces = [];
+    if (observation.count != null) pieces.push(`${observation.count} lesion${observation.count === 1 ? '' : 's'}`);
+    if (observation.measurements?.length) pieces.push(observation.measurements.join(' · '));
+    if (observation.morphology?.length) pieces.push(observation.morphology.join(', '));
+    if (observation.enhancement) pieces.push(label(observation.enhancement));
+    if (observation.temporal_change) pieces.push(label(observation.temporal_change));
+    if (pieces.length) {
+      const display = `${observation.source_context || 'SOURCE'}|${pieces.join(' · ')}`;
+      if (!displayedObservations.has(display)) {
+        appendExtractField(fields, label(observation.source_context || 'SOURCE'), pieces.join(' · '));
+        displayedObservations.add(display);
+      }
+    }
+  });
+  appendExtractField(fields, 'Temporal Status', item.temporal_status);
+  appendExtractField(fields, 'Temporal Change', item.temporal_change);
+}
+
+function renderCanonicalFact(item, protectedText, style = 'compact') {
+  const anchors = extractEvidence(item);
+  const compact = style !== 'primary';
+  const row = makeElement(compact ? 'details' : 'article');
+  row.className = `extract-clinical-row extract-group-${String(item.group || '').toLowerCase()} extract-${style}-fact`;
+  if (compact) {
+    const summary = makeElement('summary');
+    const title = makeElement('span');
+    const name = makeElement('strong');
+    const state = makeElement('small');
+    const count = makeElement('span');
+    const body = makeElement('div');
+    name.textContent = extractValue(item.display_label) || 'Clinical fact';
+    state.textContent = item.group === 'KEY' && item.salience === 'ASSOCIATED'
+      ? `${factStatus(item)} · Associated with principal lesion complex`
+      : [factStatus(item), item.temporal_status ? label(item.temporal_status) : '',
+        item.salience === 'BACKGROUND' ? 'Background' : ''].filter(Boolean).join(' · ');
+    count.textContent = `${anchors.length} evidence`;
+    count.className = 'extract-anchor-count';
+    title.className = 'extract-row-main';
+    body.className = 'extract-row-detail';
+    title.append(name, state);
+    summary.append(title, count);
+    summary.setAttribute('aria-expanded', 'false');
+    row.ontoggle = () => summary.setAttribute('aria-expanded', String(row.open));
+    const fields = makeElement('dl');
+    appendFactObservations(fields, item);
+    if (fields.children.length) body.append(fields);
+    const distinctReview = materialReviewReasons(item);
+    if (distinctReview.length) {
+      const review = makeElement('p');
+      review.className = 'extract-review-reason';
+      review.textContent = distinctReview.map(label).join(' · ');
+      body.append(review);
+    }
+    appendExtractEvidence(body, item, protectedText);
+    row.append(summary, body);
+    return row;
+  }
   const heading = makeElement('h6');
   const badges = makeElement('div');
   const fields = makeElement('dl');
-  const assertion = item.assertion_state || 'UNKNOWN';
-  card.className = `extract-finding assertion-${assertion.toLowerCase()}`;
-  heading.textContent = extractValue(item.finding_concept) || extractValue(item.source_expression) || 'Clinical finding';
+  heading.textContent = extractValue(item.display_label) || 'Clinical fact';
   badges.className = 'extract-finding-badges';
-  [item.semantic_class ? label(item.semantic_class) : '',
-    (item.clinical_salience || item.salience) ? label(item.clinical_salience || item.salience) : '',
-    ASSERTION_LABELS[assertion] || label(assertion), extractNeedsReview(item) ? 'Needs Review' : '']
+  [factStatus(item), item.salience ? label(item.salience) : '']
     .filter(Boolean).forEach(value => {
       const badge = makeElement('span');
       badge.textContent = value;
       badges.append(badge);
     });
-  appendExtractField(fields, 'Anatomy', item.anatomic_site);
-  appendExtractField(fields, 'Body Region', item.body_region);
-  appendExtractField(fields, 'Laterality', item.laterality);
-  appendExtractField(fields, 'Severity', item.severity);
-  appendExtractField(fields, 'Temporal Status', item.temporal_status);
-  appendExtractField(fields, 'Source Section', item.source_section);
-  appendExtractField(fields, 'Confidence', item.extraction_confidence?.band || item.extraction_confidence?.display);
-  const measurements = (item.measurements || []).map(value => extractValue(value.source_value)).filter(Boolean);
-  if (measurements.length) appendExtractField(fields, 'Measurement', measurements.join(' · '));
-  card.append(heading, badges, fields);
-  if (extractNeedsReview(item)) {
-    const explanation = makeElement('p');
-    explanation.className = 'extract-review-reason';
-    explanation.textContent = extractValue(item.review_reason)
-      || (assertion === 'UNCERTAIN' ? 'The source describes this finding as uncertain.' : 'This finding requires human review.');
-    card.append(explanation);
+  appendFactObservations(fields, item);
+  row.append(heading, badges, fields);
+  const distinctReview = materialReviewReasons(item);
+  if (distinctReview.length) {
+    const review = makeElement('p');
+    review.className = 'extract-review-reason';
+    review.textContent = distinctReview.map(label).join(' · ');
+    row.append(review);
   }
-  const conflict = item.internal_report_conflict || item.conflict;
-  if (conflict) {
-    const conflictBox = makeElement('section');
-    const title = makeElement('strong');
-    title.textContent = 'Internal Report Conflict — review both statements';
-    conflictBox.className = 'extract-conflict';
-    conflictBox.append(title);
-    [conflict.summary_assertion, conflict.detail_assertion].forEach((value, index) => {
-      if (!value) return;
-      const statement = makeElement('p');
-      statement.textContent = `${index ? 'Findings Description' : 'Diagnostic Summary'}: ${ASSERTION_LABELS[value] || label(value)}`;
-      conflictBox.append(statement);
-    });
-    card.append(conflictBox);
+  if (anchors.length) {
+    const detail = makeElement('details');
+    detail.className = 'extract-fact-evidence';
+    const summary = makeElement('summary');
+    summary.textContent = `${anchors.length} evidence anchor${anchors.length === 1 ? '' : 's'} · View in protected report`;
+    detail.append(summary);
+    appendExtractEvidence(detail, item, protectedText);
+    row.append(detail);
   }
-  appendExtractEvidence(card, item, protectedText);
-  const firstAnchor = extractEvidence(item).find(anchor => extractAnchorLocation(anchor, protectedText));
-  if (firstAnchor) {
-    card.tabIndex = 0;
-    card.setAttribute('aria-label', `Show evidence for ${heading.textContent}`);
-    card.onclick = interaction => {
-      if (interaction?.target?.tagName?.toLowerCase() === 'button') return;
-      highlightExtractEvidence(firstAnchor, protectedText);
-    };
-    card.onkeydown = interaction => {
-      if (interaction.key === 'Enter' || interaction.key === ' ') {
-        interaction.preventDefault();
-        highlightExtractEvidence(firstAnchor, protectedText);
-      }
-    };
-  }
-  return card;
+  return row;
+}
+
+function resetExtractDetails(detailId, summaryId) {
+  const detail = getElement(detailId);
+  const summary = getElement(summaryId);
+  detail.removeAttribute('open');
+  summary.setAttribute('aria-expanded', 'false');
+  detail.ontoggle = () => summary.setAttribute('aria-expanded', String(detail.open));
 }
 
 function renderExtractFacts(result, protectedText, stageState = 'NOT_STARTED') {
+  const synthesis = result?.clinical_synthesis || null;
+  const facts = synthesis?.canonical_facts || [];
   const counts = result ? extractCounts(result) : null;
-  const metrics = counts ? [['Clinical Findings', counts.findings], ['Diagnoses', counts.diagnoses],
-    ['Negated', counts.negated], ['Measured', counts.measured], ['Needs Review', counts.review]] : [];
+  const empty = getElement('extractSummaryEmpty');
+  const messages = {
+    NOT_STARTED: 'Not run yet — no clinical synthesis is available.',
+    PROCESSING: 'Clinical extraction is processing the protected report.',
+    FAILED: 'Clinical extraction failed. No clinical result was accepted.',
+    BLOCKED: 'Clinical extraction is blocked by a prerequisite.',
+  };
+  empty.hidden = Boolean(result);
+  empty.textContent = messages[stageState] || 'No clinical extraction result is available for this report.';
   getElement('extractMetrics').hidden = !result;
-  getElement('extractCountsNote').hidden = !result;
-  getElement('extractSummaryEmpty').hidden = Boolean(result);
-  getElement('extractSummaryEmpty').textContent = stageState === 'NOT_STARTED'
-    ? 'Not run yet — no result counts are available.'
-    : 'No clinical extraction result is available for this report.';
-  getElement('extractMetrics').replaceChildren(...metrics.map(([name, value]) => {
-    const metric = makeElement('div');
-    const number = makeElement('strong');
-    const title = makeElement('span');
-    number.textContent = String(value);
-    title.textContent = name;
-    metric.append(number, title);
-    return metric;
+  getElement('extractMetrics').replaceChildren(...(counts
+    ? [['Key Findings', counts.key], ['Diagnostic Considerations', counts.diagnostic],
+      ['Secondary Findings', counts.secondary]].map(([name, value]) => {
+      const metric = makeElement('div');
+      const number = makeElement('strong');
+      const title = makeElement('span');
+      number.textContent = String(value);
+      title.textContent = name;
+      metric.append(number, title);
+      return metric;
+    }) : []));
+  const review = getElement('extractReviewDetails');
+  const reviewSummary = getElement('extractReviewSummary');
+  const reviewItems = getElement('extractReviewItems');
+  const reviewReasons = [...new Set(facts.flatMap(item => item.review_reason || []))];
+  review.hidden = !result || !reviewReasons.length;
+  review.removeAttribute('open');
+  reviewSummary.setAttribute('aria-expanded', 'false');
+  review.ontoggle = () => reviewSummary.setAttribute('aria-expanded', String(review.open));
+  reviewSummary.textContent = `Needs Review · ${reviewReasons.length} item${reviewReasons.length === 1 ? '' : 's'}`;
+  reviewItems.replaceChildren(...reviewReasons.map(reason => {
+    const item = makeElement('p');
+    item.textContent = label(reason);
+    return item;
   }));
-  renderList(getElement('extractFindings'), extractFindingList(result),
-    item => renderExtractFinding(item, protectedText),
-    result ? 'No clinical findings were returned for this report.'
-      : stageState === 'NOT_STARTED'
-        ? 'No clinical extraction has been run for this report yet. Findings, diagnoses, measurements and evidence will appear here when available.'
-        : 'Clinical extraction findings are unavailable for this report.');
-  renderList(getElement('extractRelationships'), extractRelationshipList(result), item => {
-    const card = makeElement('article');
-    const line = makeElement('p');
-    card.className = 'extract-relation';
-    line.textContent = `${extractValue(item.source_finding) || extractValue(item.source_finding_id) || 'Finding'} · ${label(item.relationship_type || item.type)} · ${extractValue(item.target_finding) || extractValue(item.target_finding_id) || 'Related finding'}`;
-    card.append(line);
-    appendExtractEvidence(card, item, protectedText);
-    return card;
-  }, 'No source-supported relationships are available.');
+  getElement('extractSynthesisText').textContent = !result ? ''
+    : synthesis?.clinical_synthesis
+      || 'No eligible canonical clinical facts were synthesized. Technical Evidence remains available for review.';
+  renderList(getElement('extractFindings'), facts.filter(item => item.group === 'KEY'),
+    item => renderCanonicalFact(item, protectedText, item.salience === 'PRIMARY' ? 'primary' : 'associated'),
+    result ? 'No key clinical findings met the synthesis rules.' : 'No clinical extraction result is available.');
+  renderList(getElement('extractDiagnoses'), facts.filter(item => item.group === 'DIAGNOSTIC'),
+    item => renderCanonicalFact(item, protectedText, 'diagnostic'),
+    result ? 'No supported diagnostic considerations were synthesized.' : 'No clinical extraction result is available.');
+  renderList(getElement('extractSecondaryFacts'), facts.filter(item => item.group === 'SECONDARY'),
+    item => renderCanonicalFact(item, protectedText, 'secondary'),
+    result ? 'No secondary findings met the synthesis rules.' : 'No clinical extraction result is available.');
+  renderList(getElement('extractNegativeFacts'), facts.filter(item => item.group === 'NEGATIVE'),
+    item => renderCanonicalFact(item, protectedText, 'negative'),
+    result ? 'No pertinent negative met the synthesis rules.' : 'No clinical extraction result is available.');
+  getElement('extractSecondaryCount').textContent = counts ? String(counts.secondary) : '';
+  getElement('extractDiagnosisCount').textContent = counts ? String(counts.diagnostic) : '';
+  getElement('extractNegativeCount').textContent = counts ? String(counts.negative) : '';
+  resetExtractDetails('extractSecondary', 'extractSecondarySummary');
+  resetExtractDetails('extractNegatives', 'extractNegativesSummary');
+  resetExtractDetails('extractContextDetails', 'extractContextSummary');
   const contextTarget = getElement('extractContext');
   contextTarget.replaceChildren();
   const common = result?.common_clinical_context || result?.clinical_fact_graph?.common_clinical_context || {};
@@ -750,22 +827,40 @@ function renderExtractFacts(result, protectedText, stageState = 'NOT_STARTED') {
     contextTarget.append(card);
   });
   if (!contextTarget.children.length) {
-    const empty = makeElement('p');
-    empty.className = 'empty-state';
-    empty.textContent = 'No privacy-safe clinical context is available. MRJ will not infer age, sex, or dates.';
-    contextTarget.append(empty);
+    const unavailable = makeElement('p');
+    unavailable.className = 'empty-state';
+    unavailable.textContent = 'No privacy-safe clinical context is available. MRJ will not infer age, sex, or dates.';
+    contextTarget.append(unavailable);
   }
   const technical = getElement('extractTechnicalBody');
   technical.replaceChildren();
-  const audit = makeElement('dl');
-  [['Report ID', result?.report_id], ['Extraction Profile', result?.extraction_profile],
-    ['Pack Version', result?.pack_version], ['Validation State', result?.validation_state],
-    ['Method', result?.extraction_method]].forEach(([name, value]) => appendExtractField(audit, name, value));
-  technical.append(audit);
-  if (!audit.children.length) technical.textContent = 'No extraction provenance is available yet.';
-  getElement('extractTechnical').removeAttribute('open');
+  getElement('extractTechnicalCount').textContent = counts
+    ? `${counts.technical} validated engine findings` : '';
+  if (result) {
+    const audit = makeElement('dl');
+    [['Raw extraction candidates', counts.candidates], ['Report ID', result.report_id], ['Extraction Profile', result.extraction_profile],
+      ['Pack Version', result.pack_version], ['Validation State', result.validation_state],
+      ['Method', result.extraction_method], ['Engine', result.engine_metadata?.engine],
+      ['Package', result.engine_metadata?.package], ['Model', result.engine_metadata?.model_type],
+      ['Device', result.engine_metadata?.device]].forEach(([name, value]) => appendExtractField(audit, name, value));
+    technical.append(audit);
+    const rawTitle = makeElement('h6');
+    rawTitle.textContent = 'Raw engine evidence, assertions, relationships, conflicts and synthesis mapping';
+    const raw = makeElement('pre');
+    raw.className = 'extract-raw-evidence';
+    raw.textContent = JSON.stringify({
+      raw_engine_evidence: result.raw_engine_evidence,
+      radiology_findings: extractFindingList(result),
+      radiology_finding_relationships: extractRelationshipList(result),
+      review_candidates: result.review_candidates,
+      technical_evidence_mapping: synthesis?.technical_evidence_mapping,
+    }, null, 2);
+    technical.append(rawTitle, raw);
+  } else {
+    technical.textContent = 'No extraction provenance is available yet.';
+  }
+  resetExtractDetails('extractTechnical', 'extractTechnicalSummary');
 }
-
 function buildCompareLines(value, counterpart) {
   const lines = String(value || '').split('\n');
   const otherLines = String(counterpart || '').split('\n');
@@ -1052,15 +1147,49 @@ function updateActiveStagePresentation() {
 }
 
 function setExtractSourceView(view) {
-  const pdf = view === 'pdf';
+  const pdf = view === 'pdf' && Boolean(extractPdfTarget);
   getElement('extractPdfBtn').classList.toggle('active', pdf);
   getElement('extractTextBtn').classList.toggle('active', !pdf);
   getElement('extractPdfBtn').setAttribute('aria-pressed', String(pdf));
   getElement('extractTextBtn').setAttribute('aria-pressed', String(!pdf));
+  getElement('extractPdfPanel').hidden = !pdf;
+  getElement('extractProtectedText').hidden = pdf;
+  if (pdf && !extractPdfRequested) {
+    extractPdfRequested = true;
+    loadExtractPdf(extractPdfTarget);
+  }
+}
+
+function openExtractSource(view, opener) {
+  extractSourceOpener = opener || extractSourceOpener;
+  setExtractSourceView(view);
+  getElement('extractCard').classList.add('evidence-open');
+  ['extractViewEvidenceBtn', 'extractMobilePdfBtn', 'extractMobileTextBtn'].forEach(id =>
+    getElement(id).setAttribute('aria-expanded', 'true'));
+  const panel = getElement('extractSourcePanel');
+  if (globalThis.matchMedia?.('(max-width: 980px)').matches) {
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    getElement('extractCloseEvidenceBtn').focus({ preventScroll: true });
+  } else {
+    panel.scrollIntoView({ block: 'start' });
+  }
+}
+
+function closeExtractSource() {
+  getElement('extractCard').classList.remove('evidence-open');
+  ['extractViewEvidenceBtn', 'extractMobilePdfBtn', 'extractMobileTextBtn'].forEach(id =>
+    getElement(id).setAttribute('aria-expanded', 'false'));
+  const panel = getElement('extractSourcePanel');
+  panel.removeAttribute('role');
+  panel.removeAttribute('aria-modal');
+  extractSourceOpener?.focus({ preventScroll: true });
+  extractSourceOpener = null;
 }
 
 function releaseExtractArtifact() {
   extractArtifactRequestVersion += 1;
+  extractPdfRequested = false;
   getElement('extractPdfViewer').src = 'about:blank';
   if (extractArtifactUrl) globalThis.URL?.revokeObjectURL(extractArtifactUrl);
   extractArtifactUrl = null;
@@ -1104,6 +1233,23 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
   getElement('reportCard').hidden = true;
   getElement('protectionCard').hidden = true;
   getElement('extractCard').hidden = false;
+  closeExtractSource();
+  getElement('extractViewEvidenceBtn').onclick = event => openExtractSource('text', event.currentTarget);
+  getElement('extractCloseEvidenceBtn').onclick = closeExtractSource;
+  getElement('extractSourcePanel').onkeydown = event => {
+    if (event.key === 'Escape') closeExtractSource();
+    if (event.key === 'Tab') {
+      const controls = [...getElement('extractSourcePanel').querySelectorAll('button:not([hidden]):not([disabled]), [tabindex="0"]:not([hidden])')];
+      if (!controls.length) return;
+      if (event.shiftKey && globalThis.document.activeElement === controls[0]) {
+        event.preventDefault();
+        controls.at(-1).focus();
+      } else if (!event.shiftKey && globalThis.document.activeElement === controls.at(-1)) {
+        event.preventDefault();
+        controls[0].focus();
+      }
+    }
+  };
   getElement('extractReportName').textContent = sourceName;
   getElement('extractStageStatus').className = `status-badge ${statusClass(extractState)}`;
   getElement('extractStageStatus').textContent = extractState === 'NOT_STARTED' ? 'Not run yet' : label(extractState);
@@ -1111,12 +1257,14 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
   getElement('extractInputStatus').textContent = inputSafety.ready ? 'Protected input ready' : 'Protected input unavailable';
   getElement('extractReadiness').textContent = !inputSafety.ready
     ? `Extraction input blocked. ${inputSafety.reason}`
+    : extractState === 'PROCESSING'
+      ? 'Clinical extraction is processing the protected report.'
     : extractState === 'BLOCKED'
       ? 'Protected input is safe, but a separate document or extraction-profile prerequisite requires review.'
       : ownedResult
         ? 'Protected report and clinical extraction result are available.'
         : extractState === 'NOT_STARTED'
-          ? 'Workspace ready. Clinical extraction has not been run for this report. The extraction engine is not connected yet.'
+          ? 'Workspace ready. Clinical extraction has not been run for this report.'
           : 'The clinical extraction result is unavailable for this report. Review is required.';
   getElement('extractSourceNote').textContent = !inputSafety.ready
     ? 'A safe protected representation is required before clinical extraction can use this report.'
@@ -1124,30 +1272,27 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
     ? 'Protected PDF and canonical protected text. Evidence navigation uses the text; PDF coordinates are not inferred.'
     : 'Canonical protected text for source evidence review.';
   getElement('extractProtectedText').textContent = sourceText || 'No protected report is available for this report.';
+  const domain = runDocument?.stage_results?.UNDERSTAND?.document_context?.identity?.healthcare_domain;
+  const action = getElement('runClinicalExtractionBtn');
+  action.disabled = !inputSafety.ready || domain !== 'RADIOLOGY' || !runId || !documentId || extractState === 'PROCESSING';
+  action.textContent = extractState === 'PROCESSING' ? 'Extracting…' : 'Run Clinical Extraction';
+  action.onclick = () => runClinicalExtraction(runId, documentId);
   getElement('extractEvidenceStatus').hidden = true;
   getElement('extractEvidenceStatus').textContent = '';
   releaseExtractArtifact();
   const target = inputSafety.ready && runId && documentId && model.hasPdfArtifact
     ? { runId, documentId } : null;
+  extractPdfTarget = target;
   getElement('extractPdfBtn').hidden = !target;
-  getElement('extractPdfPanel').hidden = !target;
-  getElement('extractProtectedText').hidden = Boolean(target);
-  setExtractSourceView(target ? 'pdf' : 'text');
-  getElement('extractPdfBtn').onclick = () => {
-    getElement('extractPdfPanel').hidden = false;
-    getElement('extractProtectedText').hidden = true;
-    setExtractSourceView('pdf');
-  };
-  getElement('extractTextBtn').onclick = () => {
-    getElement('extractPdfPanel').hidden = true;
-    getElement('extractProtectedText').hidden = false;
-    setExtractSourceView('text');
-  };
-  if (target) loadExtractPdf(target);
+  getElement('extractMobilePdfBtn').hidden = !target;
+  setExtractSourceView('text');
+  getElement('extractPdfBtn').onclick = () => setExtractSourceView('pdf');
+  getElement('extractTextBtn').onclick = () => setExtractSourceView('text');
+  getElement('extractMobilePdfBtn').onclick = event => openExtractSource('pdf', event.currentTarget);
+  getElement('extractMobileTextBtn').onclick = event => openExtractSource('text', event.currentTarget);
   getElement('extractCompareBtn').hidden = !inputSafety.ready;
   getElement('extractCompareBtn').onclick = () => showProtectStage();
   renderExtractFacts(ownedResult, sourceText, extractState);
-  setExtractTab('findings');
   getElement('results').classList.add('show');
   if (batchView) renderBatchReportBrowser();
   configureReportNavigation();
@@ -1158,14 +1303,30 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
   }
 }
 
-function setExtractTab(view) {
-  [['findings', 'extractFindingsTab', 'extractFindingsPanel'],
-    ['relationships', 'extractRelationshipsTab', 'extractRelationshipsPanel'],
-    ['context', 'extractContextTab', 'extractContextPanel']].forEach(([name, tabId, panelId]) => {
-    const selected = name === view;
-    getElement(tabId).setAttribute('aria-selected', String(selected));
-    getElement(panelId).hidden = !selected;
-  });
+async function runClinicalExtraction(runId, documentId) {
+  const run = workflowMode === 'batch' ? batchRun : singleRun;
+  const item = getRunDocumentById(run, documentId);
+  if (!item || run?.run_id !== runId || item.stage_status?.EXTRACT?.status === 'PROCESSING') return;
+  item.stage_status.EXTRACT = { status: 'PROCESSING' };
+  renderExtractWorkspace(item, runId, { scroll: false });
+  try {
+    const response = await fetch(`/api/v1/understanding/journey-runs/${encodeURIComponent(runId)}/documents/${encodeURIComponent(documentId)}/extract`, { method: 'POST', cache: 'no-store' });
+    const payload = await response.json();
+    if (!response.ok) throw Error(payload.detail || 'Clinical extraction failed.');
+    const current = workflowMode === 'batch' ? batchRun : singleRun;
+    if (current?.run_id !== runId) return;
+    if (workflowMode === 'batch') batchRun = payload; else singleRun = payload;
+    if (activeJourneyStage === 'EXTRACT' && (workflowMode !== 'batch' || selectedBatchDocumentId === documentId)) {
+      renderExtractWorkspace(getRunDocumentById(payload, documentId), runId, { scroll: false });
+    }
+  } catch (_) {
+    item.stage_status.EXTRACT = { status: 'FAILED' };
+    const current = workflowMode === 'batch' ? batchRun : singleRun;
+    if (current?.run_id === runId && activeJourneyStage === 'EXTRACT' && (workflowMode !== 'batch' || selectedBatchDocumentId === documentId)) {
+      renderExtractWorkspace(item, runId, { scroll: false });
+      getElement('extractReadiness').textContent = 'Clinical extraction failed or was blocked. No new result was accepted.';
+    }
+  }
 }
 
 function openExtractWorkspace() {
@@ -2061,9 +2222,6 @@ function showUnderstandStage() {
 }
 
 function initializeUnderstandingWorkspace() {
-  getElement('extractFindingsTab').onclick = () => setExtractTab('findings');
-  getElement('extractRelationshipsTab').onclick = () => setExtractTab('relationships');
-  getElement('extractContextTab').onclick = () => setExtractTab('context');
   getElement('singleModeTab').onclick = () => setWorkflowMode('single');
   getElement('batchModeTab').onclick = () => setWorkflowMode('batch');
   getElement('fileTab').onclick = () => setInputMode('file');
