@@ -1135,14 +1135,18 @@ function prepareResultsWorkspace(batchView) {
 function updateActiveStagePresentation() {
   const protectActive = activeJourneyStage === 'PROTECT';
   const extractActive = activeJourneyStage === 'EXTRACT';
-  getElement('results').classList.toggle('extract-view', extractActive);
-  getElement('activeStageNumber').textContent = extractActive ? '03' : protectActive ? '02' : '01';
+  const standardizeActive = activeJourneyStage === 'STANDARDIZE';
+  getElement('results').classList.toggle('extract-view', extractActive || standardizeActive);
+  getElement('activeStageNumber').textContent = standardizeActive ? '04' : extractActive ? '03' : protectActive ? '02' : '01';
   getElement('activeStageName').textContent = activeJourneyStage;
-  getElement('activeStageDescription').textContent = extractActive ? 'Clinical extraction workspace'
+  getElement('activeStageDescription').textContent = standardizeActive ? 'Governed clinical representation'
+    : extractActive ? 'Clinical extraction workspace'
     : protectActive ? 'Purpose-based privacy protection' : 'Document identity and context';
-  getElement('resultsEyebrow').textContent = extractActive ? 'Extraction Workspace' : protectActive ? 'Protection Result' : 'Report Result';
-  getElement('resultsTitle').textContent = extractActive ? 'Review clinical extraction' : protectActive ? 'What MRJ protected' : 'What MRJ understood';
-  getElement('anotherBtn').textContent = extractActive ? 'Review PROTECT' : protectActive
+  getElement('resultsEyebrow').textContent = standardizeActive ? 'Standardization Workspace'
+    : extractActive ? 'Extraction Workspace' : protectActive ? 'Protection Result' : 'Report Result';
+  getElement('resultsTitle').textContent = standardizeActive ? 'Review standardized facts'
+    : extractActive ? 'Review clinical extraction' : protectActive ? 'What MRJ protected' : 'What MRJ understood';
+  getElement('anotherBtn').textContent = standardizeActive ? 'Review EXTRACT' : extractActive ? 'Review PROTECT' : protectActive
     ? 'Review UNDERSTAND' : workflowMode === 'batch' ? 'Back to batch overview' : 'Analyze another report';
 }
 
@@ -1233,6 +1237,7 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
   getElement('reportCard').hidden = true;
   getElement('protectionCard').hidden = true;
   getElement('extractCard').hidden = false;
+  getElement('standardizeCard').hidden = true;
   closeExtractSource();
   getElement('extractViewEvidenceBtn').onclick = event => openExtractSource('text', event.currentTarget);
   getElement('extractCloseEvidenceBtn').onclick = closeExtractSource;
@@ -1277,6 +1282,10 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
   action.disabled = !inputSafety.ready || domain !== 'RADIOLOGY' || !runId || !documentId || extractState === 'PROCESSING';
   action.textContent = extractState === 'PROCESSING' ? 'Extracting…' : 'Run Clinical Extraction';
   action.onclick = () => runClinicalExtraction(runId, documentId);
+  const standardize = getElement('continueStandardizeBtn');
+  standardize.hidden = !ownedResult;
+  standardize.disabled = !ownedResult || !runId || !documentId;
+  standardize.onclick = () => renderStandardizeWorkspace(runDocument, runId);
   getElement('extractEvidenceStatus').hidden = true;
   getElement('extractEvidenceStatus').textContent = '';
   releaseExtractArtifact();
@@ -1337,6 +1346,190 @@ function openExtractWorkspace() {
   renderExtractWorkspace(runDocument, run?.run_id || null);
 }
 
+function renderStandardizeWorkspace(runDocument, runId = null, options = {}) {
+  const batchView = workflowMode === 'batch' && Boolean(batchRun);
+  const documentId = runDocument?.document_id;
+  const extractState = runDocument?.stage_status?.EXTRACT?.status;
+  const state = runDocument?.stage_status?.STANDARDIZE?.status || 'NOT_STARTED';
+  const eligible = ['COMPLETE', 'NEEDS_REVIEW'].includes(extractState)
+    && Boolean(runDocument?.stage_results?.EXTRACT?.clinical_synthesis);
+  const result = ['COMPLETE', 'NEEDS_REVIEW'].includes(state)
+    && runDocument?.stage_results?.STANDARDIZE?.report_id === documentId
+    ? runDocument.stage_results.STANDARDIZE : null;
+  prepareResultsWorkspace(batchView);
+  activeJourneyStage = 'STANDARDIZE';
+  updateActiveStagePresentation();
+  getElement('reportCard').hidden = true;
+  getElement('protectionCard').hidden = true;
+  getElement('extractCard').hidden = true;
+  getElement('standardizeCard').hidden = false;
+  getElement('standardizeReportName').textContent = runDocument?.original_filename || 'Retained report';
+  getElement('standardizeStatus').className = `status-badge ${statusClass(state)}`;
+  getElement('standardizeStatus').textContent = label(state);
+  getElement('standardizeMessage').textContent = !eligible ? 'A completed EXTRACT result is required.'
+    : state === 'PROCESSING' ? 'Standardizing accepted clinical facts…'
+    : result ? 'Original clinical meaning is retained; terminology and units are additive.'
+    : state === 'FAILED' ? 'Standardization failed. The EXTRACT result remains available.'
+    : 'Ready to standardize accepted clinical facts.';
+  const action = getElement('runStandardizeBtn');
+  action.disabled = !eligible || !runId || !documentId || state === 'PROCESSING';
+  action.textContent = state === 'PROCESSING' ? 'Standardizing…' : result ? 'Run Standardization Again' : 'Run Standardization';
+  action.onclick = () => runStandardization(runId, documentId);
+  getElement('returnExtractBtn').onclick = showExtractStage;
+  const summary = getElement('standardizeSummary');
+  summary.replaceChildren();
+  const factsTarget = getElement('standardizeFacts');
+  factsTarget.replaceChildren();
+  const studyTarget = getElement('standardizeStudy');
+  studyTarget.replaceChildren();
+  const measurementsTarget = getElement('standardizeMeasurements');
+  measurementsTarget.replaceChildren();
+  const technicalTarget = getElement('standardizeTechnicalBody');
+  technicalTarget.replaceChildren();
+  ['standardizeOverview', 'standardizeStudySection', 'standardizeConceptSection',
+    'standardizeMeasurementSection', 'standardizeReviewSection', 'standardizeTechnical']
+    .forEach(id => { getElement(id).hidden = !result; });
+  if (result) {
+    const counts = result.summary;
+    [
+      ['Clinical Concepts', `${counts.clinical_concepts.total} total`,
+        `${counts.clinical_concepts.matched} matched · ${counts.clinical_concepts.needs_review} need review · ${counts.clinical_concepts.unmapped} unmapped`],
+      ['Mapping Scope', `${counts.whole_fact_exact_mappings || 0} whole-label exact`,
+        `${counts.component_exact_mappings || 0} exact components · ${counts.facts_with_component_standardization || 0} facts with components`],
+      ['Measurements', `${counts.measurements.normalized} normalized`,
+        `${counts.measurements.needs_review} need review`],
+      ['Study Identity', label(counts.study_identity), 'Exact procedure only when supported by accepted context'],
+    ].forEach(([title, value, note]) => {
+      const metric = makeElement('div');
+      metric.className = 'standardize-metric';
+      const heading = makeElement('strong');
+      heading.textContent = title;
+      const amount = makeElement('span');
+      amount.textContent = value;
+      const detail = makeElement('span');
+      detail.textContent = note;
+      metric.append(heading, amount, detail);
+      summary.append(metric);
+    });
+    const study = result.standardized_study_context || {};
+    const procedure = study.procedure_mapping || {};
+    const studyLines = [
+      `Original: ${study.original_exam_name || 'Not determined'}`,
+      `Accepted modality: ${study.normalized_modality || 'Not determined'} · Body region: ${study.normalized_body_region || 'Not determined'} · Laterality: ${study.normalized_laterality || 'Not determined'}`,
+      procedure.mapping_status === 'MATCHED'
+        ? `Procedure mapping: MATCHED · LOINC/RSNA Playbook ${procedure.code} · ${procedure.preferred_label}`
+        : `Procedure mapping: ${label(procedure.mapping_status || 'UNMAPPED')} · No exact procedure was selected from the accepted context.`,
+    ];
+    if (procedure.mapping_method === 'EXACT_MODALITY_ALIAS') {
+      studyLines.push(`Terminology spelling: ${study.normalized_modality} → MR; no anatomy or laterality inferred.`);
+    }
+    studyLines.forEach(value => {
+      const line = makeElement('p');
+      line.textContent = value;
+      studyTarget.append(line);
+    });
+    const sourceFacts = new Map((runDocument.stage_results.EXTRACT.clinical_synthesis.canonical_facts || [])
+      .map(fact => [fact.fact_id, fact]));
+    result.standardized_facts.forEach(item => {
+      const detail = makeElement('details');
+      detail.className = 'standardize-fact';
+      const heading = makeElement('summary');
+      const original = sourceFacts.get(item.source_fact_id);
+      const originalLabel = makeElement('span');
+      originalLabel.textContent = original?.display_label || item.source_fact_id;
+      const assertion = item.source_assertion_state || original?.assertion_state;
+      const assertionBadge = makeElement('span');
+      assertionBadge.className = 'standardize-assertion';
+      assertionBadge.textContent = `Assertion: ${assertion === 'ABSENT_NEGATED' ? 'ABSENT' : label(assertion)}`;
+      const concept = item.concept_mappings[0];
+      const status = makeElement('span');
+      status.className = `status-badge ${statusClass(concept.mapping_status)}`;
+      status.textContent = label(concept.mapping_status);
+      heading.append(originalLabel, assertionBadge, status);
+      detail.append(heading);
+      const originalLine = makeElement('p');
+      originalLine.className = 'standardize-original';
+      originalLine.textContent = `Original clinical fact: ${original?.display_label || item.source_fact_id} · ${assertion === 'ABSENT_NEGATED' ? 'ABSENT' : label(assertion)}`;
+      detail.append(originalLine);
+      const mapping = makeElement('p');
+      mapping.textContent = concept.mapping_status === 'MATCHED'
+        ? `${concept.lookup_scope === 'CANONICAL_CONCEPT' ? 'Underlying concept' : 'Whole-label terminology'}: ${concept.preferred_label} · RadLex ${concept.code} · ${label(concept.match_type)}${assertion === 'ABSENT_NEGATED' ? ' · assertion remains ABSENT' : ''}`
+        : concept.mapping_status === 'NEEDS_REVIEW'
+          ? 'Whole expression: NEEDS REVIEW · Component codes do not represent the complete clinical fact.'
+          : 'Whole expression: UNMAPPED · Original clinical meaning preserved; no code assigned.';
+      detail.append(mapping);
+      (item.component_mappings || []).forEach(component => {
+        const row = makeElement('p');
+        row.textContent = `Clinical component: ${component.source_text} → RadLex ${component.code} · ${label(component.match_type)} · ${component.relationship_to_fact === 'BROADER' ? 'broader than complete fact; review required' : 'assertion separate'}`;
+        detail.append(row);
+      });
+      item.anatomy_mappings.forEach(anatomy => {
+        const row = makeElement('p');
+        row.textContent = `Anatomy: ${anatomy.source_text} → ${anatomy.code ? `RadLex ${anatomy.code}` : label(anatomy.mapping_status)}`;
+        detail.append(row);
+      });
+      item.standardized_measurements.forEach(measurement => {
+        const row = makeElement('p');
+        row.textContent = `Measurement: ${measurement.original_text} → ${measurement.normalized_value && measurement.normalized_unit ? `${measurement.normalized_value} ${measurement.normalized_unit}` : label(measurement.mapping_status)}`;
+        measurementsTarget.append(row);
+      });
+      factsTarget.append(detail);
+    });
+    if (!measurementsTarget.children.length) {
+      const empty = makeElement('p');
+      empty.textContent = 'No measurements to normalize in this result.';
+      measurementsTarget.append(empty);
+    }
+    const reviewCount = counts.facts_needing_review || 0;
+    getElement('standardizeReview').textContent = `${reviewCount} ${reviewCount === 1 ? 'fact needs' : 'facts need'} standardization review. Unmapped concepts alone are not failures. EXTRACT review remains separate.`;
+    const versions = result.technical_diagnostics?.provider_versions || {};
+    const provenance = makeElement('p');
+    provenance.textContent = `Providers: ${Object.entries(versions).map(([system, version]) => `${system} ${version || 'unavailable'}`).join(' · ') || 'Not recorded'}`;
+    technicalTarget.append(provenance);
+    result.standardized_facts.forEach(item => {
+      const row = makeElement('p');
+      row.textContent = `${item.source_fact_id} · ${item.concept_mappings[0].mapping_method} · ${item.concept_mappings[0].match_type}`;
+      technicalTarget.append(row);
+    });
+  }
+  getElement('results').classList.add('show');
+  if (batchView) renderBatchReportBrowser();
+  configureReportNavigation();
+  updateJourneyRail(batchView ? batchRun : singleRun);
+  if (options.scroll !== false) {
+    getElement('standardizeCard').focus({ preventScroll: true });
+    getElement('standardizeCard').scrollIntoView({ behavior: 'auto', block: 'start' });
+  }
+}
+
+async function runStandardization(runId, documentId) {
+  const run = workflowMode === 'batch' ? batchRun : singleRun;
+  const item = getRunDocumentById(run, documentId);
+  if (!item || run?.run_id !== runId || item.stage_status?.STANDARDIZE?.status === 'PROCESSING') return;
+  item.stage_status.STANDARDIZE = { status: 'PROCESSING' };
+  renderStandardizeWorkspace(item, runId, { scroll: false });
+  try {
+    const response = await fetch(`/api/v1/understanding/journey-runs/${encodeURIComponent(runId)}/documents/${encodeURIComponent(documentId)}/standardize`, { method: 'POST', cache: 'no-store' });
+    const payload = await response.json();
+    if (!response.ok) throw Error(payload.detail || 'Standardization failed.');
+    const current = workflowMode === 'batch' ? batchRun : singleRun;
+    if (current?.run_id !== runId) return;
+    if (workflowMode === 'batch') batchRun = payload; else singleRun = payload;
+    if (activeJourneyStage === 'STANDARDIZE' && (workflowMode !== 'batch' || selectedBatchDocumentId === documentId)) {
+      renderStandardizeWorkspace(getRunDocumentById(payload, documentId), runId, { scroll: false });
+    }
+  } catch (_) {
+    item.stage_status.STANDARDIZE = { status: 'FAILED' };
+    if (activeJourneyStage === 'STANDARDIZE') renderStandardizeWorkspace(item, runId, { scroll: false });
+  }
+}
+
+function showExtractStage() {
+  const run = workflowMode === 'batch' ? batchRun : singleRun;
+  const item = workflowMode === 'batch' ? getRunDocumentById(run, selectedBatchDocumentId) : run?.documents?.[0];
+  if (item) renderExtractWorkspace(item, run.run_id);
+}
+
 function showProtectStage(compare = false) {
   const run = workflowMode === 'batch' ? batchRun : singleRun;
   const runDocument = workflowMode === 'batch'
@@ -1361,6 +1554,7 @@ function renderProtectionResult(payload, options = {}) {
   getElement('reportCard').hidden = true;
   getElement('protectionCard').hidden = false;
   getElement('extractCard').hidden = true;
+  getElement('standardizeCard').hidden = true;
   getElement('protectionCard').className = `protection-card ${statusClass(model.state)}`;
   getElement('protectReportNumber').textContent = options.number
     ? `Report ${String(options.number).padStart(2, '0')}`
@@ -1472,6 +1666,7 @@ function renderReportResult(payload, options = {}) {
   getElement('reportCard').hidden = false;
   getElement('protectionCard').hidden = true;
   getElement('extractCard').hidden = true;
+  getElement('standardizeCard').hidden = true;
   getElement('reportCard').className = `report-card ${statusClass(model.state)}`;
   getElement('reportNumber').textContent = options.number ? `Report ${String(options.number).padStart(2, '0')}` : 'Report';
   getElement('resultFileName').textContent = model.filename;
@@ -1894,6 +2089,8 @@ function selectBatchDocument(documentId, scroll = true) {
   const result = getRunDocumentStageResult(batchRun, documentId, stage);
   if (stage === 'EXTRACT') {
     renderExtractWorkspace(runDocument, batchRun.run_id, { scroll });
+  } else if (stage === 'STANDARDIZE') {
+    renderStandardizeWorkspace(runDocument, batchRun.run_id, { scroll });
   } else if (stage === 'PROTECT') {
     renderProtectionResult(result, {
       runId: batchRun.run_id,
@@ -2271,6 +2468,10 @@ function initializeUnderstandingWorkspace() {
   getElement('clearBatchBtn').onclick = resetBatch;
   getElement('newBatchBtn').onclick = resetBatch;
   getElement('anotherBtn').onclick = () => {
+    if (activeJourneyStage === 'STANDARDIZE') {
+      showExtractStage();
+      return;
+    }
     if (activeJourneyStage === 'EXTRACT') {
       showProtectStage();
       return;

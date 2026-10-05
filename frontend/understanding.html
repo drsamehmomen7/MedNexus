@@ -199,6 +199,7 @@
               </header>
               <p class="extract-readiness" id="extractReadiness" role="status"></p>
               <button class="btn-primary" id="runClinicalExtractionBtn" type="button" disabled>Run Clinical Extraction</button>
+              <div class="standardize-next"><p>Next transformation: governed clinical terminology and measurements.</p><button class="mn-button mn-button--secondary" id="continueStandardizeBtn" type="button" disabled hidden>Continue to STANDARDIZE</button></div>
               <div class="extract-workspace">
                 <section class="extract-source" id="extractSourcePanel" aria-labelledby="extractSourceTitle" tabindex="-1">
                   <header class="extract-panel-head"><div><p class="mn-eyebrow">Source</p><h4 id="extractSourceTitle">Protected Report</h4></div><div class="extract-source-actions"><div class="protect-view-toggle" role="group" aria-label="EXTRACT protected report view"><button id="extractPdfBtn" type="button" aria-pressed="false">View PDF</button><button id="extractTextBtn" type="button" aria-pressed="true">Text View</button></div><button class="extract-close-evidence" id="extractCloseEvidenceBtn" type="button">Close report</button></div></header>
@@ -221,6 +222,17 @@
                   <div class="extract-mobile-report"><strong>Protected Report</strong><div><button id="extractMobilePdfBtn" type="button" aria-controls="extractSourcePanel" aria-expanded="false">View PDF</button><button id="extractMobileTextBtn" type="button" aria-controls="extractSourcePanel" aria-expanded="false">Text View</button></div></div>
                 </section>
               </div>
+            </article>
+            <article class="standardize-card" id="standardizeCard" aria-labelledby="standardizeTitle" tabindex="-1" hidden>
+              <header class="standardize-header"><div><p class="mn-eyebrow">Stage 04 · STANDARDIZE</p><h3 id="standardizeTitle">Clinical Standardization</h3><p id="standardizeReportName"></p></div><span class="status-badge" id="standardizeStatus">Not started</span></header>
+              <p id="standardizeMessage" role="status">Run EXTRACT before standardization.</p>
+              <div class="standardize-actions"><button class="mn-button mn-button--primary" id="runStandardizeBtn" type="button" disabled>Run Standardization</button><button class="mn-button mn-button--secondary" id="returnExtractBtn" type="button">Review EXTRACT</button></div>
+              <section class="standardize-section" id="standardizeOverview" aria-labelledby="standardizeOverviewTitle" hidden><h4 id="standardizeOverviewTitle">Standardization Overview</h4><div class="standardize-summary" id="standardizeSummary"></div></section>
+              <section class="standardize-section" id="standardizeStudySection" aria-labelledby="standardizeStudyTitle" hidden><h4 id="standardizeStudyTitle">Study Identity</h4><div id="standardizeStudy"></div></section>
+              <section class="standardize-section" id="standardizeConceptSection" aria-labelledby="standardizeConceptTitle" hidden><h4 id="standardizeConceptTitle">Clinical Concepts</h4><div id="standardizeFacts"></div></section>
+              <section class="standardize-section" id="standardizeMeasurementSection" aria-labelledby="standardizeMeasurementTitle" hidden><h4 id="standardizeMeasurementTitle">Measurements</h4><div id="standardizeMeasurements"></div></section>
+              <section class="standardize-section" id="standardizeReviewSection" aria-labelledby="standardizeReviewTitle" hidden><h4 id="standardizeReviewTitle">Review Required</h4><p id="standardizeReview"></p></section>
+              <details class="standardize-technical" id="standardizeTechnical" hidden><summary>Technical / Provenance</summary><div id="standardizeTechnicalBody"></div></details>
             </article>
           </div>
         </div>

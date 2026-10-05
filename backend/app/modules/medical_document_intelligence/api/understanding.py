@@ -335,6 +335,17 @@ def extract_journey_document(run_id: str, document_id: str) -> JSONResponse:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+@router.post("/journey-runs/{run_id}/documents/{document_id}/standardize")
+def standardize_journey_document(run_id: str, document_id: str) -> JSONResponse:
+    try:
+        journey_store.standardize_document(run_id, document_id)
+        return JSONResponse(content=journey_store.run_payload(run_id), headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 @router.post("/journey-runs/{run_id}/documents/{document_id}/compare-source")
 def get_compare_source(run_id: str, document_id: str) -> JSONResponse:
     """Return ephemeral original text only after an explicit Compare action."""

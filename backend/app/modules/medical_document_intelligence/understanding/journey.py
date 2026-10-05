@@ -667,6 +667,12 @@ class JourneyStore:
             item = self._find_document(run, document_id)
             if item.stage_status[JourneyStage.EXTRACT] is StageStatus.PROCESSING:
                 raise ValueError("Clinical extraction is already processing this report.")
+            if item.stage_status[JourneyStage.STANDARDIZE] is StageStatus.PROCESSING:
+                raise ValueError("STANDARDIZE is already processing this report.")
+            # A rerun cannot retain a Stage 04 projection of an older EXTRACT.
+            item.stage_results.pop(JourneyStage.STANDARDIZE, None)
+            item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
+            item.stage_status[JourneyStage.STANDARDIZE] = StageStatus.NOT_STARTED
             output = item.stage_results.get(JourneyStage.PROTECT, {})
             protected = output.get("protected_document", {})
             text = protected.get("protected_text", "")
@@ -692,6 +698,7 @@ class JourneyStore:
             item.stage_errors.pop(JourneyStage.EXTRACT, None)
             item.technical_error = None
             self._touch_locked(run)
+
         try:
             result = (service or ClinicalExtractionService()).extract(
                 protected_text=text, sections=sections, report_id=document_id, run_id=run_id,
@@ -716,6 +723,48 @@ class JourneyStore:
             item.stage_results[JourneyStage.EXTRACT] = result
             item.transition(JourneyStage.EXTRACT, StageStatus(result["state"]))
             run.current_stage = JourneyStage.EXTRACT
+            self._touch_locked(run)
+
+    def standardize_document(self, run_id: str, document_id: str, service=None):
+        from backend.app.modules.medical_document_intelligence.services.clinical_standardization import (
+            ClinicalStandardizationService,
+        )
+
+        with self._lock:
+            run = self._get_run_locked(run_id)
+            item = self._find_document(run, document_id)
+            if item.stage_status[JourneyStage.STANDARDIZE] is StageStatus.PROCESSING:
+                raise ValueError("STANDARDIZE is already processing this report.")
+            extract = item.stage_results.get(JourneyStage.EXTRACT)
+            if (item.stage_status[JourneyStage.EXTRACT] not in {StageStatus.COMPLETE, StageStatus.NEEDS_REVIEW}
+                    or not extract or item.context is None):
+                item.stage_results.pop(JourneyStage.STANDARDIZE, None)
+                item.transition(JourneyStage.STANDARDIZE, StageStatus.BLOCKED)
+                item.stage_errors[JourneyStage.STANDARDIZE] = "STANDARDIZE requires a completed clinical EXTRACT result."
+                self._touch_locked(run)
+                raise ValueError(item.stage_errors[JourneyStage.STANDARDIZE])
+            item.stage_results.pop(JourneyStage.STANDARDIZE, None)
+            item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
+            item.transition(JourneyStage.STANDARDIZE, StageStatus.PROCESSING)
+            self._touch_locked(run)
+            context = item.context
+        try:
+            result = (service or ClinicalStandardizationService()).standardize(extract, context)
+        except Exception:
+            with self._lock:
+                item.transition(JourneyStage.STANDARDIZE, StageStatus.FAILED)
+                item.stage_errors[JourneyStage.STANDARDIZE] = "STANDARDIZATION_RUNTIME_FAILURE"
+                self._touch_locked(run)
+            return
+        with self._lock:
+            if item.stage_results.get(JourneyStage.EXTRACT) is not extract:
+                item.transition(JourneyStage.STANDARDIZE, StageStatus.FAILED)
+                item.stage_errors[JourneyStage.STANDARDIZE] = "EXTRACT result changed during STANDARDIZE."
+                self._touch_locked(run)
+                return
+            item.stage_results[JourneyStage.STANDARDIZE] = result
+            item.transition(JourneyStage.STANDARDIZE, StageStatus(result["state"]))
+            run.current_stage = JourneyStage.STANDARDIZE
             self._touch_locked(run)
 
     def source_text_for_compare(self, run_id: str, document_id: str) -> str:

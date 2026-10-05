@@ -288,4 +288,94 @@ console.log('EXTRACT clinical synthesis UI contract passed');
   assert.equal(requests[0][1], 'POST');
   assert.equal(read('extractStageStatus').textContent, 'Needs Review');
   assert.match(read('extractFindings').textContent, /Observation A/);
+  assert.equal(read('continueStandardizeBtn').disabled, false);
+  assert.equal(read('continueStandardizeBtn').hidden, false);
+  read('continueStandardizeBtn').click();
+  assert.equal(run('activeJourneyStage'), 'STANDARDIZE');
+  assert.equal(read('standardizeCard').hidden, false);
+  assert.equal(read('extractCard').hidden, true);
+  assert.equal(read('activeStageNumber').textContent, '04');
+  assert.match(read('standardizeReportName').textContent, /one.txt/);
+  assert.equal(read('runStandardizeBtn').disabled, false);
+  facts.clinical_synthesis.canonical_facts[3].display_label = 'No diverticulum';
+  const sourceBefore = JSON.stringify(facts);
+  const standardized = {
+    report_id: 'one', state: 'NEEDS_REVIEW',
+    summary: { clinical_concepts: { total: 4, matched: 2, needs_review: 1, unmapped: 1 },
+      whole_fact_exact_mappings: 1, component_exact_mappings: 2,
+      facts_with_component_standardization: 2, facts_needing_review: 1, facts_fully_unmapped: 1,
+      anatomy: { total: 0, matched: 0, needs_review: 0, unmapped: 0 },
+      measurements: { total: 2, normalized: 2, needs_review: 0, unmapped: 0 },
+      study_identity: 'UNMAPPED' },
+    standardized_study_context: { original_exam_name: 'MRI Extremity', normalized_modality: 'MRI',
+      normalized_body_region: 'EXTREMITY', normalized_laterality: null,
+      procedure_mapping: { mapping_status: 'UNMAPPED', code: null } },
+    technical_diagnostics: { provider_versions: { RADLEX_CURRENT: '4.3', LOINC_RSNA_2_82: '2.82' } },
+    standardized_facts: [{ source_fact_id: 'canonical-1',
+      source_assertion_state: 'PRESENT',
+      concept_mappings: [{ terminology_system: 'RADLEX_CURRENT', code: 'RID1',
+        preferred_label: 'Observation A', match_type: 'EXACT_LABEL', mapping_status: 'MATCHED',
+        lookup_scope: 'WHOLE_LABEL', mapping_method: 'LOCAL_REFERENCE_EXACT' }],
+      component_mappings: [], anatomy_mappings: [], standardized_measurements: [
+        { original_text: '1.4 cm', normalized_value: '14', normalized_unit: 'mm' },
+        { original_text: '4 mm', normalized_value: '4', normalized_unit: 'mm' }] },
+    { source_fact_id: 'canonical-2', source_assertion_state: 'UNCERTAIN',
+      concept_mappings: [{ terminology_system: 'RADLEX_CURRENT', code: null,
+        mapping_status: 'NEEDS_REVIEW', match_type: 'BROADER', mapping_method: 'STRUCTURED_COMPONENTS' }],
+      component_mappings: [{ source_text: 'edema', code: 'RID4865', match_type: 'EXACT_LABEL', relationship_to_fact: 'BROADER' }],
+      anatomy_mappings: [], standardized_measurements: [] },
+    { source_fact_id: 'canonical-3', source_assertion_state: 'PRESENT',
+      concept_mappings: [{ terminology_system: 'RADLEX_CURRENT', code: null,
+        mapping_status: 'UNMAPPED', match_type: 'NONE', mapping_method: 'NO_MAPPING' }],
+      component_mappings: [], anatomy_mappings: [], standardized_measurements: [] },
+    { source_fact_id: 'canonical-4', source_assertion_state: 'ABSENT_NEGATED',
+      concept_mappings: [{ terminology_system: 'RADLEX_CURRENT', code: 'RID4817', preferred_label: 'diverticulum',
+        mapping_status: 'MATCHED', match_type: 'EXACT_LABEL', lookup_scope: 'CANONICAL_CONCEPT',
+        mapping_method: 'STRUCTURED_CANONICAL_CONCEPT' }],
+      component_mappings: [{ source_text: 'diverticulum', code: 'RID4817', match_type: 'EXACT_LABEL', relationship_to_fact: 'EXACT_CONCEPT_ASSERTION_SEPARATE' }],
+      anatomy_mappings: [], standardized_measurements: [] }],
+  };
+  context.fetch = async (url, options) => {
+    requests.push([url, options.method]);
+    assert.equal(read('standardizeStatus').textContent, 'Processing');
+    assert.equal(read('runStandardizeBtn').disabled, true);
+    return { ok: true, json: async () => ({ run_id: 'pilot-run', documents: [{ ...run('singleRun.documents[0]'),
+      stage_status: { ...run('singleRun.documents[0].stage_status'), STANDARDIZE: { status: 'NEEDS_REVIEW' } },
+      stage_results: { ...run('singleRun.documents[0].stage_results'), STANDARDIZE: standardized },
+    }] }) };
+  };
+  await read('runStandardizeBtn').click();
+  assert.equal(requests.length, 2);
+  assert.equal(requests[1][0], '/api/v1/understanding/journey-runs/pilot-run/documents/one/standardize');
+  assert.equal(requests[1][1], 'POST');
+  assert.match(read('standardizeSummary').textContent, /4 total/);
+  assert.match(read('standardizeSummary').textContent, /2 matched · 1 need review · 1 unmapped/);
+  assert.match(read('standardizeSummary').textContent, /2 exact components/);
+  assert.equal(read('standardizeOverview').hidden, false);
+  assert.equal(read('standardizeConceptSection').hidden, false);
+  assert.equal(read('standardizeStudySection').hidden, false);
+  assert.match(read('standardizeFacts').textContent, /Observation A/);
+  assert.match(read('standardizeFacts').textContent, /RID1/);
+  assert.match(read('standardizeFacts').textContent, /Clinical component: edema → RadLex RID4865/);
+  assert.match(read('standardizeFacts').textContent, /Whole expression: NEEDS REVIEW/);
+  assert.match(read('standardizeFacts').textContent, /Whole expression: UNMAPPED/);
+  assert.match(read('standardizeFacts').textContent, /No diverticulum.*Assertion: ABSENT/);
+  assert.match(read('standardizeFacts').textContent, /RID4817.*assertion remains ABSENT/);
+  assert.doesNotMatch(read('standardizeFacts').children[2].children[0].textContent, /FAILED/);
+  assert.match(read('standardizeMeasurements').textContent, /1.4 cm → 14 mm/);
+  assert.match(read('standardizeMeasurements').textContent, /4 mm → 4 mm/);
+  assert.match(read('standardizeStudy').textContent, /MRI Extremity/);
+  assert.match(read('standardizeStudy').textContent, /Procedure mapping: Unmapped/);
+  assert.equal(read('standardizeTechnical').hidden, false);
+  assert.equal(read('standardizeTechnical').attributes.open, undefined);
+  assert.match(read('standardizeTechnicalBody').textContent, /RADLEX_CURRENT 4.3/);
+  assert.equal(JSON.stringify(facts), sourceBefore, 'STANDARDIZE must not mutate EXTRACT facts');
+  assert.equal(read('railStandardize').textContent, 'Needs Review');
+  assert.match(read('stageStandardize').className, /active/);
+  assert.doesNotMatch(read('stageExtract').className, /active/);
+  read('returnExtractBtn').click();
+  assert.equal(run('activeJourneyStage'), 'EXTRACT');
+  assert.equal(read('extractCard').hidden, false);
+  assert.equal(read('standardizeCard').hidden, true);
+  assert.match(read('extractFindings').textContent, /Observation A/);
 })().catch(error => { console.error(error); process.exitCode = 1; });

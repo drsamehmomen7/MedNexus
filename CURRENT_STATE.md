@@ -1,8 +1,16 @@
 # MRJ Current State
 
-**Authoritative date:** 4 October 2026
+**Authoritative date:** 5 October 2026
 
-## Current checkpoint — R2.0C accepted and closed
+## Current checkpoint — R3.0A STANDARDIZE V0 accepted and closed
+
+**R3.0A STANDARDIZE V0: ACCEPTED / CLOSED. Human browser review: PASS. Component-aware provider correction: ACCEPTED. Stage 04 Journey UI wiring: ACCEPTED.** Stage 04 enriches accepted Radiology EXTRACT canonical facts with conservative terminology, anatomy, study-identity, and mm/cm measurement representation. It reuses activated local RadLex 4.3 and LOINC/RSNA Playbook 2.82 through the existing Reference Model, allows `UNMAPPED` without false codes, and leaves EXTRACT facts unchanged. The optional SNOMED interface includes no licensed content. The compact STANDARDIZE workspace is accepted as functional Stage 04; the final Unified Journey visual design is deferred. See [R3.0A STANDARDIZE V0](docs/design/MRJ_R3_0A_Standardize_V0.md) for the authority boundary, mapping and review contract, provenance, human acceptance, and limits.
+
+Validation at closure: **1175 backend tests passed, 8 warnings, 0 failures**; focused R3.0A and UI contract checks passed. The US_CT_07, US_X-ray_04, and IN_MRI_02 production-equivalent synthetic Journey runs retained every canonical fact and the unchanged EXTRACT result. Human browser review of IN_MRI_02 and US_X-ray_04 confirmed Stage 04 access, component-versus-whole-fact distinction, preserved negative assertion, original and normalized measurements, and return to EXTRACT. Mapping coverage remains intentionally conservative; do not optimize percentages before a downstream need is demonstrated.
+
+**Next milestone: R4.0A — ANALYZE V0.** ANALYZE will consume governed report records from the preceding Journey; it must not rediscover or reinterpret clinical facts. Initial collection-level work covers frequencies, distributions, stratification, co-occurrence, explicit eligibility/exclusions, and correct denominators. It does not make causal or population-prevalence claims without the corresponding population denominator. The platform direction remains **horizontal first, polish later** and **one platform, one Journey, multiple domain intelligence packs**; Radiology and Public Health will share the Journey shell, lifecycle, human review, batch/collection mechanics, analytics eligibility, provenance/governance, and visual identity. R4.0A and the final UX redesign are not implemented by this closure.
+
+## Accepted R2.0C checkpoint — closed
 
 **R2.0C Clinical Synthesis: ACCEPTED / CLOSED. R2.0C Cross-Radiology Generalization: ACCEPTED FOR HORIZONTAL PROGRESSION. R2.0C EXTRACT UX: ACCEPTED AS A WORKING CLINICAL SHELL.** The final Unified Journey UX is deferred until the seven-stage Journey is functionally connected. The eight-report blind Radiology holdout finished **6 PASS, 2 PARTIAL, 0 FAIL**, with zero fact collapses, no obvious noise promoted, no assertion or semantic-role errors, and no major findings missed. US_CT_07, US_X-ray_04, and IN_MRI_02 passed the regression triad; the US_CT_07 canonical projection matched its accepted hash. Final backend regression: **1131 passed, 8 warnings, 0 failures**.
 
@@ -10,7 +18,7 @@ The two partial holdouts are accepted minor recall gaps, not progression blocker
 
 The platform direction is **one platform, one Journey, multiple domain intelligence packs**. Radiology and Public Health share future Journey shell, lifecycle, review, batch/collection, provenance, analytics eligibility, and visual identity mechanisms while keeping domain-specific structured records. Every report should ultimately contain common report context/metadata plus a domain-specific structured record. The [R2.0C closure and platform direction](docs/design/MRJ_R2_0C_Clinical_Synthesis_and_EXTRACT_Experience.md) records the conceptual fields, Radiology slots, and the human-review analytics gate. No new shared schema or redesign is implemented here.
 
-**Next milestone: R3.0A — STANDARDIZE V0.** STANDARDIZE consumes accepted EXTRACT canonical facts and governs concept normalization; it must not rediscover findings. RadLex, SNOMED CT, LOINC / RSNA Radiology Playbook, and UCUM are possible references, not implemented dependencies.
+**Next milestone identified at R2.0C closure: R3.0A — STANDARDIZE V0.** Its accepted implementation is recorded above. STANDARDIZE consumes accepted EXTRACT canonical facts and must not rediscover findings.
 
 ## Historical pilot checkpoint — 29 September 2026
 
