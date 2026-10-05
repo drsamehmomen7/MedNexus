@@ -324,6 +324,12 @@ button { appearance: none; }
 .standardize-next { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 0 32px 20px; padding: 14px 18px; border: 1px solid var(--understand-border); border-radius: 12px; background: var(--understand-teal-soft); }
 .standardize-next p { margin: 0; color: var(--understand-teal-deep); font-size: .9rem; }
 .standardize-next button:disabled { opacity: .58; cursor: not-allowed; }
+.standardize-card .standardize-next { margin: 20px 0 0; }
+.standardize-card select, .standardize-card input[type="text"] { min-height: 42px; max-width: 100%; padding: 8px 10px; border: 1px solid var(--understand-border); border-radius: 8px; font: inherit; }
+.standardize-card input[type="text"] { width: min(320px, 100%); }
+.analysis-list { margin: 0; padding-left: 20px; }
+.analysis-list li { padding: 5px 0; overflow-wrap: anywhere; }
+.analysis-list small { color: var(--understand-muted); }
 .standardize-card { padding: 28px 32px; border: 1px solid var(--understand-border); border-top: 4px solid var(--understand-teal); border-radius: 22px; background: var(--understand-paper); scroll-margin-top: 100px; }
 .standardize-card h3 { margin: 4px 0 14px; font-size: clamp(1.6rem, 3vw, 2.2rem); }
 .standardize-card > p { color: var(--understand-muted); }

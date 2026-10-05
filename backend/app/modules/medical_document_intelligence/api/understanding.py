@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from backend.app.modules.medical_document_intelligence.policies.policy_profiles import resolve_policy_profile
 from backend.app.modules.medical_document_intelligence.services.deidentification import DeidentificationService
+from backend.app.modules.medical_document_intelligence.services.collection_analysis import collection_store
 from backend.app.modules.medical_document_intelligence.understanding.journey import (
     JourneyMode,
     JourneyStage,
@@ -50,6 +51,28 @@ class JourneyProtectRequest(BaseModel):
 
 class JourneyRunRequest(BaseModel):
     mode: str = Field("batch", description="Journey operating mode: single or batch.")
+
+
+class CollectionReportRef(BaseModel):
+    run_id: str
+    document_id: str
+
+
+class CollectionCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str = Field("", max_length=500)
+    report_refs: list[CollectionReportRef] = Field(..., min_length=1, max_length=20)
+
+
+class CollectionAddRequest(BaseModel):
+    report_refs: list[CollectionReportRef] = Field(..., min_length=1, max_length=20)
+
+
+class CollectionAnalyzeRequest(BaseModel):
+    collection_version: int | None = None
+    include_review_required_for_validation: bool = False
+    filters: dict[str, str | int] = Field(default_factory=dict)
+    journey_run_id: str | None = None
 
 
 def _result_payload(document, result, context, journey: dict[str, Any]) -> dict[str, Any]:
@@ -344,6 +367,75 @@ def standardize_journey_document(run_id: str, document_id: str) -> JSONResponse:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+def _collection_snapshots(refs: list[CollectionReportRef]) -> list[dict[str, Any]]:
+    return journey_store.governed_report_snapshots([(ref.run_id, ref.document_id) for ref in refs])
+
+
+@router.get("/analysis-collections")
+def list_analysis_collections() -> JSONResponse:
+    return JSONResponse(content={"collections": collection_store.list()}, headers={"Cache-Control": "no-store, private"})
+
+
+@router.post("/analysis-collections")
+def create_analysis_collection(request: CollectionCreateRequest) -> JSONResponse:
+    try:
+        result = collection_store.create(request.name, _collection_snapshots(request.report_refs),
+                                         description=request.description)
+        return JSONResponse(content=result, headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/analysis-collections/{collection_id}")
+def get_analysis_collection(collection_id: str) -> JSONResponse:
+    try:
+        collection, _ = collection_store.get(collection_id)
+        return JSONResponse(content=collection_store.metadata(collection), headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/analysis-collections/{collection_id}/reports")
+def add_analysis_collection_reports(collection_id: str, request: CollectionAddRequest) -> JSONResponse:
+    try:
+        result = collection_store.add_reports(collection_id, _collection_snapshots(request.report_refs))
+        return JSONResponse(content=result, headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/analysis-collections/{collection_id}/analyze")
+def analyze_collection_run(collection_id: str, request: CollectionAnalyzeRequest) -> JSONResponse:
+    try:
+        result = collection_store.analyze(collection_id, version=request.collection_version,
+                                          include_review_required=request.include_review_required_for_validation,
+                                          filters=request.filters)
+        if request.journey_run_id:
+            _, snapshot = collection_store.get(collection_id, result["collection_version"])
+            journey_store.attach_collection_analysis(request.journey_run_id, result,
+                {report["report_id"] for report in snapshot["reports"]})
+        return JSONResponse(content=result, headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="ANALYSIS_RUNTIME_FAILURE") from exc
+
+
+@router.get("/analysis-runs/{analysis_run_id}")
+def get_analysis_run(analysis_run_id: str) -> JSONResponse:
+    try:
+        return JSONResponse(content=collection_store.get_analysis(analysis_run_id),
+                            headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/journey-runs/{run_id}/documents/{document_id}/compare-source")

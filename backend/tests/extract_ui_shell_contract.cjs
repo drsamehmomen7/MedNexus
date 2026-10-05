@@ -378,4 +378,85 @@ console.log('EXTRACT clinical synthesis UI contract passed');
   assert.equal(read('extractCard').hidden, false);
   assert.equal(read('standardizeCard').hidden, true);
   assert.match(read('extractFindings').textContent, /Observation A/);
+  read('continueStandardizeBtn').click();
+  assert.equal(read('continueAnalyzeBtn').hidden, false);
+  const collection = { collection_id: 'c'.repeat(32), name: 'Synthetic validation collection',
+    version: 1, report_count: 1, eligible: 0, review_required: 1, excluded: 0 };
+  const metric = (label, numerator, denominator) => ({ metric_type: 'finding_report_frequency',
+    analysis_level: 'REPORT_LEVEL', display_label: label, concept_identity: `MRJ:${label}`,
+    numerator, denominator, value: numerator / denominator, anatomy: [] });
+  const analysis = { analysis_run_id: 'a'.repeat(32), collection_id: collection.collection_id,
+    collection_version: 1, collection_name: collection.name, analysis_level: 'REPORT_LEVEL',
+    generated_at: '2026-10-05T00:00:00Z', diagnostics: ['INSUFFICIENT_COMPARABLE_MEASUREMENTS'],
+    eligibility_policy: { include_review_required_for_validation: true, human_review_asserted: false },
+    collection_summary: { total_reports: 1, eligible_reports: 0, review_required_reports: 1,
+      excluded_reports: 0, included_reports: 1, included_review_required_reports: 1,
+      facts_total: 4, present_facts: 1, negative_facts: 1, uncertain_facts: 1,
+      standardized_matched: 2, standardized_review: 1, standardized_unmapped: 1 },
+    eligibility_summary: { reports: [{ report_id: 'synthetic-one', status: 'NEEDS_REVIEW',
+      reasons: ['REPORT_REVIEW_REQUIRED'] }] },
+    finding_frequencies: [metric('Observation A', 1, 1)],
+    diagnostic_hypothesis_frequencies: [{ ...metric('Hypothesis', 1, 1), assertion: 'FAVORED' }],
+    pertinent_negative_frequencies: [metric('diverticulum', 1, 1)],
+    measurement_distributions: [], measurement_coverage: { unclassified_measurements: 2 },
+    stratifications: [{ dimension: 'modality', category: 'MRI', numerator: 1, denominator: 1 }],
+    cooccurrences: [{ concept_a: 'MRJ:edema', concept_b: 'MRJ:mass', numerator: 1, denominator: 1, value: 1 }],
+    cooccurrence_presentation: { minimum_support: 2, top_n: 20, repeated_patterns: [],
+      total_valid_pairs: 1, one_off_pairs: 1 },
+    coverage_metrics: [{ field: 'modality', available: 1, missing: 0, denominator: 1 }],
+    standardization_coverage: { whole_fact_matched: 2, needs_review: 1, unmapped: 1,
+      component_mappings_available: 2, denominator_facts: 4 },
+  };
+  context.fetch = async (url, options = {}) => {
+    requests.push([url, options.method || 'GET']);
+    if (url.endsWith('/analysis-collections') && !options.method)
+      return { ok: true, json: async () => ({ collections: [] }) };
+    if (url.endsWith('/analysis-collections') && options.method === 'POST') {
+      assert.deepEqual(JSON.parse(options.body).report_refs, [{ run_id: 'pilot-run', document_id: 'one' }]);
+      return { ok: true, json: async () => collection };
+    }
+    if (url.endsWith('/analyze')) {
+      assert.equal(JSON.parse(options.body).include_review_required_for_validation, true);
+      assert.equal(read('runAnalysisBtn').disabled, true);
+      return { ok: true, json: async () => analysis };
+    }
+    if (url.endsWith('/journey-runs/pilot-run')) return { ok: true, json: async () => ({
+      ...run('singleRun'), documents: [{ ...run('singleRun.documents[0]'),
+        stage_status: { ...run('singleRun.documents[0].stage_status'), ANALYZE: { status: 'NEEDS_REVIEW' } } }] }) };
+    throw Error(`Unexpected Stage 05 request: ${url}`);
+  };
+  await read('continueAnalyzeBtn').click();
+  assert.equal(run('activeJourneyStage'), 'ANALYZE');
+  assert.equal(read('activeStageNumber').textContent, '05');
+  assert.equal(read('analyzeCard').hidden, false);
+  assert.equal(read('standardizeCard').hidden, true);
+  read('analyzeCollectionName').value = collection.name;
+  await read('createAnalysisCollectionBtn').click();
+  assert.match(read('analyzeCollectionDetails').textContent, /1 reports.*0 eligible.*1 need review/);
+  read('includeReviewAnalysis').checked = true;
+  await read('runAnalysisBtn').click();
+  assert.equal(read('railAnalyze').textContent, 'Needs Review');
+  assert.match(read('stageAnalyze').className, /active/);
+  assert.match(read('analyzeSummary').textContent, /1 included in this run/);
+  assert.match(read('analyzeEligibility').textContent, /no human review asserted/i);
+  assert.match(read('analyzeFindings').textContent, /1 \/ 1 included reports.*report frequency/);
+  assert.match(read('analyzeNegatives').textContent, /ABSENT/);
+  assert.match(read('analyzeMeasurements').textContent, /No safely comparable measurements/);
+  assert.match(read('analyzeCooccurrences').textContent, /No repeated co-occurrence patterns were observed/);
+  assert.match(read('analyzeCooccurrences').textContent, /at least 2 included reports; top 20/);
+  assert.doesNotMatch(read('analyzeCooccurrences').textContent, /MRJ:edema \+ MRJ:mass/);
+  assert.match(read('analyzeTechnicalBody').textContent, /1 valid co-occurrence pairs, including 1 one-off pairs/);
+  context.analysisFixture = { ...analysis, cooccurrence_presentation: { minimum_support: 2,
+    top_n: 20, total_valid_pairs: 2, one_off_pairs: 1, repeated_patterns: [
+      { concept_a: 'MRJ:edema', concept_b: 'MRJ:mass', numerator: 3, denominator: 8, value: 0.375 },
+    ] } };
+  run('renderAnalysisResult(analysisFixture)');
+  assert.match(read('analyzeCooccurrences').textContent, /MRJ:edema \+ MRJ:mass · 3 \/ 8 included reports \(38% report-level co-occurrence\)/);
+  assert.match(read('analyzeCoverage').textContent, /0 missing/);
+  assert.match(read('analyzeStandardization').textContent, /Component mappings are not whole-fact matches/);
+  assert.equal(read('analyzeTechnical').attributes.open, undefined);
+  assert.doesNotMatch(read('analyzeCard').textContent.toLowerCase(), /population prevalence|incidence|caused by|association/);
+  read('returnStandardizeBtn').click();
+  assert.equal(run('activeJourneyStage'), 'STANDARDIZE');
+  assert.equal(read('standardizeCard').hidden, false);
 })().catch(error => { console.error(error); process.exitCode = 1; });

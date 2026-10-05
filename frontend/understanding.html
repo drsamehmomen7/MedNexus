@@ -233,6 +233,24 @@
               <section class="standardize-section" id="standardizeMeasurementSection" aria-labelledby="standardizeMeasurementTitle" hidden><h4 id="standardizeMeasurementTitle">Measurements</h4><div id="standardizeMeasurements"></div></section>
               <section class="standardize-section" id="standardizeReviewSection" aria-labelledby="standardizeReviewTitle" hidden><h4 id="standardizeReviewTitle">Review Required</h4><p id="standardizeReview"></p></section>
               <details class="standardize-technical" id="standardizeTechnical" hidden><summary>Technical / Provenance</summary><div id="standardizeTechnicalBody"></div></details>
+              <div class="standardize-next"><p>Next transformation: report-level collection intelligence.</p><button class="mn-button mn-button--secondary" id="continueAnalyzeBtn" type="button" disabled hidden>Continue to ANALYZE</button></div>
+            </article>
+            <article class="standardize-card" id="analyzeCard" aria-labelledby="analyzeTitle" tabindex="-1" hidden>
+              <header class="standardize-header"><div><p class="mn-eyebrow">Stage 05 · ANALYZE</p><h3 id="analyzeTitle">Clinical Collection Analysis</h3><p>Report-level descriptive analysis of governed structured records.</p></div><span class="status-badge" id="analyzeStatus">Not started</span></header>
+              <p id="analyzeMessage" role="status">Select or create a report collection.</p>
+              <section class="standardize-section"><h4>Report Collection</h4><label for="analyzeCollectionSelect">Selected collection</label><select id="analyzeCollectionSelect"><option value="">Select a collection</option></select><p id="analyzeCollectionDetails"></p><div class="standardize-actions"><input id="analyzeCollectionName" type="text" maxlength="120" placeholder="Validation collection name" aria-label="New collection name"><button class="mn-button mn-button--secondary" id="createAnalysisCollectionBtn" type="button">Create from current Journey</button><button class="mn-button mn-button--secondary" id="addAnalysisReportsBtn" type="button" disabled>Add current Journey reports</button></div></section>
+              <section class="standardize-section"><h4>Analysis Policy</h4><label><input id="includeReviewAnalysis" type="checkbox"> Include review-required records for validation only</label><p>Default analysis includes only eligible records. This choice does not assert human review.</p><div class="standardize-actions"><button class="mn-button mn-button--primary" id="runAnalysisBtn" type="button" disabled>Run Collection Analysis</button><button class="mn-button mn-button--secondary" id="returnStandardizeBtn" type="button">Review STANDARDIZE</button></div></section>
+              <section class="standardize-section" id="analyzeSummarySection" hidden><h4>Collection Summary</h4><div id="analyzeSummary" class="standardize-summary"></div></section>
+              <section class="standardize-section" id="analyzeEligibilitySection" hidden><h4>Eligibility</h4><div id="analyzeEligibility"></div></section>
+              <section class="standardize-section" id="analyzeFindingsSection" hidden><h4>Finding Frequencies</h4><div id="analyzeFindings"></div></section>
+              <section class="standardize-section" id="analyzeHypothesesSection" hidden><h4>Diagnostic Considerations</h4><div id="analyzeHypotheses"></div></section>
+              <section class="standardize-section" id="analyzeNegativesSection" hidden><h4>Pertinent Negatives</h4><div id="analyzeNegatives"></div></section>
+              <section class="standardize-section" id="analyzeMeasurementsSection" hidden><h4>Measurement Distributions</h4><div id="analyzeMeasurements"></div></section>
+              <section class="standardize-section" id="analyzeStrataSection" hidden><h4>Stratification</h4><div id="analyzeStrata"></div></section>
+              <section class="standardize-section" id="analyzeCooccurrencesSection" hidden><h4>Co-occurrence</h4><div id="analyzeCooccurrences"></div></section>
+              <section class="standardize-section" id="analyzeCoverageSection" hidden><h4>Coverage / Missingness</h4><div id="analyzeCoverage"></div></section>
+              <section class="standardize-section" id="analyzeStandardizationSection" hidden><h4>Standardization Coverage</h4><div id="analyzeStandardization"></div></section>
+              <details class="standardize-technical" id="analyzeTechnical" hidden><summary>Technical / Provenance</summary><div id="analyzeTechnicalBody"></div></details>
             </article>
           </div>
         </div>

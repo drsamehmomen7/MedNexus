@@ -265,6 +265,21 @@ class JourneyStore:
             self._touch_locked(run)
             return run
 
+    def governed_report_snapshots(self, references: list[tuple[str, str]]) -> list[dict[str, Any]]:
+        """Freeze bounded Stage 04 projections while the source runs are locked."""
+        from backend.app.modules.medical_document_intelligence.services.collection_analysis import (
+            governed_report_snapshot,
+        )
+
+        with self._lock:
+            self._cleanup_locked()
+            snapshots = []
+            for run_id, document_id in references:
+                run = self._get_run_locked(run_id)
+                item = self._find_document(run, document_id)
+                snapshots.append(governed_report_snapshot(run, item))
+            return snapshots
+
     def begin_document(
         self,
         run_id: str,
@@ -673,6 +688,9 @@ class JourneyStore:
             item.stage_results.pop(JourneyStage.STANDARDIZE, None)
             item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
             item.stage_status[JourneyStage.STANDARDIZE] = StageStatus.NOT_STARTED
+            item.stage_results.pop(JourneyStage.ANALYZE, None)
+            item.stage_errors.pop(JourneyStage.ANALYZE, None)
+            item.stage_status[JourneyStage.ANALYZE] = StageStatus.NOT_STARTED
             output = item.stage_results.get(JourneyStage.PROTECT, {})
             protected = output.get("protected_document", {})
             text = protected.get("protected_text", "")
@@ -745,6 +763,9 @@ class JourneyStore:
                 raise ValueError(item.stage_errors[JourneyStage.STANDARDIZE])
             item.stage_results.pop(JourneyStage.STANDARDIZE, None)
             item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
+            item.stage_results.pop(JourneyStage.ANALYZE, None)
+            item.stage_errors.pop(JourneyStage.ANALYZE, None)
+            item.stage_status[JourneyStage.ANALYZE] = StageStatus.NOT_STARTED
             item.transition(JourneyStage.STANDARDIZE, StageStatus.PROCESSING)
             self._touch_locked(run)
             context = item.context
@@ -765,6 +786,33 @@ class JourneyStore:
             item.stage_results[JourneyStage.STANDARDIZE] = result
             item.transition(JourneyStage.STANDARDIZE, StageStatus(result["state"]))
             run.current_stage = JourneyStage.STANDARDIZE
+            self._touch_locked(run)
+
+    def attach_collection_analysis(self, run_id: str, analysis: dict[str, Any], report_ids: set[str]) -> None:
+        """Project a completed collection run onto its current Journey members."""
+        from backend.app.modules.medical_document_intelligence.services.collection_analysis import (
+            governed_report_snapshot,
+        )
+
+        with self._lock:
+            run = self._get_run_locked(run_id)
+            members = [item for item in run.documents
+                       if governed_report_snapshot(run, item)["report_id"] in report_ids]
+            if not members:
+                return
+            state = StageStatus.NEEDS_REVIEW if (
+                analysis["collection_summary"]["included_review_required_reports"]
+                or not analysis["collection_summary"]["included_reports"]) else StageStatus.COMPLETE
+            for item in members:
+                item.stage_results[JourneyStage.ANALYZE] = {
+                    "analysis_run_id": analysis["analysis_run_id"],
+                    "collection_id": analysis["collection_id"],
+                    "collection_version": analysis["collection_version"],
+                    "analysis_level": "REPORT_LEVEL",
+                    "state": state.value,
+                }
+                item.transition(JourneyStage.ANALYZE, state)
+            run.current_stage = JourneyStage.ANALYZE
             self._touch_locked(run)
 
     def source_text_for_compare(self, run_id: str, document_id: str) -> str:
