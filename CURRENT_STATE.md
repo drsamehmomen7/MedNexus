@@ -1,6 +1,14 @@
 # MRJ Current State
 
-**Authoritative date:** 5 October 2026
+**Authoritative date:** 6 October 2026
+
+## Accepted checkpoint — R5.0A VISUALIZE V0
+
+**R4.0A ANALYZE V0: CLOSED. R5.0A VISUALIZE V0: CLOSED FOR HORIZONTAL PROGRESSION. Functional/scientific acceptance: PASS. Final visual UX acceptance: DEFERRED.** Stage 06 consumes a completed R4.0A AnalysisRun as its numerical authority and persists a deterministic, source-linked VisualizationRun outside Git. The existing Journey opens a minimal VISUALIZE workspace from ANALYZE, with report-level numerator/denominator context, separate finding/hypothesis/negative views, governed measurement abstention, repeated-pattern-only co-occurrence, categorical and temporal views, coverage/missingness, standardization coverage, explicit validation-inclusion policy, and collapsed provenance. It does not read source report text or recalculate clinical metrics. The first view uses the existing 10-report R4.0A synthetic validation collection (8 explicitly included review-required reports, 2 excluded), not a new collection. See [R5.0A VISUALIZE V0](docs/design/MRJ_R5_0A_Visualize_V0.md) for the contract, panel rules, safety boundaries, and limitations.
+
+**Closure validation: 1197 backend tests passed, 8 warnings, 0 failures; Stage 06 UI contract and live responsive Journey verification passed.** The final VISUALIZE design and Unified Journey UX are **deferred until the complete seven-stage flow is functional**. Deferred platform UX debt includes overall visual hierarchy, typography and spacing, page length, stage-to-stage inconsistency, duplicated controls, collection workflow clarity, visible internal IDs and hashes, navigation, report-to-collection transition, final responsive and chart design, Seven-stage coherence, and a common Public Health/Radiology identity. These are not R5.0A functional blockers.
+
+**Next milestone: R6.0A — INDICATORS V0 (not implemented).** ANALYZE produces descriptive metrics; VISUALIZE presents them; INDICATORS will define governed measurable constructs with explicit identity, purpose, analysis level, numerator and denominator definitions, eligibility, exclusions, time window, stratification context, data coverage, provenance, and validity/readiness state. No Stage 07 behavior is implemented by this closure.
 
 ## Current implementation — R4.0A ANALYZE V0
 

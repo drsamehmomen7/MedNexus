@@ -691,6 +691,9 @@ class JourneyStore:
             item.stage_results.pop(JourneyStage.ANALYZE, None)
             item.stage_errors.pop(JourneyStage.ANALYZE, None)
             item.stage_status[JourneyStage.ANALYZE] = StageStatus.NOT_STARTED
+            item.stage_results.pop(JourneyStage.VISUALIZE, None)
+            item.stage_errors.pop(JourneyStage.VISUALIZE, None)
+            item.stage_status[JourneyStage.VISUALIZE] = StageStatus.NOT_STARTED
             output = item.stage_results.get(JourneyStage.PROTECT, {})
             protected = output.get("protected_document", {})
             text = protected.get("protected_text", "")
@@ -766,6 +769,9 @@ class JourneyStore:
             item.stage_results.pop(JourneyStage.ANALYZE, None)
             item.stage_errors.pop(JourneyStage.ANALYZE, None)
             item.stage_status[JourneyStage.ANALYZE] = StageStatus.NOT_STARTED
+            item.stage_results.pop(JourneyStage.VISUALIZE, None)
+            item.stage_errors.pop(JourneyStage.VISUALIZE, None)
+            item.stage_status[JourneyStage.VISUALIZE] = StageStatus.NOT_STARTED
             item.transition(JourneyStage.STANDARDIZE, StageStatus.PROCESSING)
             self._touch_locked(run)
             context = item.context
@@ -804,6 +810,9 @@ class JourneyStore:
                 analysis["collection_summary"]["included_review_required_reports"]
                 or not analysis["collection_summary"]["included_reports"]) else StageStatus.COMPLETE
             for item in members:
+                item.stage_results.pop(JourneyStage.VISUALIZE, None)
+                item.stage_errors.pop(JourneyStage.VISUALIZE, None)
+                item.stage_status[JourneyStage.VISUALIZE] = StageStatus.NOT_STARTED
                 item.stage_results[JourneyStage.ANALYZE] = {
                     "analysis_run_id": analysis["analysis_run_id"],
                     "collection_id": analysis["collection_id"],
@@ -813,6 +822,30 @@ class JourneyStore:
                 }
                 item.transition(JourneyStage.ANALYZE, state)
             run.current_stage = JourneyStage.ANALYZE
+            self._touch_locked(run)
+
+    def attach_collection_visualization(self, run_id: str, visualization: dict[str, Any]) -> None:
+        """Attach Stage 06 only to Journey documents bearing its exact AnalysisRun."""
+        with self._lock:
+            run = self._get_run_locked(run_id)
+            members = [item for item in run.documents if
+                       item.stage_results.get(JourneyStage.ANALYZE, {}).get("analysis_run_id")
+                       == visualization["analysis_run_id"]]
+            if not members:
+                return
+            summary = visualization["collection_summary"]
+            state = StageStatus.NEEDS_REVIEW if (summary["included_review_required_reports"]
+                                                 or not summary["included_reports"]) else StageStatus.COMPLETE
+            for item in members:
+                item.stage_results[JourneyStage.VISUALIZE] = {
+                    "visualization_run_id": visualization["visualization_run_id"],
+                    "analysis_run_id": visualization["analysis_run_id"],
+                    "collection_id": visualization["collection_id"],
+                    "collection_version": visualization["collection_version"],
+                    "state": state.value,
+                }
+                item.transition(JourneyStage.VISUALIZE, state)
+            run.current_stage = JourneyStage.VISUALIZE
             self._touch_locked(run)
 
     def source_text_for_compare(self, run_id: str, document_id: str) -> str:

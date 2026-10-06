@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from backend.app.modules.medical_document_intelligence.policies.policy_profiles import resolve_policy_profile
 from backend.app.modules.medical_document_intelligence.services.deidentification import DeidentificationService
 from backend.app.modules.medical_document_intelligence.services.collection_analysis import collection_store
+from backend.app.modules.medical_document_intelligence.services.collection_visualization import visualization_store
 from backend.app.modules.medical_document_intelligence.understanding.journey import (
     JourneyMode,
     JourneyStage,
@@ -72,6 +73,10 @@ class CollectionAnalyzeRequest(BaseModel):
     collection_version: int | None = None
     include_review_required_for_validation: bool = False
     filters: dict[str, str | int] = Field(default_factory=dict)
+    journey_run_id: str | None = None
+
+
+class VisualizationRequest(BaseModel):
     journey_run_id: str | None = None
 
 
@@ -433,6 +438,30 @@ def analyze_collection_run(collection_id: str, request: CollectionAnalyzeRequest
 def get_analysis_run(analysis_run_id: str) -> JSONResponse:
     try:
         return JSONResponse(content=collection_store.get_analysis(analysis_run_id),
+                            headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/analysis-runs/{analysis_run_id}/visualize")
+def visualize_analysis_run(analysis_run_id: str, request: VisualizationRequest) -> JSONResponse:
+    try:
+        result = visualization_store.create(analysis_run_id)
+        if request.journey_run_id:
+            journey_store.attach_collection_visualization(request.journey_run_id, result)
+        return JSONResponse(content=result, headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="VISUALIZATION_RUNTIME_FAILURE") from exc
+
+
+@router.get("/visualization-runs/{visualization_run_id}")
+def get_visualization_run(visualization_run_id: str) -> JSONResponse:
+    try:
+        return JSONResponse(content=visualization_store.get(visualization_run_id),
                             headers={"Cache-Control": "no-store, private"})
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

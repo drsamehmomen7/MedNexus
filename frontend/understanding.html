@@ -7,7 +7,7 @@
   <title>Document Understanding Workspace — MRJ</title>
   <meta name="description" content="MRJ Medical Document Understanding and Recognition.">
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
-  <link rel="stylesheet" href="/understanding-styles.css">
+  <link rel="stylesheet" href="/understanding-styles.css?v=r5-0a">
   <link rel="stylesheet" href="/static/mrj-brand.css">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
@@ -251,6 +251,16 @@
               <section class="standardize-section" id="analyzeCoverageSection" hidden><h4>Coverage / Missingness</h4><div id="analyzeCoverage"></div></section>
               <section class="standardize-section" id="analyzeStandardizationSection" hidden><h4>Standardization Coverage</h4><div id="analyzeStandardization"></div></section>
               <details class="standardize-technical" id="analyzeTechnical" hidden><summary>Technical / Provenance</summary><div id="analyzeTechnicalBody"></div></details>
+              <div class="standardize-next"><p>Next presentation: governed views of this AnalysisRun.</p><button class="mn-button mn-button--secondary" id="continueVisualizeBtn" type="button" disabled hidden>Continue to VISUALIZE</button></div>
+            </article>
+            <article class="standardize-card" id="visualizeCard" aria-labelledby="visualizeTitle" tabindex="-1" hidden>
+              <header class="standardize-header"><div><p class="mn-eyebrow">Stage 06 · VISUALIZE</p><h3 id="visualizeTitle">Clinical Collection Visualization</h3><p>Descriptive views of the completed AnalysisRun.</p></div><span class="status-badge" id="visualizeStatus">Not started</span></header>
+              <p id="visualizeMessage" role="status">Run ANALYZE before visualization.</p>
+              <p id="visualizeContext"></p>
+              <p id="visualizePolicy" class="visualize-policy"></p>
+              <div class="standardize-actions"><button class="mn-button mn-button--secondary" id="returnAnalyzeBtn" type="button">Review ANALYZE</button></div>
+              <div id="visualizePanels" class="visualize-panels"></div>
+              <details class="standardize-technical" id="visualizeTechnical" hidden><summary>Visualization Provenance</summary><div id="visualizeTechnicalBody"></div></details>
             </article>
           </div>
         </div>

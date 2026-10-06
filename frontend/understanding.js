@@ -35,6 +35,9 @@ let analysisCollection = null;
 let analysisResult = null;
 let analysisBusy = false;
 let analysisError = '';
+let visualizationResult = null;
+let visualizationBusy = false;
+let visualizationError = '';
 
 const LABELS = {
   UNKNOWN: 'Not determined', NEEDS_REVIEW: 'Needs Review', NOT_STARTED: 'Not Started',
@@ -258,6 +261,8 @@ function setWorkflowMode(nextMode) {
   resetCompareView();
   analysisResult = null;
   analysisError = '';
+  visualizationResult = null;
+  visualizationError = '';
   workflowMode = nextMode;
   activeJourneyStage = 'UNDERSTAND';
   const singleActive = nextMode === 'single';
@@ -1144,20 +1149,24 @@ function updateActiveStagePresentation() {
   const extractActive = activeJourneyStage === 'EXTRACT';
   const standardizeActive = activeJourneyStage === 'STANDARDIZE';
   const analyzeActive = activeJourneyStage === 'ANALYZE';
-  getElement('results').classList.toggle('extract-view', extractActive || standardizeActive || analyzeActive);
-  getElement('activeStageNumber').textContent = analyzeActive ? '05' : standardizeActive ? '04' : extractActive ? '03' : protectActive ? '02' : '01';
+  const visualizeActive = activeJourneyStage === 'VISUALIZE';
+  getElement('results').classList.toggle('extract-view', extractActive || standardizeActive || analyzeActive || visualizeActive);
+  getElement('activeStageNumber').textContent = visualizeActive ? '06' : analyzeActive ? '05' : standardizeActive ? '04' : extractActive ? '03' : protectActive ? '02' : '01';
   getElement('activeStageName').textContent = activeJourneyStage;
-  getElement('activeStageDescription').textContent = analyzeActive ? 'Report-level collection intelligence'
+  getElement('activeStageDescription').textContent = visualizeActive ? 'Governed collection views'
+    : analyzeActive ? 'Report-level collection intelligence'
     : standardizeActive ? 'Governed clinical representation'
     : extractActive ? 'Clinical extraction workspace'
     : protectActive ? 'Purpose-based privacy protection' : 'Document identity and context';
-  getElement('resultsEyebrow').textContent = analyzeActive ? 'Collection Analysis Workspace'
+  getElement('resultsEyebrow').textContent = visualizeActive ? 'Visualization Workspace'
+    : analyzeActive ? 'Collection Analysis Workspace'
     : standardizeActive ? 'Standardization Workspace'
     : extractActive ? 'Extraction Workspace' : protectActive ? 'Protection Result' : 'Report Result';
-  getElement('resultsTitle').textContent = analyzeActive ? 'Review collection analysis'
+  getElement('resultsTitle').textContent = visualizeActive ? 'Review clinical visualizations'
+    : analyzeActive ? 'Review collection analysis'
     : standardizeActive ? 'Review standardized facts'
     : extractActive ? 'Review clinical extraction' : protectActive ? 'What MRJ protected' : 'What MRJ understood';
-  getElement('anotherBtn').textContent = analyzeActive ? 'Review STANDARDIZE' : standardizeActive ? 'Review EXTRACT' : extractActive ? 'Review PROTECT' : protectActive
+  getElement('anotherBtn').textContent = visualizeActive ? 'Review ANALYZE' : analyzeActive ? 'Review STANDARDIZE' : standardizeActive ? 'Review EXTRACT' : extractActive ? 'Review PROTECT' : protectActive
     ? 'Review UNDERSTAND' : workflowMode === 'batch' ? 'Back to batch overview' : 'Analyze another report';
 }
 
@@ -1250,6 +1259,7 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
   getElement('extractCard').hidden = false;
   getElement('standardizeCard').hidden = true;
   getElement('analyzeCard').hidden = true;
+  getElement('visualizeCard').hidden = true;
   closeExtractSource();
   getElement('extractViewEvidenceBtn').onclick = event => openExtractSource('text', event.currentTarget);
   getElement('extractCloseEvidenceBtn').onclick = closeExtractSource;
@@ -1376,6 +1386,7 @@ function renderStandardizeWorkspace(runDocument, runId = null, options = {}) {
   getElement('extractCard').hidden = true;
   getElement('standardizeCard').hidden = false;
   getElement('analyzeCard').hidden = true;
+  getElement('visualizeCard').hidden = true;
   getElement('standardizeReportName').textContent = runDocument?.original_filename || 'Retained report';
   getElement('standardizeStatus').className = `status-badge ${statusClass(state)}`;
   getElement('standardizeStatus').textContent = label(state);
@@ -1629,6 +1640,7 @@ function renderAnalyzeWorkspace(scroll = true) {
   updateActiveStagePresentation();
   ['reportCard', 'protectionCard', 'extractCard', 'standardizeCard'].forEach(id => { getElement(id).hidden = true; });
   getElement('analyzeCard').hidden = false;
+  getElement('visualizeCard').hidden = true;
   const select = getElement('analyzeCollectionSelect');
   select.replaceChildren();
   const first = makeElement('option');
@@ -1646,6 +1658,8 @@ function renderAnalyzeWorkspace(scroll = true) {
     analysisCollection = analysisCollections.find(item => item.collection_id === select.value) || null;
     analysisResult = null;
     analysisError = '';
+    visualizationResult = null;
+    visualizationError = '';
     renderAnalyzeWorkspace(false);
   };
   getElement('analyzeCollectionDetails').textContent = analysisCollection
@@ -1661,6 +1675,10 @@ function renderAnalyzeWorkspace(scroll = true) {
       : 'No eligible reports for this analysis policy.'
     : 'Select or create a report collection, then run a conservative or explicit validation analysis.');
   getElement('runAnalysisBtn').disabled = analysisBusy || !analysisCollection;
+  const visualizeNext = getElement('continueVisualizeBtn');
+  visualizeNext.hidden = !analysisResult;
+  visualizeNext.disabled = analysisBusy || !analysisResult;
+  visualizeNext.onclick = openVisualizeWorkspace;
   getElement('createAnalysisCollectionBtn').disabled = analysisBusy || !currentAnalysisRefs().length;
   getElement('addAnalysisReportsBtn').disabled = analysisBusy || !analysisCollection || !currentAnalysisRefs().length;
   getElement('returnStandardizeBtn').onclick = showStandardizeStage;
@@ -1703,6 +1721,7 @@ async function createAnalysisCollection() {
     analysisCollection = await responsePayload(response, 'Collection could not be created.');
     analysisCollections.unshift(analysisCollection);
     analysisResult = null;
+    visualizationResult = null;
   } catch (error) {
     analysisError = error.message || 'Collection could not be created.';
   } finally { analysisBusy = false; renderAnalyzeWorkspace(false); }
@@ -1721,6 +1740,7 @@ async function addAnalysisReports() {
     analysisCollection = await responsePayload(response, 'Reports could not be added.');
     analysisCollections = analysisCollections.map(item => item.collection_id === analysisCollection.collection_id ? analysisCollection : item);
     analysisResult = null;
+    visualizationResult = null;
   } catch (error) {
     analysisError = error.message || 'Reports could not be added.';
   } finally { analysisBusy = false; renderAnalyzeWorkspace(false); }
@@ -1740,6 +1760,8 @@ async function runCollectionAnalysis() {
         journey_run_id: run?.run_id || null }),
     });
     analysisResult = await responsePayload(response, 'Collection analysis failed.');
+    visualizationResult = null;
+    visualizationError = '';
     if (run) {
       const updated = await fetch(`/api/v1/understanding/journey-runs/${encodeURIComponent(run.run_id)}`, { cache: 'no-store' });
       const payload = await responsePayload(updated, 'Journey status could not be refreshed.');
@@ -1748,6 +1770,204 @@ async function runCollectionAnalysis() {
   } catch (error) {
     analysisError = error.message || 'Collection analysis failed.';
   } finally { analysisBusy = false; renderAnalyzeWorkspace(false); }
+}
+
+function visualizationPercent(value) {
+  return `${(value * 100).toFixed(1).replace(/\.0$/, '')}%`;
+}
+
+function visualizationLabel(panel, row) {
+  if (['top_findings', 'diagnostic_considerations', 'pertinent_negatives'].includes(panel.panel_id)) {
+    const anatomy = row.anatomy?.length ? ` · ${row.anatomy.join(', ')}` : '';
+    const laterality = row.laterality && row.laterality !== 'MISSING' ? ` · ${row.laterality}` : '';
+    const identity = row.concept_identity ? ` · ${row.concept_identity}` : '';
+    const label = panel.panel_id === 'diagnostic_considerations'
+      ? `${row.display_label} · ${row.assertion} diagnostic consideration`
+      : panel.panel_id === 'pertinent_negatives' ? `Documented absence: ${row.display_label}` : row.display_label;
+    return `${label}${identity}${anatomy}${laterality}`;
+  }
+  if (panel.panel_id === 'cooccurrence') return `${row.concept_a} + ${row.concept_b}`;
+  if (panel.panel_id === 'coverage') return row.field;
+  return `${row.dimension}: ${row.category}`;
+}
+
+function renderVisualizationBars(panel, target) {
+  const limit = panel.default_display_limit || panel.data.length;
+  const appendRows = (rows, parent) => {
+    const list = makeElement('ol');
+    rows.forEach(row => {
+      const item = makeElement('li');
+      const numerator = panel.panel_id === 'coverage' ? row.available : row.numerator;
+      const detail = panel.panel_id === 'coverage'
+        ? `${numerator} / ${row.denominator} included reports available · ${row.missing} missing · ${visualizationPercent(row.value)}`
+        : `${numerator} / ${row.denominator} included reports · ${visualizationPercent(row.value)}`;
+      const label = makeElement('span');
+      label.textContent = `${visualizationLabel(panel, row)} · ${detail}`;
+      const bar = makeElement('progress');
+      bar.max = 1;
+      bar.value = row.value;
+      bar.setAttribute('aria-label', `${visualizationLabel(panel, row)}: ${detail}; scale starts at zero`);
+      item.append(label, bar);
+      list.append(item);
+    });
+    parent.append(list);
+  };
+  appendRows(panel.data.slice(0, limit), target);
+  if (panel.data.length > limit) {
+    const more = makeElement('details');
+    const summary = makeElement('summary');
+    summary.textContent = `Show ${panel.data.length - limit} more analysis rows`;
+    more.append(summary);
+    appendRows(panel.data.slice(limit), more);
+    target.append(more);
+  }
+}
+
+function renderVisualizationTable(panel, target) {
+  const wrap = makeElement('div');
+  wrap.className = 'visualize-table-wrap';
+  const table = makeElement('table');
+  table.className = 'visualize-table';
+  const rows = panel.data.map(row => {
+    if (panel.panel_id === 'collection_snapshot') return [
+      ['Collection reports', row.total_reports], ['Included reports', row.included_reports],
+      ['Excluded reports', row.excluded_reports], ['Review-required reports', row.review_required_reports],
+      ['Included review-required reports', row.included_review_required_reports],
+      ['Canonical facts', row.facts_total],
+    ];
+    if (panel.panel_id === 'standardization') return [
+      ['Whole-fact MATCHED', row.whole_fact_matched], ['NEEDS_REVIEW', row.needs_review],
+      ['UNMAPPED', row.unmapped], ['Canonical fact denominator', row.denominator_facts],
+      ['Component mappings available (separate)', row.component_mappings_available],
+    ];
+    return [[`${row.concept_identity} · ${row.measurement_type} (${row.dimension})`,
+      `${row.sample_count} comparable measurements · min ${row.minimum}, max ${row.maximum}, mean ${row.mean}, median ${row.median} ${row.normalized_unit} · ${row.numerator} / ${row.denominator} included reports`]];
+  }).flat();
+  rows.forEach(([label, value]) => {
+    const tr = makeElement('tr');
+    const th = makeElement('th');
+    th.textContent = label;
+    const td = makeElement('td');
+    td.textContent = value;
+    tr.append(th, td);
+    table.append(tr);
+  });
+  wrap.append(table);
+  target.append(wrap);
+}
+
+function renderVisualizationLine(panel, target) {
+  const svg = globalThis.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('visualize-line');
+  svg.setAttribute('viewBox', '0 0 420 180');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', panel.accessibility_description);
+  const baseline = globalThis.document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  [['x1', '20'], ['y1', '160'], ['x2', '400'], ['y2', '160'], ['stroke', 'currentColor']]
+    .forEach(([key, value]) => baseline.setAttribute(key, value));
+  svg.append(baseline);
+  const path = globalThis.document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  const points = panel.data.map((row, index) => {
+    const x = 20 + index * 380 / (panel.data.length - 1);
+    const y = 160 - row.value * 140;
+    return `${x},${y}`;
+  });
+  path.setAttribute('points', points.join(' '));
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-width', '3');
+  svg.append(path);
+  target.append(svg);
+  const list = makeElement('ol');
+  panel.data.forEach(row => {
+    const item = makeElement('li');
+    item.textContent = `${row.category}: ${row.numerator} / ${row.denominator} included reports · ${visualizationPercent(row.value)}`;
+    list.append(item);
+  });
+  target.append(list);
+}
+
+function renderVisualizationPanel(panel) {
+  const section = makeElement('section');
+  section.className = 'visualize-panel';
+  section.setAttribute('aria-label', panel.title);
+  const title = makeElement('h4');
+  title.textContent = panel.title;
+  const subtitle = makeElement('p');
+  subtitle.textContent = panel.subtitle;
+  const description = makeElement('p');
+  description.textContent = panel.accessibility_description;
+  section.append(title, subtitle, description);
+  if (!panel.data.length) {
+    const empty = makeElement('p');
+    empty.textContent = panel.empty_state;
+    section.append(empty);
+  } else if (panel.visualization_type === 'LINE') renderVisualizationLine(panel, section);
+  else if (panel.visualization_type === 'TABLE' || panel.visualization_type === 'SUMMARY_METRIC')
+    renderVisualizationTable(panel, section);
+  else renderVisualizationBars(panel, section);
+  return section;
+}
+
+function renderVisualizeWorkspace(scroll = true) {
+  activeJourneyStage = 'VISUALIZE';
+  prepareResultsWorkspace(false);
+  updateActiveStagePresentation();
+  ['reportCard', 'protectionCard', 'extractCard', 'standardizeCard', 'analyzeCard']
+    .forEach(id => { getElement(id).hidden = true; });
+  getElement('visualizeCard').hidden = false;
+  getElement('visualizeStatus').textContent = visualizationBusy ? 'Processing'
+    : visualizationResult ? visualizationResult.collection_summary.included_review_required_reports
+      || !visualizationResult.collection_summary.included_reports ? 'Needs Review' : 'Complete' : 'Not Started';
+  getElement('visualizeMessage').textContent = visualizationError || (visualizationBusy
+    ? 'Preparing governed visualization…' : visualizationResult
+      ? 'Values shown below come from the referenced AnalysisRun.' : 'Run ANALYZE before visualization.');
+  const result = visualizationResult;
+  getElement('visualizeContext').textContent = result
+    ? `${result.collection_name} · version ${result.collection_version} · AnalysisRun ${result.analysis_run_id} · ${result.collection_summary.included_reports} included reports`
+    : '';
+  getElement('visualizePolicy').textContent = result
+    ? result.analysis_policy.include_review_required_for_validation
+      ? `Validation inclusion: ${result.collection_summary.included_review_required_reports} review-required reports explicitly included. This does not imply human review. Filters: ${JSON.stringify(result.analysis_policy.filters)}.`
+      : `Conservative policy: eligible reports only. Filters: ${JSON.stringify(result.analysis_policy.filters)}.`
+    : '';
+  const panels = getElement('visualizePanels');
+  panels.replaceChildren();
+  if (result) result.panels.forEach(panel => panels.append(renderVisualizationPanel(panel)));
+  getElement('visualizeTechnical').hidden = !result;
+  getElement('visualizeTechnicalBody').textContent = result
+    ? `VisualizationRun ${result.visualization_run_id} · AnalysisRun ${result.analysis_run_id} · Collection ${result.collection_id} v${result.collection_version} · Generated at ${result.generated_at} (${result.generated_at_basis}) · Policy ${JSON.stringify(result.analysis_policy)}`
+    : '';
+  getElement('returnAnalyzeBtn').onclick = () => renderAnalyzeWorkspace(false);
+  getElement('results').classList.add('show');
+  updateJourneyRail(currentAnalysisJourney());
+  if (scroll) getElement('visualizeCard').scrollIntoView({ behavior: 'auto', block: 'start' });
+}
+
+async function openVisualizeWorkspace() {
+  if (!analysisResult || visualizationBusy) return;
+  if (visualizationResult?.analysis_run_id === analysisResult.analysis_run_id) {
+    renderVisualizeWorkspace();
+    return;
+  }
+  visualizationError = '';
+  visualizationBusy = true;
+  renderVisualizeWorkspace();
+  try {
+    const run = currentAnalysisJourney();
+    const response = await fetch(`/api/v1/understanding/analysis-runs/${encodeURIComponent(analysisResult.analysis_run_id)}/visualize`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+      body: JSON.stringify({ journey_run_id: run?.run_id || null }),
+    });
+    visualizationResult = await responsePayload(response, 'Visualization could not be prepared.');
+    if (run) {
+      const updated = await fetch(`/api/v1/understanding/journey-runs/${encodeURIComponent(run.run_id)}`, { cache: 'no-store' });
+      const payload = await responsePayload(updated, 'Journey status could not be refreshed.');
+      if (workflowMode === 'batch') batchRun = payload; else singleRun = payload;
+    }
+  } catch (error) {
+    visualizationError = error.message || 'Visualization could not be prepared.';
+  } finally { visualizationBusy = false; renderVisualizeWorkspace(false); }
 }
 
 function showStandardizeStage() {
@@ -1788,6 +2008,7 @@ function renderProtectionResult(payload, options = {}) {
   getElement('extractCard').hidden = true;
   getElement('standardizeCard').hidden = true;
   getElement('analyzeCard').hidden = true;
+  getElement('visualizeCard').hidden = true;
   getElement('protectionCard').className = `protection-card ${statusClass(model.state)}`;
   getElement('protectReportNumber').textContent = options.number
     ? `Report ${String(options.number).padStart(2, '0')}`
@@ -1901,6 +2122,7 @@ function renderReportResult(payload, options = {}) {
   getElement('extractCard').hidden = true;
   getElement('standardizeCard').hidden = true;
   getElement('analyzeCard').hidden = true;
+  getElement('visualizeCard').hidden = true;
   getElement('reportCard').className = `report-card ${statusClass(model.state)}`;
   getElement('reportNumber').textContent = options.number ? `Report ${String(options.number).padStart(2, '0')}` : 'Report';
   getElement('resultFileName').textContent = model.filename;
@@ -1978,6 +2200,8 @@ async function analyzeSingle() {
     activeJourneyStage = 'UNDERSTAND';
     analysisResult = null;
     analysisError = '';
+    visualizationResult = null;
+    visualizationError = '';
     singleRun = null;
     getElement('analyzeBtn').disabled = true;
     getElement('status').textContent = 'Analyzing report…';
@@ -2201,6 +2425,8 @@ async function analyzeBatch() {
   activeJourneyStage = 'UNDERSTAND';
   analysisResult = null;
   analysisError = '';
+  visualizationResult = null;
+  visualizationError = '';
   batchProcessing = true;
   batchRun = null;
   selectedBatchDocumentId = null;
@@ -2615,7 +2841,11 @@ function updateJourneyRail(run = null, context = null) {
           })),
         }
       : run;
-    const display = stage === 'ANALYZE' && analysisResult
+    const display = stage === 'VISUALIZE' && visualizationResult
+      ? { label: visualizationResult.collection_summary.included_review_required_reports || !visualizationResult.collection_summary.included_reports
+        ? 'Needs Review' : 'Complete', state: visualizationResult.collection_summary.included_review_required_reports || !visualizationResult.collection_summary.included_reports
+        ? 'NEEDS_REVIEW' : 'COMPLETE' }
+      : stage === 'ANALYZE' && analysisResult
       ? { label: analysisResult.collection_summary.included_review_required_reports || !analysisResult.collection_summary.included_reports
         ? 'Needs Review' : 'Complete', state: analysisResult.collection_summary.included_review_required_reports || !analysisResult.collection_summary.included_reports
         ? 'NEEDS_REVIEW' : 'COMPLETE' }
@@ -2630,6 +2860,8 @@ function resetBatch() {
   resetCompareView();
   analysisResult = null;
   analysisError = '';
+  visualizationResult = null;
+  visualizationError = '';
   releaseExtractArtifact();
   batchEntries = [];
   batchRun = null;
@@ -2715,6 +2947,10 @@ function initializeUnderstandingWorkspace() {
   getElement('addAnalysisReportsBtn').onclick = addAnalysisReports;
   getElement('runAnalysisBtn').onclick = runCollectionAnalysis;
   getElement('anotherBtn').onclick = () => {
+    if (activeJourneyStage === 'VISUALIZE') {
+      renderAnalyzeWorkspace(false);
+      return;
+    }
     if (activeJourneyStage === 'ANALYZE') {
       showStandardizeStage();
       return;

@@ -54,7 +54,8 @@ for (const match of html.matchAll(/<([a-z][a-z0-9]*)\b([^>]*\bid="([^"]+)"[^>]*)
 const read = id => { assert(nodes.has(id), `missing page ID ${id}`); return nodes.get(id); };
 const requests = [];
 const context = vm.createContext({
-  document: { getElementById: read, createElement: tag => new Element(tag) },
+  document: { getElementById: read, createElement: tag => new Element(tag),
+    createElementNS: (_namespace, tag) => new Element(tag) },
   fetch: async (url, options = {}) => { requests.push([url, options.method || 'GET']); throw Error('No extraction endpoint exists'); },
   URL: { revokeObjectURL() {}, createObjectURL() { throw Error('No PDF test asset'); } },
 });
@@ -407,6 +408,41 @@ console.log('EXTRACT clinical synthesis UI contract passed');
     standardization_coverage: { whole_fact_matched: 2, needs_review: 1, unmapped: 1,
       component_mappings_available: 2, denominator_facts: 4 },
   };
+  const vizPanel = (panel_id, title, visualization_type, data, empty_state = null) => ({
+    panel_id, title, visualization_type, data, empty_state, subtitle: `${title} source values`,
+    accessibility_description: `${title} textual description`, default_display_limit: 10,
+  });
+  const visualization = { visualization_run_id: 'v'.repeat(32), analysis_run_id: analysis.analysis_run_id,
+    collection_id: collection.collection_id, collection_version: 1, collection_name: collection.name,
+    generated_at: '2026-10-05T00:00:00Z', generated_at_basis: 'ANALYSIS_RUN_GENERATED_AT',
+    analysis_policy: { include_review_required_for_validation: true, human_review_asserted: false, filters: {} },
+    collection_summary: { included_reports: 1, included_review_required_reports: 1 },
+    panels: [
+      vizPanel('collection_snapshot', 'Collection Snapshot', 'SUMMARY_METRIC', [{ total_reports: 1,
+        included_reports: 1, excluded_reports: 0, review_required_reports: 1,
+        included_review_required_reports: 1, facts_total: 4 }]),
+      vizPanel('top_findings', 'Top Findings', 'HORIZONTAL_BAR', [{ display_label: 'Observation A',
+        concept_identity: 'MRJ:Observation A', anatomy: [], laterality: 'MISSING',
+        numerator: 1, denominator: 1, value: 1 }]),
+      vizPanel('diagnostic_considerations', 'Diagnostic Considerations', 'HORIZONTAL_BAR', [
+        { display_label: 'Hypothesis', assertion: 'FAVORED', numerator: 1, denominator: 1, value: 1 }]),
+      vizPanel('pertinent_negatives', 'Pertinent Negatives', 'HORIZONTAL_BAR', [
+        { display_label: 'diverticulum', numerator: 1, denominator: 1, value: 1 }]),
+      vizPanel('measurements', 'Measurements', 'TABLE', [],
+        'INSUFFICIENT_COMPARABLE_MEASUREMENTS: No safely comparable measurement distributions.'),
+      vizPanel('stratification', 'Stratification', 'HORIZONTAL_BAR', [
+        { dimension: 'modality', category: 'MRI', numerator: 1, denominator: 1, value: 1 }]),
+      vizPanel('temporal', 'Report Year', 'TABLE', [],
+        'MISSING_TEMPORAL_DATA: No comparable report-year series is available.'),
+      vizPanel('cooccurrence', 'Co-occurrence', 'HORIZONTAL_BAR', [],
+        'No repeated co-occurrence patterns were observed in this collection.'),
+      vizPanel('coverage', 'Data Coverage', 'COVERAGE_BAR', [
+        { field: 'modality', available: 0, missing: 1, denominator: 1, value: 0 }]),
+      vizPanel('standardization', 'Standardization Coverage', 'TABLE', [{ whole_fact_matched: 2,
+        needs_review: 1, unmapped: 1, denominator_facts: 4, component_mappings_available: 2 }]),
+    ],
+  };
+  let visualized = false;
   context.fetch = async (url, options = {}) => {
     requests.push([url, options.method || 'GET']);
     if (url.endsWith('/analysis-collections') && !options.method)
@@ -420,9 +456,15 @@ console.log('EXTRACT clinical synthesis UI contract passed');
       assert.equal(read('runAnalysisBtn').disabled, true);
       return { ok: true, json: async () => analysis };
     }
+    if (url.endsWith('/visualize')) {
+      assert.equal(JSON.parse(options.body).journey_run_id, 'pilot-run');
+      visualized = true;
+      return { ok: true, json: async () => visualization };
+    }
     if (url.endsWith('/journey-runs/pilot-run')) return { ok: true, json: async () => ({
       ...run('singleRun'), documents: [{ ...run('singleRun.documents[0]'),
-        stage_status: { ...run('singleRun.documents[0].stage_status'), ANALYZE: { status: 'NEEDS_REVIEW' } } }] }) };
+        stage_status: { ...run('singleRun.documents[0].stage_status'), ANALYZE: { status: 'NEEDS_REVIEW' },
+          VISUALIZE: { status: visualized ? 'NEEDS_REVIEW' : 'NOT_STARTED' } } }] }) };
     throw Error(`Unexpected Stage 05 request: ${url}`);
   };
   await read('continueAnalyzeBtn').click();
@@ -456,6 +498,59 @@ console.log('EXTRACT clinical synthesis UI contract passed');
   assert.match(read('analyzeStandardization').textContent, /Component mappings are not whole-fact matches/);
   assert.equal(read('analyzeTechnical').attributes.open, undefined);
   assert.doesNotMatch(read('analyzeCard').textContent.toLowerCase(), /population prevalence|incidence|caused by|association/);
+  assert.equal(read('continueVisualizeBtn').hidden, false);
+  await read('continueVisualizeBtn').click();
+  assert.equal(run('activeJourneyStage'), 'VISUALIZE');
+  assert.equal(read('activeStageNumber').textContent, '06');
+  assert.equal(read('visualizeCard').hidden, false);
+  assert.equal(read('analyzeCard').hidden, true);
+  assert.match(read('railVisualize').textContent, /Needs Review/);
+  assert.match(read('visualizeContext').textContent, /Synthetic validation collection.*version 1.*AnalysisRun/);
+  assert.match(read('visualizePolicy').textContent, /1 review-required reports.*does not imply human review/);
+  assert.match(read('visualizePanels').textContent, /Observation A.*1 \/ 1 included reports/);
+  assert.match(read('visualizePanels').textContent, /Hypothesis · FAVORED diagnostic consideration/);
+  assert.match(read('visualizePanels').textContent, /Documented absence: diverticulum/);
+  assert.match(read('visualizePanels').textContent, /INSUFFICIENT_COMPARABLE_MEASUREMENTS/);
+  assert.match(read('visualizePanels').textContent, /MISSING_TEMPORAL_DATA/);
+  assert.match(read('visualizePanels').textContent, /No repeated co-occurrence patterns/);
+  assert.match(read('visualizePanels').textContent, /modality.*0 \/ 1 included reports available.*1 missing/);
+  assert.match(read('visualizePanels').textContent, /Component mappings available \(separate\)/);
+  assert.match(read('visualizeTechnicalBody').textContent, /VisualizationRun.*AnalysisRun.*Collection/);
+  assert.equal(read('visualizeTechnical').attributes.open, undefined);
+  assert.doesNotMatch(read('visualizeCard').textContent.toLowerCase(), /population prevalence|incidence|risk|association|correlation|causation/);
+  context.temporalFixture = vizPanel('temporal', 'Report Year', 'LINE', [
+    { category: '2023', numerator: 1, denominator: 2, value: 0.5 },
+    { category: '2025', numerator: 2, denominator: 2, value: 1 },
+  ]);
+  const temporal = run('renderVisualizationPanel(temporalFixture)');
+  assert.match(temporal.textContent, /2023: 1 \/ 2 included reports/);
+  assert.equal(temporal.children.some(child => child.tagName === 'svg'), true);
+  context.repeatedFixture = vizPanel('cooccurrence', 'Co-occurrence', 'HORIZONTAL_BAR', [
+    { concept_a: 'MRJ:edema', concept_b: 'MRJ:mass', numerator: 3, denominator: 8, value: 0.375 },
+  ]);
+  assert.match(run('renderVisualizationPanel(repeatedFixture)').textContent,
+    /MRJ:edema \+ MRJ:mass.*3 \/ 8 included reports.*37.5%/);
+  const longLabel = 'Very long synthetic finding label '.repeat(8);
+  context.longFixture = vizPanel('top_findings', 'Top Findings', 'HORIZONTAL_BAR',
+    Array.from({ length: 12 }, (_, index) => ({ display_label: index ? `Finding ${index}` : longLabel,
+      concept_identity: `MRJ:synthetic_${index}`, anatomy: [], laterality: 'MISSING',
+      numerator: 1, denominator: 8, value: 0.125 })));
+  const longPanel = run('renderVisualizationPanel(longFixture)');
+  assert.match(longPanel.textContent, /Very long synthetic finding label/);
+  assert.match(longPanel.textContent, /Show 2 more analysis rows/);
+  assert.equal(longPanel.children.some(child => child.tagName === 'details'), true);
+  const firstBar = longPanel.children.find(child => child.tagName === 'ol').children[0].children[1];
+  assert.equal(firstBar.tagName, 'progress');
+  assert.equal(firstBar.max, 1);
+  assert.equal(firstBar.value, 0.125);
+  assert.match(firstBar.attributes['aria-label'], /1 \/ 8 included reports.*scale starts at zero/);
+  const css = fs.readFileSync(path.join(root, 'frontend/understanding-styles.css'), 'utf8');
+  assert.match(css, /\.visualize-panels.*minmax\(min\(100%, 390px\), 1fr\)/);
+  assert.match(css, /\.visualize-table-wrap.*overflow-x: auto/);
+  read('returnAnalyzeBtn').click();
+  assert.equal(run('activeJourneyStage'), 'ANALYZE');
+  assert.equal(read('analyzeCard').hidden, false);
+  assert.equal(read('visualizeCard').hidden, true);
   read('returnStandardizeBtn').click();
   assert.equal(run('activeJourneyStage'), 'STANDARDIZE');
   assert.equal(read('standardizeCard').hidden, false);

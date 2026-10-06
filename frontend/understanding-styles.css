@@ -330,6 +330,21 @@ button { appearance: none; }
 .analysis-list { margin: 0; padding-left: 20px; }
 .analysis-list li { padding: 5px 0; overflow-wrap: anywhere; }
 .analysis-list small { color: var(--understand-muted); }
+.visualize-policy { padding: 12px 14px; border-left: 3px solid var(--understand-teal); background: var(--understand-teal-soft); overflow-wrap: anywhere; }
+#visualizeCard { min-width: 0; overflow-wrap: anywhere; }
+.visualize-panels { display: grid; min-width: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr)); gap: 16px; }
+.visualize-panel { min-width: 0; padding: 16px; border: 1px solid var(--understand-border); border-radius: 12px; overflow-wrap: anywhere; }
+.visualize-panel h4 { margin: 0 0 6px; }
+.visualize-panel p { margin: 6px 0 12px; color: var(--understand-muted); }
+.visualize-panel ol { margin: 0; padding-left: 22px; }
+.visualize-panel li { margin: 0 0 10px; overflow-wrap: anywhere; }
+.visualize-panel progress { display: block; width: min(100%, 420px); height: 13px; margin: 5px 0; accent-color: var(--understand-teal-deep); }
+.visualize-panel details { margin-top: 8px; }
+.visualize-panel summary { min-height: 44px; cursor: pointer; }
+.visualize-table-wrap { max-width: 100%; overflow-x: auto; }
+.visualize-table { width: 100%; border-collapse: collapse; }
+.visualize-table th, .visualize-table td { padding: 8px; border-bottom: 1px solid var(--understand-border); text-align: left; overflow-wrap: anywhere; }
+.visualize-line { display: block; width: 100%; max-width: 420px; height: auto; }
 .standardize-card { padding: 28px 32px; border: 1px solid var(--understand-border); border-top: 4px solid var(--understand-teal); border-radius: 22px; background: var(--understand-paper); scroll-margin-top: 100px; }
 .standardize-card h3 { margin: 4px 0 14px; font-size: clamp(1.6rem, 3vw, 2.2rem); }
 .standardize-card > p { color: var(--understand-muted); }
