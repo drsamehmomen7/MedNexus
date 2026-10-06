@@ -38,6 +38,9 @@ let analysisError = '';
 let visualizationResult = null;
 let visualizationBusy = false;
 let visualizationError = '';
+let indicatorRun = null;
+let indicatorBusy = false;
+let indicatorError = '';
 
 const LABELS = {
   UNKNOWN: 'Not determined', NEEDS_REVIEW: 'Needs Review', NOT_STARTED: 'Not Started',
@@ -263,6 +266,8 @@ function setWorkflowMode(nextMode) {
   analysisError = '';
   visualizationResult = null;
   visualizationError = '';
+  indicatorRun = null;
+  indicatorError = '';
   workflowMode = nextMode;
   activeJourneyStage = 'UNDERSTAND';
   const singleActive = nextMode === 'single';
@@ -1150,23 +1155,27 @@ function updateActiveStagePresentation() {
   const standardizeActive = activeJourneyStage === 'STANDARDIZE';
   const analyzeActive = activeJourneyStage === 'ANALYZE';
   const visualizeActive = activeJourneyStage === 'VISUALIZE';
-  getElement('results').classList.toggle('extract-view', extractActive || standardizeActive || analyzeActive || visualizeActive);
-  getElement('activeStageNumber').textContent = visualizeActive ? '06' : analyzeActive ? '05' : standardizeActive ? '04' : extractActive ? '03' : protectActive ? '02' : '01';
+  const indicatorsActive = activeJourneyStage === 'INDICATORS';
+  getElement('results').classList.toggle('extract-view', extractActive || standardizeActive || analyzeActive || visualizeActive || indicatorsActive);
+  getElement('activeStageNumber').textContent = indicatorsActive ? '07' : visualizeActive ? '06' : analyzeActive ? '05' : standardizeActive ? '04' : extractActive ? '03' : protectActive ? '02' : '01';
   getElement('activeStageName').textContent = activeJourneyStage;
-  getElement('activeStageDescription').textContent = visualizeActive ? 'Governed collection views'
+  getElement('activeStageDescription').textContent = indicatorsActive ? 'Governed measurable constructs'
+    : visualizeActive ? 'Governed collection views'
     : analyzeActive ? 'Report-level collection intelligence'
     : standardizeActive ? 'Governed clinical representation'
     : extractActive ? 'Clinical extraction workspace'
     : protectActive ? 'Purpose-based privacy protection' : 'Document identity and context';
-  getElement('resultsEyebrow').textContent = visualizeActive ? 'Visualization Workspace'
+  getElement('resultsEyebrow').textContent = indicatorsActive ? 'Indicator Workspace'
+    : visualizeActive ? 'Visualization Workspace'
     : analyzeActive ? 'Collection Analysis Workspace'
     : standardizeActive ? 'Standardization Workspace'
     : extractActive ? 'Extraction Workspace' : protectActive ? 'Protection Result' : 'Report Result';
-  getElement('resultsTitle').textContent = visualizeActive ? 'Review clinical visualizations'
+  getElement('resultsTitle').textContent = indicatorsActive ? 'Review governed indicators'
+    : visualizeActive ? 'Review clinical visualizations'
     : analyzeActive ? 'Review collection analysis'
     : standardizeActive ? 'Review standardized facts'
     : extractActive ? 'Review clinical extraction' : protectActive ? 'What MRJ protected' : 'What MRJ understood';
-  getElement('anotherBtn').textContent = visualizeActive ? 'Review ANALYZE' : analyzeActive ? 'Review STANDARDIZE' : standardizeActive ? 'Review EXTRACT' : extractActive ? 'Review PROTECT' : protectActive
+  getElement('anotherBtn').textContent = indicatorsActive ? 'Review VISUALIZE' : visualizeActive ? 'Review ANALYZE' : analyzeActive ? 'Review STANDARDIZE' : standardizeActive ? 'Review EXTRACT' : extractActive ? 'Review PROTECT' : protectActive
     ? 'Review UNDERSTAND' : workflowMode === 'batch' ? 'Back to batch overview' : 'Analyze another report';
 }
 
@@ -1260,6 +1269,7 @@ function renderExtractWorkspace(runDocument, runId = null, options = {}) {
   getElement('standardizeCard').hidden = true;
   getElement('analyzeCard').hidden = true;
   getElement('visualizeCard').hidden = true;
+  getElement('indicatorsCard').hidden = true;
   closeExtractSource();
   getElement('extractViewEvidenceBtn').onclick = event => openExtractSource('text', event.currentTarget);
   getElement('extractCloseEvidenceBtn').onclick = closeExtractSource;
@@ -1387,6 +1397,7 @@ function renderStandardizeWorkspace(runDocument, runId = null, options = {}) {
   getElement('standardizeCard').hidden = false;
   getElement('analyzeCard').hidden = true;
   getElement('visualizeCard').hidden = true;
+  getElement('indicatorsCard').hidden = true;
   getElement('standardizeReportName').textContent = runDocument?.original_filename || 'Retained report';
   getElement('standardizeStatus').className = `status-badge ${statusClass(state)}`;
   getElement('standardizeStatus').textContent = label(state);
@@ -1641,6 +1652,7 @@ function renderAnalyzeWorkspace(scroll = true) {
   ['reportCard', 'protectionCard', 'extractCard', 'standardizeCard'].forEach(id => { getElement(id).hidden = true; });
   getElement('analyzeCard').hidden = false;
   getElement('visualizeCard').hidden = true;
+  getElement('indicatorsCard').hidden = true;
   const select = getElement('analyzeCollectionSelect');
   select.replaceChildren();
   const first = makeElement('option');
@@ -1660,6 +1672,8 @@ function renderAnalyzeWorkspace(scroll = true) {
     analysisError = '';
     visualizationResult = null;
     visualizationError = '';
+    indicatorRun = null;
+    indicatorError = '';
     renderAnalyzeWorkspace(false);
   };
   getElement('analyzeCollectionDetails').textContent = analysisCollection
@@ -1722,6 +1736,7 @@ async function createAnalysisCollection() {
     analysisCollections.unshift(analysisCollection);
     analysisResult = null;
     visualizationResult = null;
+    indicatorRun = null;
   } catch (error) {
     analysisError = error.message || 'Collection could not be created.';
   } finally { analysisBusy = false; renderAnalyzeWorkspace(false); }
@@ -1741,6 +1756,7 @@ async function addAnalysisReports() {
     analysisCollections = analysisCollections.map(item => item.collection_id === analysisCollection.collection_id ? analysisCollection : item);
     analysisResult = null;
     visualizationResult = null;
+    indicatorRun = null;
   } catch (error) {
     analysisError = error.message || 'Reports could not be added.';
   } finally { analysisBusy = false; renderAnalyzeWorkspace(false); }
@@ -1762,6 +1778,8 @@ async function runCollectionAnalysis() {
     analysisResult = await responsePayload(response, 'Collection analysis failed.');
     visualizationResult = null;
     visualizationError = '';
+    indicatorRun = null;
+    indicatorError = '';
     if (run) {
       const updated = await fetch(`/api/v1/understanding/journey-runs/${encodeURIComponent(run.run_id)}`, { cache: 'no-store' });
       const payload = await responsePayload(updated, 'Journey status could not be refreshed.');
@@ -1916,6 +1934,7 @@ function renderVisualizeWorkspace(scroll = true) {
   ['reportCard', 'protectionCard', 'extractCard', 'standardizeCard', 'analyzeCard']
     .forEach(id => { getElement(id).hidden = true; });
   getElement('visualizeCard').hidden = false;
+  getElement('indicatorsCard').hidden = true;
   getElement('visualizeStatus').textContent = visualizationBusy ? 'Processing'
     : visualizationResult ? visualizationResult.collection_summary.included_review_required_reports
       || !visualizationResult.collection_summary.included_reports ? 'Needs Review' : 'Complete' : 'Not Started';
@@ -1939,6 +1958,10 @@ function renderVisualizeWorkspace(scroll = true) {
     ? `VisualizationRun ${result.visualization_run_id} · AnalysisRun ${result.analysis_run_id} · Collection ${result.collection_id} v${result.collection_version} · Generated at ${result.generated_at} (${result.generated_at_basis}) · Policy ${JSON.stringify(result.analysis_policy)}`
     : '';
   getElement('returnAnalyzeBtn').onclick = () => renderAnalyzeWorkspace(false);
+  const indicatorsNext = getElement('continueIndicatorsBtn');
+  indicatorsNext.hidden = !result;
+  indicatorsNext.disabled = visualizationBusy || !result;
+  indicatorsNext.onclick = openIndicatorWorkspace;
   getElement('results').classList.add('show');
   updateJourneyRail(currentAnalysisJourney());
   if (scroll) getElement('visualizeCard').scrollIntoView({ behavior: 'auto', block: 'start' });
@@ -1968,6 +1991,159 @@ async function openVisualizeWorkspace() {
   } catch (error) {
     visualizationError = error.message || 'Visualization could not be prepared.';
   } finally { visualizationBusy = false; renderVisualizeWorkspace(false); }
+}
+
+const INDICATOR_GROUPS = [
+  ['REPORT_FINDING_FREQUENCY', 'Clinical Indicators'],
+  ['DIAGNOSTIC_CONSIDERATION_FREQUENCY', 'Diagnostic Consideration Indicators'],
+  ['DOCUMENTED_NEGATIVE_FREQUENCY', 'Documented Negative Indicators'],
+  ['DATA_COVERAGE', 'Data Coverage Indicators'],
+  ['STANDARDIZATION_COVERAGE', 'Standardization Coverage Indicators'],
+  ['MEASUREMENT_SUMMARY', 'Measurement Indicators'],
+];
+
+function renderIndicatorCard(definition, result) {
+  const card = makeElement('article');
+  card.className = 'indicator-card';
+  const title = makeElement('h5');
+  title.textContent = definition.name;
+  const identity = makeElement('p');
+  identity.textContent = `${definition.indicator_type} · ${definition.analysis_level} · definition v${definition.version}`;
+  const readiness = makeElement('strong');
+  readiness.textContent = result.readiness_state === 'VALIDATION_ONLY' ? 'VALIDATION ONLY' : result.readiness_state.replaceAll('_', ' ');
+  const amount = makeElement('p');
+  const unit = definition.unit === 'CANONICAL_FACT_RATIO' ? 'canonical facts' : 'included reports';
+  amount.textContent = `${result.numerator ?? '—'} / ${result.denominator ?? '—'} ${unit}`
+    + (typeof result.value === 'number' ? ` · ${visualizationPercent(result.value)}` : '');
+  const scope = makeElement('p');
+  scope.textContent = definition.interpretation_scope;
+  const rules = makeElement('dl');
+  [['Numerator', definition.numerator_definition], ['Denominator', definition.denominator_definition],
+    ['Eligibility', definition.eligibility_rule], ['Exclusions', definition.exclusions],
+    ['Time window', definition.time_window_definition]].forEach(([key, value]) => {
+    const row = makeElement('div');
+    const term = makeElement('dt');
+    term.textContent = key;
+    const detail = makeElement('dd');
+    detail.textContent = value;
+    row.append(term, detail);
+    rules.append(row);
+  });
+  card.append(title, identity, readiness, amount, scope, rules);
+  if (result.coverage?.sample_count) {
+    const measurement = makeElement('p');
+    measurement.textContent = `${result.coverage.sample_count} comparable measurements · ${result.coverage.measurement_type} (${result.coverage.dimension}) · min ${result.coverage.minimum}, max ${result.coverage.maximum}, mean ${result.coverage.mean}, median ${result.coverage.median} ${result.coverage.normalized_unit}`;
+    card.append(measurement);
+  }
+  if (result.warnings.length) {
+    const warning = makeElement('p');
+    warning.textContent = result.warnings.join(' · ');
+    card.append(warning);
+  }
+  return card;
+}
+
+function renderIndicatorWorkspace(scroll = true) {
+  activeJourneyStage = 'INDICATORS';
+  prepareResultsWorkspace(false);
+  updateActiveStagePresentation();
+  ['reportCard', 'protectionCard', 'extractCard', 'standardizeCard', 'analyzeCard', 'visualizeCard']
+    .forEach(id => { getElement(id).hidden = true; });
+  getElement('indicatorsCard').hidden = false;
+  const run = indicatorRun;
+  const review = run && (run.collection_summary.included_review_required_reports
+    || !run.collection_summary.included_reports || run.readiness_summary.INVALID || run.readiness_summary.NEEDS_REVIEW);
+  getElement('indicatorsStatus').textContent = indicatorBusy ? 'Processing' : run ? review ? 'Needs Review' : 'Complete' : 'Not Started';
+  getElement('indicatorsMessage').textContent = indicatorError || (indicatorBusy
+    ? 'Preparing governed indicators…' : run
+      ? 'Indicator values are copied from the source AnalysisRun; definitions govern their interpretation.'
+      : 'Complete VISUALIZE before viewing indicators.');
+  getElement('indicatorsContext').textContent = run
+    ? `${run.collection_name} · version ${run.collection_version} · AnalysisRun ${run.analysis_run_id} · ${run.collection_summary.included_reports} included reports`
+    : '';
+  getElement('indicatorsPolicy').textContent = run
+    ? run.analysis_policy.include_review_required_for_validation
+      ? `VALIDATION ONLY: ${run.collection_summary.included_review_required_reports} review-required reports explicitly included for validation. This does not imply human clinical review. Filters: ${JSON.stringify(run.analysis_policy.filters)}.`
+      : `Production-compatible policy: eligible reports only. Filters: ${JSON.stringify(run.analysis_policy.filters)}.`
+    : '';
+  getElement('indicatorsReadiness').textContent = run
+    ? ['READY', 'VALIDATION_ONLY', 'NEEDS_REVIEW', 'NOT_READY', 'INVALID']
+      .map(state => `${state}: ${run.readiness_summary[state]}`).join(' · ') : '';
+  const sections = getElement('indicatorSections');
+  sections.replaceChildren();
+  if (run) {
+    const resultById = new Map(run.results.map(result => [result.indicator_id, result]));
+    INDICATOR_GROUPS.forEach(([kind, heading]) => {
+      const section = makeElement('section');
+      section.className = 'standardize-section';
+      const title = makeElement('h4');
+      title.textContent = heading;
+      section.append(title);
+      const list = makeElement('div');
+      list.className = 'indicator-list';
+      run.definitions.filter(definition => definition.indicator_type === kind).forEach(definition => {
+        const result = resultById.get(definition.indicator_id);
+        if (result) list.append(renderIndicatorCard(definition, result));
+      });
+      if (!list.children.length) {
+        const empty = makeElement('p');
+        empty.textContent = 'NO_INDICATOR_CANDIDATES: No governed source metrics in this category.';
+        list.append(empty);
+      }
+      section.append(list);
+      sections.append(section);
+    });
+  }
+  getElement('indicatorsTechnical').hidden = !run;
+  getElement('indicatorsTechnicalBody').textContent = run
+    ? `IndicatorRun ${run.indicator_run_id} · AnalysisRun ${run.analysis_run_id} · Collection ${run.collection_id} v${run.collection_version} · Generated at ${run.generated_at} (${run.generated_at_basis}) · Policy ${JSON.stringify(run.analysis_policy)}`
+    : '';
+  getElement('returnVisualizeBtn').onclick = () => renderVisualizeWorkspace(false);
+  getElement('results').classList.add('show');
+  updateJourneyRail(currentAnalysisJourney());
+  if (scroll) getElement('indicatorsCard').scrollIntoView({ behavior: 'auto', block: 'start' });
+}
+
+async function openIndicatorWorkspace() {
+  if (!visualizationResult || indicatorBusy) return;
+  const sourceAnalysisId = visualizationResult.analysis_run_id;
+  if (indicatorRun?.analysis_run_id === sourceAnalysisId
+      && indicatorRun.collection_id === visualizationResult.collection_id
+      && indicatorRun.collection_version === visualizationResult.collection_version) {
+    renderIndicatorWorkspace();
+    return;
+  }
+  indicatorError = '';
+  indicatorBusy = true;
+  renderIndicatorWorkspace();
+  try {
+    if (!sourceAnalysisId || (analysisResult && (
+      analysisResult.analysis_run_id !== sourceAnalysisId
+      || analysisResult.collection_id !== visualizationResult.collection_id
+      || analysisResult.collection_version !== visualizationResult.collection_version))) {
+      throw Error('Source AnalysisRun context does not match VISUALIZE. Return to ANALYZE and open VISUALIZE again.');
+    }
+    const run = currentAnalysisJourney();
+    const response = await fetch(`/api/v1/understanding/analysis-runs/${encodeURIComponent(sourceAnalysisId)}/indicators`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+      body: JSON.stringify({ journey_run_id: run?.run_id || null }),
+    });
+    if (response.status === 404) {
+      let detail = '';
+      try { detail = (await response.json()).detail || ''; } catch (_) { /* No JSON error body. */ }
+      if (detail === 'Not Found') throw Error('INDICATORS is unavailable in the running server. Restart the MRJ server and reopen the Journey.');
+      if (detail === 'JOURNEY_CONTEXT_NOT_AVAILABLE') throw Error('Journey context is no longer available. Start a new Journey and reopen ANALYZE.');
+      throw Error('Source AnalysisRun could not be loaded. Return to ANALYZE or VISUALIZE.');
+    }
+    indicatorRun = await responsePayload(response, 'Indicators could not be prepared.');
+    if (run) {
+      const updated = await fetch(`/api/v1/understanding/journey-runs/${encodeURIComponent(run.run_id)}`, { cache: 'no-store' });
+      const payload = await responsePayload(updated, 'Journey status could not be refreshed.');
+      if (workflowMode === 'batch') batchRun = payload; else singleRun = payload;
+    }
+  } catch (error) {
+    indicatorError = error.message || 'Indicators could not be prepared.';
+  } finally { indicatorBusy = false; renderIndicatorWorkspace(false); }
 }
 
 function showStandardizeStage() {
@@ -2009,6 +2185,7 @@ function renderProtectionResult(payload, options = {}) {
   getElement('standardizeCard').hidden = true;
   getElement('analyzeCard').hidden = true;
   getElement('visualizeCard').hidden = true;
+  getElement('indicatorsCard').hidden = true;
   getElement('protectionCard').className = `protection-card ${statusClass(model.state)}`;
   getElement('protectReportNumber').textContent = options.number
     ? `Report ${String(options.number).padStart(2, '0')}`
@@ -2123,6 +2300,7 @@ function renderReportResult(payload, options = {}) {
   getElement('standardizeCard').hidden = true;
   getElement('analyzeCard').hidden = true;
   getElement('visualizeCard').hidden = true;
+  getElement('indicatorsCard').hidden = true;
   getElement('reportCard').className = `report-card ${statusClass(model.state)}`;
   getElement('reportNumber').textContent = options.number ? `Report ${String(options.number).padStart(2, '0')}` : 'Report';
   getElement('resultFileName').textContent = model.filename;
@@ -2202,6 +2380,8 @@ async function analyzeSingle() {
     analysisError = '';
     visualizationResult = null;
     visualizationError = '';
+    indicatorRun = null;
+    indicatorError = '';
     singleRun = null;
     getElement('analyzeBtn').disabled = true;
     getElement('status').textContent = 'Analyzing report…';
@@ -2427,6 +2607,8 @@ async function analyzeBatch() {
   analysisError = '';
   visualizationResult = null;
   visualizationError = '';
+  indicatorRun = null;
+  indicatorError = '';
   batchProcessing = true;
   batchRun = null;
   selectedBatchDocumentId = null;
@@ -2841,7 +3023,13 @@ function updateJourneyRail(run = null, context = null) {
           })),
         }
       : run;
-    const display = stage === 'VISUALIZE' && visualizationResult
+    const display = stage === 'INDICATORS' && indicatorRun
+      ? { label: indicatorRun.collection_summary.included_review_required_reports || !indicatorRun.collection_summary.included_reports
+        || indicatorRun.readiness_summary.INVALID || indicatorRun.readiness_summary.NEEDS_REVIEW
+        ? 'Needs Review' : 'Complete', state: indicatorRun.collection_summary.included_review_required_reports || !indicatorRun.collection_summary.included_reports
+        || indicatorRun.readiness_summary.INVALID || indicatorRun.readiness_summary.NEEDS_REVIEW
+        ? 'NEEDS_REVIEW' : 'COMPLETE' }
+      : stage === 'VISUALIZE' && visualizationResult
       ? { label: visualizationResult.collection_summary.included_review_required_reports || !visualizationResult.collection_summary.included_reports
         ? 'Needs Review' : 'Complete', state: visualizationResult.collection_summary.included_review_required_reports || !visualizationResult.collection_summary.included_reports
         ? 'NEEDS_REVIEW' : 'COMPLETE' }
@@ -2862,6 +3050,8 @@ function resetBatch() {
   analysisError = '';
   visualizationResult = null;
   visualizationError = '';
+  indicatorRun = null;
+  indicatorError = '';
   releaseExtractArtifact();
   batchEntries = [];
   batchRun = null;
@@ -2947,6 +3137,10 @@ function initializeUnderstandingWorkspace() {
   getElement('addAnalysisReportsBtn').onclick = addAnalysisReports;
   getElement('runAnalysisBtn').onclick = runCollectionAnalysis;
   getElement('anotherBtn').onclick = () => {
+    if (activeJourneyStage === 'INDICATORS') {
+      renderVisualizeWorkspace(false);
+      return;
+    }
     if (activeJourneyStage === 'VISUALIZE') {
       renderAnalyzeWorkspace(false);
       return;

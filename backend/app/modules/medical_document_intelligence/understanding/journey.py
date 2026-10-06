@@ -694,6 +694,9 @@ class JourneyStore:
             item.stage_results.pop(JourneyStage.VISUALIZE, None)
             item.stage_errors.pop(JourneyStage.VISUALIZE, None)
             item.stage_status[JourneyStage.VISUALIZE] = StageStatus.NOT_STARTED
+            item.stage_results.pop(JourneyStage.INDICATORS, None)
+            item.stage_errors.pop(JourneyStage.INDICATORS, None)
+            item.stage_status[JourneyStage.INDICATORS] = StageStatus.NOT_STARTED
             output = item.stage_results.get(JourneyStage.PROTECT, {})
             protected = output.get("protected_document", {})
             text = protected.get("protected_text", "")
@@ -772,6 +775,9 @@ class JourneyStore:
             item.stage_results.pop(JourneyStage.VISUALIZE, None)
             item.stage_errors.pop(JourneyStage.VISUALIZE, None)
             item.stage_status[JourneyStage.VISUALIZE] = StageStatus.NOT_STARTED
+            item.stage_results.pop(JourneyStage.INDICATORS, None)
+            item.stage_errors.pop(JourneyStage.INDICATORS, None)
+            item.stage_status[JourneyStage.INDICATORS] = StageStatus.NOT_STARTED
             item.transition(JourneyStage.STANDARDIZE, StageStatus.PROCESSING)
             self._touch_locked(run)
             context = item.context
@@ -813,6 +819,9 @@ class JourneyStore:
                 item.stage_results.pop(JourneyStage.VISUALIZE, None)
                 item.stage_errors.pop(JourneyStage.VISUALIZE, None)
                 item.stage_status[JourneyStage.VISUALIZE] = StageStatus.NOT_STARTED
+                item.stage_results.pop(JourneyStage.INDICATORS, None)
+                item.stage_errors.pop(JourneyStage.INDICATORS, None)
+                item.stage_status[JourneyStage.INDICATORS] = StageStatus.NOT_STARTED
                 item.stage_results[JourneyStage.ANALYZE] = {
                     "analysis_run_id": analysis["analysis_run_id"],
                     "collection_id": analysis["collection_id"],
@@ -837,6 +846,9 @@ class JourneyStore:
             state = StageStatus.NEEDS_REVIEW if (summary["included_review_required_reports"]
                                                  or not summary["included_reports"]) else StageStatus.COMPLETE
             for item in members:
+                item.stage_results.pop(JourneyStage.INDICATORS, None)
+                item.stage_errors.pop(JourneyStage.INDICATORS, None)
+                item.stage_status[JourneyStage.INDICATORS] = StageStatus.NOT_STARTED
                 item.stage_results[JourneyStage.VISUALIZE] = {
                     "visualization_run_id": visualization["visualization_run_id"],
                     "analysis_run_id": visualization["analysis_run_id"],
@@ -846,6 +858,32 @@ class JourneyStore:
                 }
                 item.transition(JourneyStage.VISUALIZE, state)
             run.current_stage = JourneyStage.VISUALIZE
+            self._touch_locked(run)
+
+    def attach_collection_indicators(self, run_id: str, indicators: dict[str, Any]) -> None:
+        """Attach Stage 07 only to Journey documents with this AnalysisRun."""
+        with self._lock:
+            run = self._get_run_locked(run_id)
+            members = [item for item in run.documents if
+                       item.stage_results.get(JourneyStage.ANALYZE, {}).get("analysis_run_id")
+                       == indicators["analysis_run_id"]]
+            if not members:
+                return
+            summary = indicators["collection_summary"]
+            needs_review = (summary["included_review_required_reports"] or not summary["included_reports"]
+                            or indicators["readiness_summary"]["NEEDS_REVIEW"]
+                            or indicators["readiness_summary"]["INVALID"])
+            state = StageStatus.NEEDS_REVIEW if needs_review else StageStatus.COMPLETE
+            for item in members:
+                item.stage_results[JourneyStage.INDICATORS] = {
+                    "indicator_run_id": indicators["indicator_run_id"],
+                    "analysis_run_id": indicators["analysis_run_id"],
+                    "collection_id": indicators["collection_id"],
+                    "collection_version": indicators["collection_version"],
+                    "state": state.value,
+                }
+                item.transition(JourneyStage.INDICATORS, state)
+            run.current_stage = JourneyStage.INDICATORS
             self._touch_locked(run)
 
     def source_text_for_compare(self, run_id: str, document_id: str) -> str:

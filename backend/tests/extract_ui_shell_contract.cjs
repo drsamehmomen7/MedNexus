@@ -443,6 +443,36 @@ console.log('EXTRACT clinical synthesis UI contract passed');
     ],
   };
   let visualized = false;
+  const indicatorEntry = (indicator_type, name, numerator, denominator, value, readiness_state, unit = 'REPORT_FRACTION') => {
+    const indicator_id = `${indicator_type}_${name}`;
+    return [
+      { indicator_id, version: 1, name, indicator_type, analysis_level: 'REPORT_LEVEL',
+        numerator_definition: `Included reports with ${name}`, denominator_definition: 'Included reports in AnalysisRun',
+        eligibility_rule: 'INHERIT_ANALYSIS_RUN_POLICY', exclusions: 'INHERIT_ANALYSIS_RUN_EXCLUSIONS',
+        time_window_definition: 'ANALYSIS_COLLECTION_SNAPSHOT',
+        interpretation_scope: `Report-level interpretation of ${name}.`, unit },
+      { indicator_id, numerator, denominator, value, readiness_state, warnings: [], coverage: {} },
+    ];
+  };
+  const entries = [
+    indicatorEntry('REPORT_FINDING_FREQUENCY', 'Cerebral atrophy', 1, 8, 0.125, 'VALIDATION_ONLY'),
+    indicatorEntry('DIAGNOSTIC_CONSIDERATION_FREQUENCY', 'Metastatic tumor FAVORED', 1, 8, 0.125, 'VALIDATION_ONLY'),
+    indicatorEntry('DOCUMENTED_NEGATIVE_FREQUENCY', 'Documented absence: aspiration', 1, 8, 0.125, 'VALIDATION_ONLY'),
+    indicatorEntry('DATA_COVERAGE', 'Report service date coverage', 0, 8, 0, 'VALIDATION_ONLY'),
+    indicatorEntry('STANDARDIZATION_COVERAGE', 'Whole-fact MATCHED coverage', 3, 55, null,
+      'VALIDATION_ONLY', 'CANONICAL_FACT_RATIO'),
+    indicatorEntry('MEASUREMENT_SUMMARY', 'Comparable measurement summary', null, 8, null, 'NOT_READY'),
+  ];
+  const indicators = { indicator_run_id: 'i'.repeat(32), analysis_run_id: analysis.analysis_run_id,
+    collection_id: collection.collection_id, collection_version: 1, collection_name: collection.name,
+    generated_at: '2026-10-05T00:00:00Z', generated_at_basis: 'ANALYSIS_RUN_GENERATED_AT',
+    analysis_policy: { include_review_required_for_validation: true, human_review_asserted: false, filters: {} },
+    collection_summary: { included_reports: 8, included_review_required_reports: 8 },
+    readiness_summary: { READY: 0, VALIDATION_ONLY: 5, NEEDS_REVIEW: 0, NOT_READY: 1, INVALID: 0 },
+    definitions: entries.map(entry => entry[0]), results: entries.map(entry => entry[1]),
+  };
+  let indicated = false;
+  let indicatorErrorDetail = null;
   context.fetch = async (url, options = {}) => {
     requests.push([url, options.method || 'GET']);
     if (url.endsWith('/analysis-collections') && !options.method)
@@ -461,10 +491,17 @@ console.log('EXTRACT clinical synthesis UI contract passed');
       visualized = true;
       return { ok: true, json: async () => visualization };
     }
+    if (url.endsWith('/indicators')) {
+      assert.equal(JSON.parse(options.body).journey_run_id, 'pilot-run');
+      if (indicatorErrorDetail) return { ok: false, status: 404, json: async () => ({ detail: indicatorErrorDetail }) };
+      indicated = true;
+      return { ok: true, json: async () => indicators };
+    }
     if (url.endsWith('/journey-runs/pilot-run')) return { ok: true, json: async () => ({
       ...run('singleRun'), documents: [{ ...run('singleRun.documents[0]'),
         stage_status: { ...run('singleRun.documents[0].stage_status'), ANALYZE: { status: 'NEEDS_REVIEW' },
-          VISUALIZE: { status: visualized ? 'NEEDS_REVIEW' : 'NOT_STARTED' } } }] }) };
+          VISUALIZE: { status: visualized ? 'NEEDS_REVIEW' : 'NOT_STARTED' },
+          INDICATORS: { status: indicated ? 'NEEDS_REVIEW' : 'NOT_STARTED' } } }] }) };
     throw Error(`Unexpected Stage 05 request: ${url}`);
   };
   await read('continueAnalyzeBtn').click();
@@ -547,6 +584,49 @@ console.log('EXTRACT clinical synthesis UI contract passed');
   const css = fs.readFileSync(path.join(root, 'frontend/understanding-styles.css'), 'utf8');
   assert.match(css, /\.visualize-panels.*minmax\(min\(100%, 390px\), 1fr\)/);
   assert.match(css, /\.visualize-table-wrap.*overflow-x: auto/);
+  assert.equal(read('continueIndicatorsBtn').hidden, false);
+  context.savedAnalysis = run('analysisResult');
+  run('analysisResult = null');
+  await read('continueIndicatorsBtn').click();
+  assert.equal(requests.filter(([url]) => url.endsWith('/indicators')).at(-1)[0],
+    `/api/v1/understanding/analysis-runs/${visualization.analysis_run_id}/indicators`);
+  run('analysisResult = savedAnalysis');
+  assert.equal(run('activeJourneyStage'), 'INDICATORS');
+  assert.equal(read('activeStageNumber').textContent, '07');
+  assert.equal(read('indicatorsCard').hidden, false);
+  assert.equal(read('visualizeCard').hidden, true);
+  assert.match(read('railIndicators').textContent, /Needs Review/);
+  assert.match(read('indicatorsContext').textContent, /Synthetic validation collection.*version 1.*AnalysisRun/);
+  assert.match(read('indicatorsPolicy').textContent, /VALIDATION ONLY.*does not imply human clinical review/);
+  assert.match(read('indicatorsReadiness').textContent, /VALIDATION_ONLY: 5.*NOT_READY: 1/);
+  assert.match(read('indicatorSections').textContent, /Cerebral atrophy.*1 \/ 8 included reports.*12.5%/);
+  assert.match(read('indicatorSections').textContent, /Metastatic tumor FAVORED/);
+  assert.match(read('indicatorSections').textContent, /Documented absence: aspiration/);
+  assert.match(read('indicatorSections').textContent, /Report service date coverage.*0 \/ 8 included reports.*0%/);
+  assert.match(read('indicatorSections').textContent, /Whole-fact MATCHED coverage.*3 \/ 55 canonical facts/);
+  assert.match(read('indicatorSections').textContent, /Comparable measurement summary.*NOT READY.*— \/ 8 included reports/);
+  assert.match(read('indicatorsTechnicalBody').textContent, /IndicatorRun.*AnalysisRun.*Collection/);
+  assert.equal(read('indicatorsTechnical').attributes.open, undefined);
+  assert.match(css, /\.indicator-list.*minmax\(min\(100%, 320px\), 1fr\)/);
+  read('returnVisualizeBtn').click();
+  assert.equal(run('activeJourneyStage'), 'VISUALIZE');
+  assert.equal(read('visualizeCard').hidden, false);
+  assert.equal(read('indicatorsCard').hidden, true);
+  run('indicatorRun = null');
+  indicatorErrorDetail = 'Not Found';
+  await read('continueIndicatorsBtn').click();
+  assert.match(read('indicatorsMessage').textContent, /INDICATORS is unavailable in the running server/);
+  assert.equal(read('indicatorSections').textContent, '');
+  read('returnVisualizeBtn').click();
+  indicatorErrorDetail = 'SOURCE_ANALYSIS_NOT_AVAILABLE';
+  await read('continueIndicatorsBtn').click();
+  assert.match(read('indicatorsMessage').textContent, /Source AnalysisRun could not be loaded/);
+  read('returnVisualizeBtn').click();
+  indicatorErrorDetail = null;
+  await read('continueIndicatorsBtn').click();
+  assert.match(read('indicatorsReadiness').textContent, /VALIDATION_ONLY: 5.*NOT_READY: 1/);
+  assert.match(read('indicatorSections').textContent, /Cerebral atrophy/);
+  read('returnVisualizeBtn').click();
   read('returnAnalyzeBtn').click();
   assert.equal(run('activeJourneyStage'), 'ANALYZE');
   assert.equal(read('analyzeCard').hidden, false);

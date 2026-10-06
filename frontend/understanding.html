@@ -7,7 +7,7 @@
   <title>Document Understanding Workspace — MRJ</title>
   <meta name="description" content="MRJ Medical Document Understanding and Recognition.">
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
-  <link rel="stylesheet" href="/understanding-styles.css?v=r5-0a">
+  <link rel="stylesheet" href="/understanding-styles.css?v=r6-0a">
   <link rel="stylesheet" href="/static/mrj-brand.css">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
@@ -261,6 +261,17 @@
               <div class="standardize-actions"><button class="mn-button mn-button--secondary" id="returnAnalyzeBtn" type="button">Review ANALYZE</button></div>
               <div id="visualizePanels" class="visualize-panels"></div>
               <details class="standardize-technical" id="visualizeTechnical" hidden><summary>Visualization Provenance</summary><div id="visualizeTechnicalBody"></div></details>
+              <div class="standardize-next"><p>Next transformation: governed measurable indicators from this AnalysisRun.</p><button class="mn-button mn-button--secondary" id="continueIndicatorsBtn" type="button" disabled hidden>Continue to INDICATORS</button></div>
+            </article>
+            <article class="standardize-card" id="indicatorsCard" aria-labelledby="indicatorsTitle" tabindex="-1" hidden>
+              <header class="standardize-header"><div><p class="mn-eyebrow">Stage 07 · INDICATORS</p><h3 id="indicatorsTitle">Governed Indicator Workspace</h3><p>Definitions and measured results from the source AnalysisRun.</p></div><span class="status-badge" id="indicatorsStatus">Not started</span></header>
+              <p id="indicatorsMessage" role="status">Complete VISUALIZE before viewing indicators.</p>
+              <p id="indicatorsContext"></p>
+              <p id="indicatorsPolicy" class="visualize-policy"></p>
+              <div class="standardize-actions"><button class="mn-button mn-button--secondary" id="returnVisualizeBtn" type="button">Review VISUALIZE</button></div>
+              <section class="standardize-section" aria-labelledby="indicatorsReadinessTitle"><h4 id="indicatorsReadinessTitle">Indicator Readiness Summary</h4><div id="indicatorsReadiness"></div></section>
+              <div id="indicatorSections" class="indicator-sections"></div>
+              <details class="standardize-technical" id="indicatorsTechnical" hidden><summary>Indicator Provenance</summary><div id="indicatorsTechnicalBody"></div></details>
             </article>
           </div>
         </div>
@@ -269,6 +280,6 @@
   </main>
 
   <footer class="workspace-footer"><div class="mn-shell mn-shell--wide"><span class="mrj-wordmark"><b>MRJ</b><small>Medical Report Journey</small></span><p>UNDERSTAND</p><a href="/app">Back to platform</a></div></footer>
-  <script src="/understanding.js"></script>
+  <script src="/understanding.js?v=r6-0a"></script>
 </body>
 </html>

@@ -345,6 +345,15 @@ button { appearance: none; }
 .visualize-table { width: 100%; border-collapse: collapse; }
 .visualize-table th, .visualize-table td { padding: 8px; border-bottom: 1px solid var(--understand-border); text-align: left; overflow-wrap: anywhere; }
 .visualize-line { display: block; width: 100%; max-width: 420px; height: auto; }
+#indicatorsCard { min-width: 0; overflow-wrap: anywhere; }
+.indicator-sections { display: grid; gap: 18px; }
+.indicator-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.indicator-card { min-width: 0; padding: 16px; border: 1px solid var(--understand-border); border-radius: 12px; overflow-wrap: anywhere; }
+.indicator-card h5 { margin: 0 0 8px; font-size: 1rem; }
+.indicator-card p { margin: 7px 0; }
+.indicator-card dl { display: grid; gap: 8px; margin: 12px 0 0; }
+.indicator-card dt { color: var(--understand-muted); font-size: .78rem; }
+.indicator-card dd { margin: 2px 0 0; }
 .standardize-card { padding: 28px 32px; border: 1px solid var(--understand-border); border-top: 4px solid var(--understand-teal); border-radius: 22px; background: var(--understand-paper); scroll-margin-top: 100px; }
 .standardize-card h3 { margin: 4px 0 14px; font-size: clamp(1.6rem, 3vw, 2.2rem); }
 .standardize-card > p { color: var(--understand-muted); }

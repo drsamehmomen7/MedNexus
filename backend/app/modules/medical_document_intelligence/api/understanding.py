@@ -15,6 +15,7 @@ from backend.app.modules.medical_document_intelligence.policies.policy_profiles 
 from backend.app.modules.medical_document_intelligence.services.deidentification import DeidentificationService
 from backend.app.modules.medical_document_intelligence.services.collection_analysis import collection_store
 from backend.app.modules.medical_document_intelligence.services.collection_visualization import visualization_store
+from backend.app.modules.medical_document_intelligence.services.collection_indicators import indicator_store
 from backend.app.modules.medical_document_intelligence.understanding.journey import (
     JourneyMode,
     JourneyStage,
@@ -77,6 +78,10 @@ class CollectionAnalyzeRequest(BaseModel):
 
 
 class VisualizationRequest(BaseModel):
+    journey_run_id: str | None = None
+
+
+class IndicatorRequest(BaseModel):
     journey_run_id: str | None = None
 
 
@@ -462,6 +467,33 @@ def visualize_analysis_run(analysis_run_id: str, request: VisualizationRequest) 
 def get_visualization_run(visualization_run_id: str) -> JSONResponse:
     try:
         return JSONResponse(content=visualization_store.get(visualization_run_id),
+                            headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/analysis-runs/{analysis_run_id}/indicators")
+def create_indicator_run(analysis_run_id: str, request: IndicatorRequest) -> JSONResponse:
+    try:
+        result = indicator_store.create(analysis_run_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="SOURCE_ANALYSIS_NOT_AVAILABLE") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="INDICATOR_RUNTIME_FAILURE") from exc
+    if request.journey_run_id:
+        try:
+            journey_store.attach_collection_indicators(request.journey_run_id, result)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail="JOURNEY_CONTEXT_NOT_AVAILABLE") from exc
+    return JSONResponse(content=result, headers={"Cache-Control": "no-store, private"})
+
+
+@router.get("/indicator-runs/{indicator_run_id}")
+def get_indicator_run(indicator_run_id: str) -> JSONResponse:
+    try:
+        return JSONResponse(content=indicator_store.get(indicator_run_id),
                             headers={"Cache-Control": "no-store, private"})
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
