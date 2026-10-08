@@ -76,7 +76,7 @@ def governed_report_snapshot(run, item):
     modality_context = domain.modality_context if domain else None
     study = standardized.get("standardized_study_context") or {}
     protected = item.stage_results.get(JourneyStage.PROTECT) or {}
-    patient = protected.get("patient_analytic_context") or {}
+    patient = (protected.get("patient_analytic_context") or {}).get("fields") or {}
     facts = []
     for fact in source_facts:
         projected = projections.get(fact.get("fact_id")) or {}

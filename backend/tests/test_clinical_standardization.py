@@ -158,7 +158,42 @@ def test_multiple_source_specific_measurements_remain_separate():
     assert [item["source_measurement_id"] for item in measurements] == [
         "canonical-1:o0:m0", "canonical-1:o0:m1", "canonical-1:o1:m0"]
     assert [item["normalized_value"] for item in measurements] == ["14", "4", "3"]
+    assert all(item["dimension"] == "LENGTH" and item["measurement_type"] is None for item in measurements)
     assert source == before
+
+
+def test_scalar_volume_and_length_are_typed_without_cross_dimension_pooling():
+    source = extracted([fact(measures=["1.6 cm"]), {**fact(2, measures=["52 mL"]),
+                       "canonical_concept": "general:open:organ:volume"}])
+    output = service().standardize(source, context())
+    length = output["standardized_facts"][0]["standardized_measurements"][0]
+    volume = output["standardized_facts"][1]["standardized_measurements"][0]
+    assert (length["normalized_value"], length["normalized_unit"], length["dimension"], length["measurement_type"]) == ("16", "mm", "LENGTH", "LINEAR_SIZE")
+    assert (volume["normalized_value"], volume["normalized_unit"], volume["dimension"], volume["measurement_type"]) == ("52", "mL", "VOLUME", "VOLUME")
+
+
+def test_multiple_unqualified_volumes_keep_volume_dimension_but_unknown_type():
+    source = extracted([fact(measures=["310 mL", "85 mL"])])
+    output = service().standardize(source, context())
+    values = output["standardized_facts"][0]["standardized_measurements"]
+    assert [value["normalized_value"] for value in values] == ["310", "85"]
+    assert all(value["dimension"] == "VOLUME" and value["measurement_type"] is None for value in values)
+    assert normalize_measurement("18 x 15 mm", "multi")["dimension"] == "UNKNOWN"
+
+
+def test_unassigned_measurement_normalizes_but_cannot_enter_fact_distribution():
+    source = extracted([])
+    source["clinical_synthesis"]["governed_measurements"] = [{
+        "measurement_id": "source-measurement-1", "source_text": "4 mm",
+        "assignment_state": "UNASSIGNED_REVIEW",
+        "evidence_span": {"start_offset": 7, "end_offset": 11, "quote": "4 mm"},
+    }]
+    output = service().standardize(source, context())
+    assert output["standardized_facts"] == []
+    value = output["unassigned_measurements"][0]
+    assert value["normalized_value"] == "4" and value["dimension"] == "LENGTH"
+    assert value["measurement_type"] is None and value["source_fact_id"] is None
+    assert value["analytically_eligible"] is False and value["review_required"] is True
 
 
 def test_duplicate_or_missing_fact_id_is_contract_failure():

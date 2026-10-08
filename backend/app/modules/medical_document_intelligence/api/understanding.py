@@ -43,7 +43,7 @@ class JourneyProtectRequest(BaseModel):
     policy: str = "mednexus_clinical"
     document_ids: list[str] | None = Field(
         default=None,
-        max_length=10,
+        max_length=20,
         description=(
             "Optional retained report IDs to protect. Omit to process every "
             "eligible report in the same JourneyRun."
@@ -53,6 +53,7 @@ class JourneyProtectRequest(BaseModel):
 
 class JourneyRunRequest(BaseModel):
     mode: str = Field("batch", description="Journey operating mode: single or batch.")
+    batch_name: str | None = Field(default=None, max_length=80)
 
 
 class CollectionReportRef(BaseModel):
@@ -225,8 +226,16 @@ def create_journey_run(request: JourneyRunRequest) -> dict[str, Any]:
         raise HTTPException(
             status_code=422, detail="Journey mode must be 'single' or 'batch'."
         ) from exc
-    run = journey_store.create_run(mode)
+    try:
+        run = journey_store.create_run(mode, display_name=request.batch_name)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return journey_store.run_payload(run.run_id)
+
+
+@router.get("/journey-runs")
+def list_batch_journey_runs() -> dict[str, Any]:
+    return {"batches": journey_store.list_batch_runs()}
 
 
 async def _process_batch_upload(

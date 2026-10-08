@@ -203,20 +203,21 @@ def _decimal(value: Decimal) -> str:
 
 
 def normalize_measurement(text: str, source_measurement_id: str) -> dict:
-    """Keep the exact source string and normalize only known length dimensions."""
+    """Keep source wording; normalize only scalar length and volume units."""
     match = _MEASURE.fullmatch(text) if isinstance(text, str) else None
     original_value = match.group("value") if match else None
     original_unit = match.group("unit") if match else None
     result = {"source_measurement_id": source_measurement_id, "original_text": text,
               "original_value": original_value, "original_unit": original_unit,
               "ucum_code": None, "normalized_value": None, "normalized_unit": None,
+              "measurement_type": None, "dimension": "UNKNOWN",
               "conversion_applied": False, "conversion_method": None,
               "mapping_status": "NEEDS_REVIEW", "review_required": True,
               "review_reason": "INVALID_MEASUREMENT"}
     if not match or not original_unit:
         return result
     unit = original_unit.casefold()
-    if unit not in {"mm", "cm"}:
+    if unit not in {"mm", "cm", "ml", "cc"}:
         result.update(mapping_status="UNMAPPED", review_required=False,
                       review_reason="UNMAPPED_UNIT")
         return result
@@ -224,10 +225,13 @@ def normalize_measurement(text: str, source_measurement_id: str) -> dict:
         value = Decimal(original_value)
     except InvalidOperation:
         return result
+    volume = unit in {"ml", "cc"}
     normalized = value * (Decimal("10") if unit == "cm" else Decimal("1"))
-    result.update(ucum_code=unit, normalized_value=_decimal(normalized),
-                  normalized_unit="mm", conversion_applied=unit == "cm",
-                  conversion_method="UCUM_LENGTH_CM_TO_MM" if unit == "cm" else "UCUM_LENGTH_IDENTITY",
+    result.update(ucum_code="mL" if volume else unit, normalized_value=_decimal(normalized),
+                  normalized_unit="mL" if volume else "mm", conversion_applied=unit in {"cm", "cc"},
+                  conversion_method=("UCUM_VOLUME_CC_TO_ML" if unit == "cc" else "UCUM_VOLUME_IDENTITY") if volume
+                  else "UCUM_LENGTH_CM_TO_MM" if unit == "cm" else "UCUM_LENGTH_IDENTITY",
+                  dimension="VOLUME" if volume else "LENGTH",
                   mapping_status="MATCHED", review_required=False, review_reason=None)
     return result
 
@@ -295,9 +299,14 @@ class ClinicalStandardizationService:
             anatomy = [_mapping(value, fact_id, self.anatomy_provider)
                        for value in fact.get("anatomy", [])]
             measurements = []
+            measurement_count = sum(len(observation.get("measurements", [])) for observation in fact.get("observations", []))
             for observation_index, observation in enumerate(fact.get("observations", [])):
                 for measurement_index, source in enumerate(observation.get("measurements", [])):
                     measurement = normalize_measurement(source, f"{fact_id}:o{observation_index}:m{measurement_index}")
+                    # A single scalar can be compared only within its governed
+                    # fact identity. Multiple axes/volumes need explicit roles.
+                    if measurement_count == 1 and measurement["mapping_status"] == "MATCHED":
+                        measurement["measurement_type"] = "VOLUME" if measurement["dimension"] == "VOLUME" else "LINEAR_SIZE"
                     measurement["source_observation_index"] = observation_index
                     measurements.append(measurement)
             review_reasons = sorted({item["review_reason"] for item in [concept, *components, *anatomy, *measurements]
@@ -314,6 +323,18 @@ class ClinicalStandardizationService:
                     "source_report_id": extract_result.get("report_id"),
                     "source_fact_id": fact_id,
                     "provider_versions": self._versions()}})
+        unassigned_measurements = []
+        for source in extract_result["clinical_synthesis"].get("governed_measurements", []):
+            if source.get("assignment_state") == "LINKED_TO_FACT":
+                continue
+            measurement = normalize_measurement(source["source_text"], source["measurement_id"])
+            measurement.update(source_fact_id=None, measurement_type=None,
+                               assignment_state=source["assignment_state"],
+                               analytically_eligible=False, review_required=True,
+                               review_reason=("PRIOR_MEASUREMENT_CONTEXT" if source["assignment_state"] == "PRIOR_CONTEXT"
+                                              else "UNASSIGNED_MEASUREMENT_CONTEXT"),
+                               evidence_span=source["evidence_span"])
+            unassigned_measurements.append(measurement)
         study = _study(context, self.procedure_provider)
         concepts = [item["concept_mappings"][0] for item in standardized]
         components = [mapping for item in standardized for mapping in item["component_mappings"]]
@@ -322,11 +343,12 @@ class ClinicalStandardizationService:
         counts = lambda values: {status.lower(): sum(item["mapping_status"] == status for item in values)
                                  for status in ("MATCHED", "NEEDS_REVIEW", "UNMAPPED")}
         review = any(item["standardization_review_required"] for item in standardized)
-        review = review or study["procedure_mapping"]["review_required"]
+        review = review or study["procedure_mapping"]["review_required"] or bool(unassigned_measurements)
         result = {"profile": PROFILE, "report_id": extract_result.get("report_id"),
             "source_extract_state": extract_result.get("state"),
             "state": "NEEDS_REVIEW" if review else "COMPLETE",
             "standardized_facts": standardized,
+            "unassigned_measurements": unassigned_measurements,
             "standardized_study_context": study,
             "summary": {"facts_received": len(facts), "facts_processed": len(standardized),
                 "clinical_concepts": {"total": len(concepts), **counts(concepts)},
@@ -343,7 +365,8 @@ class ClinicalStandardizationService:
                 "anatomy": {"total": len(anatomy), **counts(anatomy)},
                 "measurements": {"total": len(measurements), "normalized": sum(item["mapping_status"] == "MATCHED" for item in measurements),
                                  "needs_review": sum(item["review_required"] for item in measurements),
-                                 "unmapped": sum(item["mapping_status"] == "UNMAPPED" for item in measurements)},
+                                 "unmapped": sum(item["mapping_status"] == "UNMAPPED" for item in measurements),
+                                 "unassigned_context": len(unassigned_measurements)},
                 "study_identity": study["procedure_mapping"]["mapping_status"]},
             "technical_diagnostics": {"provider_versions": self._versions(),
                 "provider_unavailable": [provider.system for provider in

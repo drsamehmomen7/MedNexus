@@ -261,6 +261,22 @@ def test_journey_snapshot_excludes_source_and_engine_evidence_and_stage_05_attac
     assert run.current_stage is JourneyStage.ANALYZE
 
 
+def test_journey_snapshot_uses_governed_protect_context_fields():
+    store = JourneyStore()
+    run = store.create_run("SINGLE")
+    item = JourneyDocument("document", "synthetic.txt", 0, "txt")
+    item.stage_results[JourneyStage.PROTECT] = {"patient_analytic_context": {"fields": {
+        "sex": {"state": "KNOWN", "value": "FEMALE"},
+        "facility_context": {"state": "KNOWN", "value": "Facility A"},
+        "safe_time_context": {"state": "KNOWN", "value": {"report_year": 2024}},
+    }}}
+    run.documents.append(item)
+    dimensions = governed_report_snapshot(run, item)["dimensions"]
+    assert dimensions["sex"] == "FEMALE"
+    assert dimensions["facility"] == "Facility A"
+    assert dimensions["report_year"] == 2024
+
+
 def test_atomic_source_identity_prevents_cross_journey_duplicate_membership(tmp_path):
     store = JourneyStore()
     one = store.create_run("SINGLE")

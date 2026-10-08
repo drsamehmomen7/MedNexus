@@ -122,6 +122,9 @@ button { appearance: none; }
 
 /* 8. BATCH INPUT */
 .batch-input-layout { display: grid; grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr); gap: 22px; }
+.batch-name-controls { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; }
+.batch-name-controls .policy-field { min-width: min(100%, 220px); margin: 0; }
+.batch-name-controls input { min-height: 44px; padding: 0 12px; border: 1px solid var(--understand-border-teal); border-radius: 12px; background: var(--understand-paper); color: var(--understand-ink); font: inherit; font-size: .82rem; letter-spacing: 0; }
 .batch-dropzone { min-height: 300px; background: var(--understand-paper-warm); }
 .prequeue-card { min-width: 0; padding: 25px; border: 1px solid var(--understand-border); border-radius: var(--mn-radius-md); background: var(--understand-paper); box-shadow: var(--mn-shadow-sm); }
 .prequeue-card > header { display: flex; align-items: end; justify-content: space-between; gap: 20px; }

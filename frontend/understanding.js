@@ -1,7 +1,7 @@
 const getElement = id => globalThis.document.getElementById(id);
 const makeElement = tag => globalThis.document.createElement(tag);
 
-const MAX_BATCH_REPORTS = 10;
+const MAX_BATCH_REPORTS = 20;
 const SUPPORTED_EXTENSIONS = new Set(['txt', 'docx', 'pdf']);
 const TERMINAL_STATES = new Set(['COMPLETE', 'NEEDS_REVIEW', 'FAILED']);
 const JOURNEY_STAGES = ['UNDERSTAND', 'PROTECT', 'EXTRACT', 'STANDARDIZE', 'ANALYZE', 'VISUALIZE', 'INDICATORS'];
@@ -291,6 +291,91 @@ function setWorkflowMode(nextMode) {
     singleActive ? singleRun : batchRun,
     singleActive ? singlePayload?.document_context : null,
   );
+  if (!singleActive) refreshBatchSelector();
+}
+
+async function refreshBatchSelector(selectedId = batchRun?.run_id || 'new') {
+  const selector = getElement('batchSelector');
+  try {
+    const response = await fetch('/api/v1/understanding/journey-runs');
+    const payload = await responsePayload(response, 'MRJ could not load batches.');
+    selector.replaceChildren();
+    const newOption = makeElement('option');
+    newOption.value = 'new';
+    newOption.textContent = '+ New batch';
+    selector.append(newOption);
+    (payload.batches || []).forEach(batch => {
+      const option = makeElement('option');
+      option.value = batch.run_id;
+      option.textContent = `${batch.batch_name || `Batch ${batch.run_id.slice(0, 8)}`} (${batch.report_count} reports)`;
+      selector.append(option);
+    });
+    selector.value = Array.from(selector.options).some(option => option.value === selectedId) ? selectedId : 'new';
+    getElement('batchNameField').hidden = selector.value !== 'new';
+  } catch (failure) {
+    getElement('batchStatus').textContent = failure.message || 'MRJ could not load batches.';
+  }
+}
+
+async function selectSavedBatch() {
+  const selectedId = getElement('batchSelector').value;
+  if (selectedId === 'new') {
+    resetBatch();
+    return;
+  }
+  if (batchProcessing || protectProcessing) return;
+  try {
+    const response = await fetch(`/api/v1/understanding/journey-runs/${encodeURIComponent(selectedId)}`);
+    const run = await responsePayload(response, 'MRJ could not open the batch.');
+    resetCompareView();
+    releaseExtractArtifact();
+    analysisResult = null;
+    analysisError = '';
+    visualizationResult = null;
+    visualizationError = '';
+    indicatorRun = null;
+    indicatorError = '';
+    batchRun = run;
+    getElement('batchStatus').textContent = run.archived
+      ? 'Batch membership and stage references are retained. Report text and in-memory Journey inputs have expired; upload the reports again to run new stages.'
+      : '';
+    const aggregate = run.documents?.[0]?.stage_results || {};
+    if (aggregate.ANALYZE?.analysis_run_id) {
+      try {
+        const collectionsResponse = await fetch('/api/v1/understanding/analysis-collections');
+        analysisCollections = (await responsePayload(collectionsResponse, 'MRJ could not load collections.')).collections || [];
+        analysisCollection = analysisCollections.find(item => item.collection_id === aggregate.ANALYZE.collection_id) || null;
+        const analysisResponse = await fetch(`/api/v1/understanding/analysis-runs/${encodeURIComponent(aggregate.ANALYZE.analysis_run_id)}`);
+        analysisResult = await responsePayload(analysisResponse, 'MRJ could not load analysis.');
+        if (aggregate.VISUALIZE?.visualization_run_id) {
+          const visualizationResponse = await fetch(`/api/v1/understanding/visualization-runs/${encodeURIComponent(aggregate.VISUALIZE.visualization_run_id)}`);
+          visualizationResult = await responsePayload(visualizationResponse, 'MRJ could not load visualization.');
+        }
+        if (aggregate.INDICATORS?.indicator_run_id) {
+          const indicatorsResponse = await fetch(`/api/v1/understanding/indicator-runs/${encodeURIComponent(aggregate.INDICATORS.indicator_run_id)}`);
+          indicatorRun = await responsePayload(indicatorsResponse, 'MRJ could not load indicators.');
+        }
+      } catch (failure) {
+        getElement('batchStatus').textContent = failure.message || 'MRJ could not load every completed stage.';
+      }
+    }
+    batchEntries = (run.documents || []).map(runDocument => ({
+      file: { name: runDocument.original_filename, size: 0 },
+      extension: fileExtension(runDocument.original_filename),
+      status: runDocument.stage_status.UNDERSTAND.status,
+      error: runDocument.error,
+      serverDocumentId: runDocument.document_id,
+    }));
+    selectedBatchDocumentId = null;
+    activeJourneyStage = 'UNDERSTAND';
+    getElement('batchNameField').hidden = true;
+    safelyRenderBatchState();
+    renderBatchReportBrowser();
+    if (run.documents?.length && !run.archived) selectBatchDocument(run.documents[0].document_id, false);
+  } catch (failure) {
+    getElement('batchStatus').textContent = failure.message || 'MRJ could not open the batch.';
+    await refreshBatchSelector('new');
+  }
 }
 
 function renderList(target, items, renderer, emptyMessage) {
@@ -2567,7 +2652,8 @@ function renderBatchDashboard() {
   getElement('batchSetup').hidden = batchProcessing || Boolean(batchRun);
   getElement('batchDashboard').hidden = !(batchProcessing || batchRun);
   getElement('batchSummaryEyebrow').textContent = complete ? 'Batch Complete' : 'Understanding Batch';
-  getElement('batchSummaryTitle').textContent = complete ? `${batchEntries.length} reports processed` : 'Analyzing reports';
+  const batchTitle = batchRun?.batch_name || 'Batch';
+  getElement('batchSummaryTitle').textContent = complete ? `${batchTitle} · ${batchEntries.length} reports processed` : `Analyzing ${batchTitle}`;
   updateBatchProgress(terminal, batchEntries.length);
   getElement('batchProgressText').hidden = complete;
   getElement('batchProgressBar').parentElement.hidden = complete;
@@ -2602,6 +2688,11 @@ function safelyRenderBatchState() {
 
 async function analyzeBatch() {
   if (batchProcessing || !batchEntries.length || batchEntries.length > MAX_BATCH_REPORTS) return;
+  const batchName = getElement('batchNameInput').value.trim();
+  if (!batchName || batchName.length > 80 || /[\x00-\x1f\x7f]/.test(batchName)) {
+    getElement('batchStatus').textContent = 'Enter a batch name of 1–80 printable characters.';
+    return;
+  }
   activeJourneyStage = 'UNDERSTAND';
   analysisResult = null;
   analysisError = '';
@@ -2621,8 +2712,9 @@ async function analyzeBatch() {
   getElement('results').classList.remove('show', 'batch-view');
   safelyRenderBatchState();
   try {
-    const createResponse = await fetch('/api/v1/understanding/journey-runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'batch' }) });
+    const createResponse = await fetch('/api/v1/understanding/journey-runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'batch', batch_name: batchName }) });
     batchRun = await responsePayload(createResponse, 'MRJ could not create the batch.');
+    await refreshBatchSelector(batchRun.run_id);
     safelyRenderBatchState();
 
     await processSequentialBatch(
@@ -2709,7 +2801,7 @@ function renderBatchRows() {
     selection.append(number, reportCopy, confidence, status);
     selection.onclick = () => selectBatchDocument(model.documentId);
     row.append(selection);
-    if (model.state === 'FAILED' && activeJourneyStage === 'UNDERSTAND') {
+    if (model.state === 'FAILED' && activeJourneyStage === 'UNDERSTAND' && typeof batchEntries[model.order]?.file?.slice === 'function') {
       const retry = makeElement('button');
       retry.type = 'button';
       retry.className = 'retry-report';
@@ -2726,6 +2818,10 @@ function renderBatchRows() {
 }
 
 function selectBatchDocument(documentId, scroll = true) {
+  if (batchRun?.archived) {
+    getElement('batchStatus').textContent = 'Report details have expired. Batch membership and stage references remain available.';
+    return;
+  }
   const runDocument = getRunDocumentById(batchRun, documentId);
   if (!runDocument) return;
   selectedBatchDocumentId = documentId;
@@ -2783,7 +2879,7 @@ function configureReportNavigation() {
 async function retryBatchDocument(documentId) {
   const runDocument = getRunDocumentById(batchRun, documentId);
   const entry = runDocument ? batchEntries[runDocument.order] : null;
-  if (!runDocument || !entry || batchProcessing) return;
+  if (!runDocument || !entry || typeof entry.file?.slice !== 'function' || batchProcessing) return;
   batchProcessing = true;
   entry.status = 'PROCESSING';
   safelyRenderBatchState();
@@ -3062,6 +3158,9 @@ function resetBatch() {
   getElement('batchSetup').hidden = false;
   getElement('batchDashboard').hidden = true;
   getElement('batchStatus').textContent = '';
+  getElement('batchSelector').value = 'new';
+  getElement('batchNameInput').value = '';
+  getElement('batchNameField').hidden = false;
   getElement('results').classList.remove('show', 'batch-view');
   getElement('batchReportBrowser').hidden = true;
   renderPreQueue();
@@ -3087,6 +3186,7 @@ function showUnderstandStage() {
 function initializeUnderstandingWorkspace() {
   getElement('singleModeTab').onclick = () => setWorkflowMode('single');
   getElement('batchModeTab').onclick = () => setWorkflowMode('batch');
+  getElement('batchSelector').onchange = selectSavedBatch;
   getElement('fileTab').onclick = () => setInputMode('file');
   getElement('textTab').onclick = () => setInputMode('text');
   getElement('fileInput').onchange = interaction => setSingleFile(interaction.target.files[0]);

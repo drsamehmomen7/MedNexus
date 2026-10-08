@@ -1,6 +1,12 @@
 # MRJ
 
-## Current checkpoint — R2.0C accepted and closed
+## Current checkpoint — Full-Cycle Validation V1 stabilization
+
+The seven-stage Journey is functionally complete. A fresh run of the 20-report synthetic Ultrasound cohort completed UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS with no runtime or stage-handoff failures. Independent clinical review improved from **6 PASS / 12 PARTIAL / 2 FAIL** to **10 PASS / 10 PARTIAL / 0 FAIL**. No validation source files changed, and processing did not read ground truth.
+
+General synthesis corrections retain secondary and numbered Impression findings, preserve local laterality for negatives, and keep source measurements in a governed ledger. All 17 reports with source measurements retain them in governed output; uncertain current measurements remain review-only and prior measurements cannot enter current analytic distributions. Policy-kept protected context supplies sex, facility, and report-year coverage for all 20 reports. Named batch metadata survives restart with stable ID and membership; clinical inputs remain ephemeral and require re-upload for further per-report work. Wording normalization, remaining clinical review items, and final UX remain deferred. The accepted future user-facing direction is **Report Workspace → Collection Intelligence**; that redesign has **not** been implemented. See [CURRENT_STATE.md](CURRENT_STATE.md) for the measured limits and [BUILD_HISTORY.md](BUILD_HISTORY.md) for the closure record.
+
+## Historical checkpoint — R2.0C accepted and closed
 
 Clinical synthesis and cross-Radiology generalization are accepted for horizontal Journey progression. EXTRACT is an accepted working clinical shell; the final Unified Journey redesign is deferred. The frozen eight-report holdout finished 6 PASS, 2 PARTIAL, 0 FAIL, and the next milestone is **R3.0A — STANDARDIZE V0**. Individual clinical facts still require human review before an accepted record can enter collection analytics. See [CURRENT_STATE.md](CURRENT_STATE.md) and the [R2.0C closure record](docs/design/MRJ_R2_0C_Clinical_Synthesis_and_EXTRACT_Experience.md).
 
@@ -45,11 +51,11 @@ The public MRJ journey is:
 → 05 ANALYZE → 06 VISUALIZE → 07 INDICATORS
 ```
 
-This is the target product architecture, not a claim that all seven stages are implemented. INGEST remains an internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction.
+All seven stages are now functionally connected; final product/UX acceptance remains separate. INGEST remains an internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction.
 
 Public identity: **MRJ — Medical Report Journey**. The former MEDNEXUS⁷ signature is historical. The seven-stage architecture is unchanged; internal code, policy IDs, APIs, schemas, provenance values, filenames, and `D:\MedNexus` paths retain their existing names.
 
-The implemented Journey includes **UNDERSTAND, PROTECT, and the R2.0C Radiology EXTRACT pilot**. The Clinical Privacy Policy Engine / De-identification and Medical Document Understanding & Recognition remain foundational capabilities. Radiology is the primary current specialization; Public Health is the second strategic specialization. Phase 1 remains frozen at its accepted POC checkpoint.
+The implemented Journey includes all seven functional stages. The Clinical Privacy Policy Engine / De-identification and Medical Document Understanding & Recognition remain foundational capabilities. Radiology is the primary current specialization; Public Health is the second strategic specialization. Phase 1 remains frozen at its accepted POC checkpoint.
 
 The [Multi-Engine Medical Intelligence Strategy v1.1](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.1.md) is the current accepted strategy and records the current priority, technical-spike checkpoint, hardware transition, UI direction, and roadmap. The accepted [Strategy v1.0 predecessor](docs/architecture/MedNexus_Multi_Engine_Medical_Intelligence_Strategy_v1.0.md) remains the immutable historical M0 checkpoint. External medical AI engines may contribute candidate evidence through a future vendor-neutral Gateway, while MRJ retains authority, policy, provenance, arbitration, clinical contracts, standardization, and persistent intelligence. The accepted strategy remains subordinate to the frozen UNDERSTAND v1 authority and does not claim runtime implementation.
 

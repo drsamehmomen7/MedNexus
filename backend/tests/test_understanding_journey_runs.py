@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import subprocess
 from types import SimpleNamespace
+import pytest
 
 from fastapi.testclient import TestClient
 
@@ -15,6 +16,11 @@ from backend.app.modules.medical_document_intelligence.api import (
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def isolate_batch_metadata(tmp_path, monkeypatch):
+    monkeypatch.setattr(understanding_api.journey_store, "_batch_root", tmp_path / "batches")
 
 
 def _verify_frontend_cards(single: dict, run: dict) -> dict:
@@ -50,9 +56,10 @@ def _create_batch() -> str:
     payload = response.json()
     assert payload["mode"] == "batch"
     assert payload["storage"] == {
-        "kind": "ephemeral_process_memory",
+        "kind": "batch_metadata_and_ephemeral_clinical_memory",
         "ttl_seconds": 1800,
-        "durable": False,
+        "durable": True,
+        "clinical_inputs_available": True,
     }
     return payload["run_id"]
 
@@ -94,24 +101,79 @@ def test_batch_two_valid_reports_use_the_single_authoritative_result_schema():
     assert set(results[0]["journey"]) == set(single["journey"]) | {"document_id"}
 
 
-def test_batch_accepts_ten_reports_and_rejects_an_eleventh_cleanly():
-    run_id = _create_batch()
+def test_batch_accepts_twenty_reports_and_rejects_a_twenty_first_cleanly():
+    created = client.post(
+        "/api/v1/understanding/journey-runs",
+        json={"mode": "batch", "batch_name": "Twenty Report Batch"},
+    )
+    assert created.status_code == 200
+    run_id = created.json()["run_id"]
     payload = None
-    for index in range(10):
+    for index in range(20):
         content = f"{CT_REPORT}\nACCESSION LABEL: {index}".encode()
         response = _add_report(run_id, index, f"report-{index}.txt", content)
         assert response.status_code == 200
         payload = response.json()
 
-    assert payload["summary"]["total"] == 10
-    assert payload["summary"]["analyzed"] == 10
+    assert payload["summary"]["total"] == 20
+    assert payload["summary"]["analyzed"] == 20
+    assert payload["batch_name"] == "Twenty Report Batch"
+    assert payload["batch_id"] == run_id
     overflow = _add_report(
-        run_id, 10, "report-10.txt", f"{CT_REPORT}\nACCESSION LABEL: 10".encode()
+        run_id, 20, "report-20.txt", f"{CT_REPORT}\nACCESSION LABEL: 20".encode()
     )
     assert overflow.status_code == 400
-    assert "at most 10 reports" in overflow.json()["detail"]
+    assert "at most 20 reports" in overflow.json()["detail"]
     retained = client.get(f"/api/v1/understanding/journey-runs/{run_id}").json()
-    assert retained["summary"]["total"] == 10
+    assert retained["summary"]["total"] == 20
+
+
+def test_named_batch_is_listed_and_preserves_technical_identity():
+    response = client.post("/api/v1/understanding/journey-runs", json={"mode": "batch", "batch_name": "  Ultrasound  "})
+    assert response.status_code == 200
+    created = response.json()
+    run_id = created["run_id"]
+    assert created["batch_id"] == run_id
+    assert created["batch_name"] == "Ultrasound"
+    report = _add_report(run_id, 0, "ultrasound.txt", CT_REPORT.encode())
+    assert report.status_code == 200
+    assert report.json()["batch_name"] == "Ultrasound"
+    listed = client.get("/api/v1/understanding/journey-runs").json()["batches"]
+    assert any(item["run_id"] == run_id and item["batch_name"] == "Ultrasound" and item["report_count"] == 1 for item in listed)
+    reopened = client.get(f"/api/v1/understanding/journey-runs/{run_id}").json()
+    assert reopened["batch_name"] == "Ultrasound"
+    assert reopened["documents"][0]["original_filename"] == "ultrasound.txt"
+    assert _create_batch() in {item["run_id"] for item in client.get("/api/v1/understanding/journey-runs").json()["batches"]}
+    assert client.post("/api/v1/understanding/journey-runs", json={"mode": "batch", "batch_name": "ultrasound"}).status_code == 409
+    assert client.post("/api/v1/understanding/journey-runs", json={"mode": "batch", "batch_name": "  "}).status_code == 409
+
+
+def test_named_batch_metadata_survives_store_reload_without_report_text(tmp_path):
+    from backend.app.modules.medical_document_intelligence.understanding.journey import (
+        JourneyMode, JourneyStore,
+    )
+
+    root = tmp_path / "batches"
+    first = JourneyStore(batch_root=root)
+    run = first.create_run(JourneyMode.BATCH, display_name="Ultrasound")
+    member = first.begin_document(run.run_id, original_filename="Private Name.pdf", order=0,
+                                  source_type="pdf", content_digest="a" * 64)
+    persisted = (root / f"{run.run_id}.json").read_text(encoding="utf-8")
+    assert "Private Name" not in persisted
+    assert "protected_text" not in persisted
+    second = JourneyStore(batch_root=root)
+    listed = second.list_batch_runs()
+    assert listed[0]["batch_name"] == "Ultrasound"
+    assert listed[0]["batch_id"] == run.run_id
+    assert listed[0]["report_count"] == 1
+    reopened = second.run_payload(run.run_id)
+    assert reopened["archived"] is True
+    assert reopened["batch_id"] == run.run_id
+    assert reopened["documents"][0]["document_id"] == member.document_id
+    assert reopened["documents"][0]["original_filename"] == "Report 1"
+    assert reopened["documents"][0]["stage_status"]["UNDERSTAND"]["status"] == "PROCESSING"
+    with pytest.raises(LookupError):
+        second.get_run(run.run_id)
 
 
 def test_batch_five_valid_reports_all_reach_terminal_state():
@@ -569,14 +631,16 @@ def test_understanding_workspace_exposes_two_modes_without_browser_phi_persisten
     script = client.get("/understanding.js").text
     assert "Single Report" in page
     assert "Batch Reports" in page
-    assert "Analyze up to 10 clinical reports together" in page
-    assert "Drop up to 10 reports here" in page
+    assert "Analyze up to 20 clinical reports together" in page
+    assert "Drop up to 20 reports here" in page
+    assert "+ New batch" in page
+    assert 'id="batchNameInput"' in page
     assert "Choose Report" in page
     assert "No file chosen" not in page
     assert 'id="fileTab" type="button" role="tab" aria-selected="true"' in page
     assert "Continue to PROTECT" in page
     assert "Previous Report" in page and "Next Report" in page
-    assert "MAX_BATCH_REPORTS = 10" in script
+    assert "MAX_BATCH_REPORTS = 20" in script
     assert "/api/v1/understanding/journey-runs" in script
     assert "stage_results?.UNDERSTAND" in script
     assert "localStorage" not in script

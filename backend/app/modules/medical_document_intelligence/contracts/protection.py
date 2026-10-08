@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -107,6 +108,47 @@ class PatientAnalyticContext:
             "fields": values,
             "populated_fields": list(self.populated_fields),
         }
+
+
+def safe_analytic_context_from_protected_text(text: str, policy: PolicyProfile) -> PatientAnalyticContext:
+    """Project explicitly labeled, policy-kept fields after PROTECT, never raw text."""
+    unavailable = PatientAnalyticField(AnalyticFieldState.NOT_AVAILABLE)
+    restricted = PatientAnalyticField(AnalyticFieldState.RESTRICTED)
+    header = re.split(r"(?im)^\s*(?:FINDINGS|IMPRESSION)\s*:\s*$", text[:4000], maxsplit=1)[0]
+    labels = {}
+    for match in re.finditer(r"(?im)^\s*(Sex|Gender|Facility|Study Date)\s*:\s*([^\r\n]{1,120})\s*$", header):
+        labels.setdefault(match.group(1).casefold(), match.group(2).strip())
+
+    def allowed(entity: CandidateEntityType) -> bool:
+        return PolicyEngine.get_action(entity, policy, require_mapping=True) is PolicyAction.KEEP
+
+    def known(value: Any, field_name: str) -> PatientAnalyticField:
+        return PatientAnalyticField(AnalyticFieldState.KNOWN, value,
+                                    {"source": "PROTECTED_LABELED_HEADER", "field": field_name,
+                                     "policy_id": policy.value})
+
+    sex = unavailable if allowed(CandidateEntityType.GENDER) else restricted
+    sex_value = labels.get("sex") or labels.get("gender")
+    if sex_value and allowed(CandidateEntityType.GENDER) and sex_value.casefold() in {"male", "female", "other", "unknown"}:
+        sex = known(sex_value.upper(), "sex")
+
+    facility = unavailable if allowed(CandidateEntityType.ORGANIZATION) else restricted
+    facility_value = labels.get("facility")
+    if facility_value and allowed(CandidateEntityType.ORGANIZATION) and re.fullmatch(r"[\w .,'()&/-]{2,120}", facility_value):
+        facility = known(facility_value, "facility")
+
+    safe_time = unavailable if allowed(CandidateEntityType.EXAM_DATE) else restricted
+    date_value = labels.get("study date")
+    if date_value and allowed(CandidateEntityType.EXAM_DATE) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
+        try:
+            parsed = datetime.strptime(date_value, "%Y-%m-%d")
+        except ValueError:
+            pass
+        else:
+            safe_time = known({"report_year": parsed.year, "representation": "YEAR_BUCKET"}, "study_date")
+
+    return PatientAnalyticContext(unavailable, unavailable, unavailable, sex,
+                                  safe_time, unavailable, facility)
 
 
 @dataclass(frozen=True, slots=True)
@@ -438,7 +480,7 @@ def build_protect_output(
             integrity_sha256=hashlib.sha256(protected_text.encode("utf-8")).hexdigest(),
             artifact=artifact if protection_complete else None,
         ),
-        patient_analytic_context=PatientAnalyticContext.unavailable(),
+        patient_analytic_context=safe_analytic_context_from_protected_text(protected_text, policy),
         protection_result=ProtectionResult(
             status=(
                 "BLOCKED"

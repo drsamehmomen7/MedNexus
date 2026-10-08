@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import re
 
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+from pathlib import Path
 from threading import RLock
 from time import monotonic
 from typing import Any
@@ -160,24 +163,26 @@ class JourneyRun:
     mode: JourneyMode
     created_at: str
     expires_at: str
+    display_name: str | None = None
     current_stage: JourneyStage = JourneyStage.UNDERSTAND
     documents: list[JourneyDocument] = field(default_factory=list)
     _last_access: float = field(default_factory=monotonic, repr=False)
 
 
 class JourneyStore:
-    """Bounded process-local journey storage for the current POC.
+    """Bounded live journeys with durable, nonclinical batch metadata.
 
     Extracted clinical content lives only in application memory. It is never
-    written to Git, logs, browser storage, or a durable database. Runs expire
-    after a sliding TTL and are also evicted by capacity or process restart.
+    written to Git, logs, browser storage, or a durable database. Live runs
+    expire after a sliding TTL; batch membership survives in the workspace.
     """
 
     def __init__(
         self,
         capacity: int = 32,
         ttl_seconds: int = 30 * 60,
-        max_batch_documents: int = 10,
+        max_batch_documents: int = 20,
+        batch_root: str | Path | None = None,
     ) -> None:
         if capacity < 1 or ttl_seconds < 1 or max_batch_documents < 1:
             raise ValueError("Journey store limits must be positive integers.")
@@ -186,6 +191,70 @@ class JourneyStore:
         self._max_batch_documents = max_batch_documents
         self._runs: OrderedDict[str, JourneyRun] = OrderedDict()
         self._lock = RLock()
+        default_root = "D:/MedNexus/Analysis_Workspace/batches" if os.name == "nt" else "/tmp/mrj-analysis/batches"
+        self._batch_root = Path(batch_root or os.getenv("MRJ_BATCH_STORE_DIR", default_root))
+
+    def _batch_path(self, run_id: str) -> Path:
+        if not re.fullmatch(r"[0-9a-f]{32}", run_id):
+            raise LookupError("Journey run was not found or has expired.")
+        return self._batch_root / f"{run_id}.json"
+
+    def _batch_metadata(self, run: JourneyRun) -> dict[str, Any]:
+        documents = sorted(run.documents, key=lambda item: item.order)
+        return {
+            "schema_version": 1, "run_id": run.run_id, "batch_id": run.run_id,
+            "mode": "batch", "batch_name": run.display_name, "created_at": run.created_at,
+            "report_count": len(documents), "current_stage": run.current_stage.value,
+            "documents": [
+                {"document_id": item.document_id, "order": item.order,
+                 "display_label": f"Report {item.order + 1}", "source_type": item.source_type,
+                 "source_sha256": item.content_digest,
+                 "stage_status": {stage.value: {"status": item.stage_status[stage].value}
+                                  for stage in PUBLIC_JOURNEY_STAGES},
+                 "stage_references": {
+                     stage.value: {key: value for key, value in result.items()
+                                   if key in {"collection_id", "analysis_run_id", "visualization_run_id", "indicator_run_id"}
+                                   and isinstance(value, str) and re.fullmatch(r"[0-9a-f]{32}", value)}
+                     for stage, result in item.stage_results.items()
+                     if stage in {JourneyStage.ANALYZE, JourneyStage.VISUALIZE, JourneyStage.INDICATORS}
+                 }} for item in documents
+            ],
+        }
+
+    def _persist_batch_locked(self, run: JourneyRun) -> None:
+        if run.mode is not JourneyMode.BATCH:
+            return
+        path = self._batch_path(run.run_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp = path.with_name(f".{run.run_id}.{uuid4().hex}.tmp")
+        try:
+            temp.write_text(json.dumps(self._batch_metadata(run), sort_keys=True, separators=(",", ":")), encoding="utf-8")
+            os.replace(temp, path)
+        finally:
+            temp.unlink(missing_ok=True)
+
+    def _read_batch(self, run_id: str) -> dict[str, Any]:
+        path = self._batch_path(run_id)
+        if not path.is_file():
+            raise LookupError("Journey run was not found or has expired.")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def _archived_batch_payload(self, metadata: dict[str, Any]) -> dict[str, Any]:
+        documents = []
+        for member in metadata["documents"]:
+            documents.append({
+                "document_id": member["document_id"], "original_filename": member["display_label"],
+                "order": member["order"], "source_type": member["source_type"],
+                "stage_status": member["stage_status"], "stage_results": member.get("stage_references", {}),
+                "stage_errors": {}, "error": None,
+            })
+        return {"run_id": metadata["run_id"], "batch_id": metadata["batch_id"],
+                "mode": "batch", "batch_name": metadata["batch_name"],
+                "created_at": metadata["created_at"], "archived": True,
+                "current_stage": metadata["current_stage"], "documents": documents,
+                "summary": {"total": len(documents)},
+                "storage": {"kind": "durable_batch_metadata", "durable": True,
+                            "clinical_inputs_available": False}}
 
     @property
     def ttl_seconds(self) -> int:
@@ -196,23 +265,58 @@ class JourneyStore:
         return self._max_batch_documents
 
     def create_run(
-        self, mode: JourneyMode | str, *, run_id: str | None = None
+        self, mode: JourneyMode | str, *, run_id: str | None = None,
+        display_name: str | None = None,
     ) -> JourneyRun:
         selected_mode = mode if isinstance(mode, JourneyMode) else JourneyMode(mode.upper())
+        name = display_name.strip() if display_name is not None else None
+        if display_name is not None and (selected_mode is not JourneyMode.BATCH or not name
+                                         or len(name) > 80 or any(ord(char) < 32 for char in name)):
+            raise ValueError("Batch name must be 1–80 printable characters.")
         created = _utc_now()
         run = JourneyRun(
             run_id=run_id or uuid4().hex,
             mode=selected_mode,
             created_at=_timestamp(created),
             expires_at=_timestamp(created + timedelta(seconds=self._ttl_seconds)),
+            display_name=name,
         )
         with self._lock:
             self._cleanup_locked()
+            if name and any(existing.mode is JourneyMode.BATCH
+                            and existing.display_name and existing.display_name.casefold() == name.casefold()
+                            for existing in self._runs.values()):
+                raise ValueError("A batch with this name already exists. Choose another name.")
+            if name and any((existing.get("batch_name") or "").casefold() == name.casefold()
+                            for existing in self._list_persisted_batches_locked()):
+                raise ValueError("A batch with this name already exists. Choose another name.")
             self._runs[run.run_id] = run
             self._runs.move_to_end(run.run_id)
+            self._persist_batch_locked(run)
             while len(self._runs) > self._capacity:
                 self._runs.popitem(last=False)
         return run
+
+    def list_batch_runs(self) -> list[dict[str, Any]]:
+        """List durable batch metadata; never expose report text."""
+        with self._lock:
+            self._cleanup_locked()
+            return self._list_persisted_batches_locked()
+
+    def _list_persisted_batches_locked(self) -> list[dict[str, Any]]:
+        if not self._batch_root.is_dir():
+            return []
+        batches = []
+        for path in self._batch_root.glob("*.json"):
+            if not re.fullmatch(r"[0-9a-f]{32}\.json", path.name):
+                continue
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                batches.append({key: data[key] for key in
+                                ("run_id", "batch_id", "batch_name", "report_count", "created_at")})
+            except (OSError, ValueError, KeyError, TypeError):
+                continue
+        return sorted(batches, key=lambda item: item["created_at"], reverse=True)
 
     def retain(
         self,
@@ -384,7 +488,10 @@ class JourneyStore:
             return item
 
     def run_payload(self, run_id: str) -> dict[str, Any]:
-        run = self.get_run(run_id)
+        try:
+            run = self.get_run(run_id)
+        except LookupError:
+            return self._archived_batch_payload(self._read_batch(run_id))
         documents = sorted(run.documents, key=lambda value: value.order)
         status_counts = {
             stage.value: {
@@ -454,13 +561,16 @@ class JourneyStore:
         return {
             "run_id": run.run_id,
             "mode": run.mode.value.lower(),
+            "batch_id": run.run_id if run.mode is JourneyMode.BATCH else None,
+            "batch_name": run.display_name,
             "created_at": run.created_at,
             "expires_at": run.expires_at,
-            "storage": {
-                "kind": "ephemeral_process_memory",
-                "ttl_seconds": self._ttl_seconds,
-                "durable": False,
-            },
+            "storage": ({"kind": "batch_metadata_and_ephemeral_clinical_memory",
+                         "ttl_seconds": self._ttl_seconds, "durable": True,
+                         "clinical_inputs_available": True}
+                        if run.mode is JourneyMode.BATCH else
+                        {"kind": "ephemeral_process_memory", "ttl_seconds": self._ttl_seconds,
+                         "durable": False}),
             "current_stage": run.current_stage.value,
             "documents": [item.to_dict() for item in documents],
             "summary": {
@@ -1100,6 +1210,7 @@ class JourneyStore:
         run._last_access = monotonic()
         run.expires_at = _timestamp(_utc_now() + timedelta(seconds=self._ttl_seconds))
         self._runs.move_to_end(run.run_id)
+        self._persist_batch_locked(run)
 
     def _cleanup_locked(self) -> None:
         now = monotonic()

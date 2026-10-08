@@ -81,6 +81,77 @@ def test_measurement_attaches_only_to_its_positive_clause():
     assert any(obs.get("measurements") for fact in positives for obs in fact["observations"])
 
 
+def test_measured_secondary_positive_survives_without_engine_entity():
+    sentence = "A small 12 mm cortical cyst is present. The duct measures 4 mm and is not dilated."
+    sections = [{"role": "FINDINGS_DESCRIPTION", "start": 0, "end": len(sentence), "text": sentence}]
+    result = output(sentence, [], sections)
+    positives = [fact for fact in result["canonical_facts"] if fact["assertion_state"] == "PRESENT"]
+    assert any("cyst" in fact["display_label"].casefold()
+               and "12 mm" in [measure for observation in fact["observations"]
+                               for measure in observation.get("measurements", [])] for fact in positives)
+    assert not any("4 mm" in [measure for observation in fact["observations"]
+                              for measure in observation.get("measurements", [])] for fact in positives)
+
+
+def test_measurement_after_truncated_positive_anchor_remains_attached():
+    sentence = "Several echogenic foci are present, largest measuring 13 mm."
+    sections = [{"role": "FINDINGS_DESCRIPTION", "start": 0, "end": len(sentence), "text": sentence}]
+    result = output(sentence, [("echogenic foci", "Several echogenic foci are present", "FINDINGS_DESCRIPTION", "PRESENT")], sections)
+    assert any("13 mm" in observation.get("measurements", [])
+               for fact in result["canonical_facts"] for observation in fact["observations"])
+
+
+def test_adjacent_measured_bilateral_subject_retains_side_specific_sizes():
+    first = "Both glands are mildly reduced in size."
+    second = "Right gland measures 9.1 cm and left gland measures 9.3 cm."
+    text = first + " " + second
+    sections = [{"role": "FINDINGS_DESCRIPTION", "start": 0, "end": len(text), "text": text}]
+    result = output(text, [("glands", first, "FINDINGS_DESCRIPTION", "PRESENT")], sections)
+    fact = next(f for f in result["canonical_facts"] if "glands" in f["display_label"].casefold())
+    measured = [(m, obs.get("laterality")) for obs in fact["observations"]
+                for m in obs.get("measurements", [])]
+    assert ("9.1 cm", "RIGHT") in measured
+    assert ("9.3 cm", "LEFT") in measured
+
+
+def test_unowned_normal_measurement_is_governed_without_becoming_a_finding():
+    text = "The duct measures 4 mm and is not dilated."
+    sections = [{"role": "FINDINGS_DESCRIPTION", "start": 0, "end": len(text), "text": text}]
+    result = output(text, [], sections)
+    assert not result["canonical_facts"]
+    entry = result["governed_measurements"][0]
+    assert entry["source_text"] == "4 mm"
+    assert entry["assignment_state"] == "UNASSIGNED_REVIEW"
+    assert entry["source_fact_id"] is None
+    assert text[entry["evidence_span"]["start_offset"]:entry["evidence_span"]["end_offset"]] == "4 mm"
+
+
+def test_prior_measurement_is_marked_as_prior_not_current():
+    text = "The lesion measures 18 x 15 mm. It was previously 16 x 14 mm."
+    sections = [{"role": "FINDINGS_DESCRIPTION", "start": 0, "end": len(text), "text": text}]
+    result = output(text, [("lesion", "The lesion measures 18 x 15 mm.", "FINDINGS_DESCRIPTION", "PRESENT")], sections)
+    ledger = result["governed_measurements"]
+    assert [item["source_text"] for item in ledger] == ["18 x 15 mm", "16 x 14 mm"]
+    assert ledger[1]["assignment_state"] == "PRIOR_CONTEXT"
+
+
+def test_current_measurement_followed_by_prior_comparison_stays_current():
+    text = "A stable cyst measures 12 mm, unchanged from prior examination."
+    sections = [{"role": "FINDINGS_DESCRIPTION", "start": 0, "end": len(text), "text": text}]
+    result = output(text, [("cyst", text, "FINDINGS_DESCRIPTION", "PRESENT")], sections)
+    assert result["governed_measurements"][0]["assignment_state"] != "PRIOR_CONTEXT"
+
+
+def test_unique_summary_owned_size_is_not_duplicated_as_unassigned():
+    summary = "Small cyst measuring 1.6 cm."
+    finding = "A cyst measures 1.6 cm."
+    text = summary + "\n" + finding
+    sections = [{"role": "DIAGNOSTIC_SUMMARY", "start": 0, "end": len(summary), "text": summary},
+                {"role": "FINDINGS_DESCRIPTION", "start": len(summary) + 1, "end": len(text), "text": finding}]
+    result = output(text, [("cyst", summary, "DIAGNOSTIC_SUMMARY", "PRESENT")], sections)
+    assert result["governed_measurements"][0]["assignment_state"] == "LINKED_TO_FACT"
+
+
 def test_patient_assessment_before_same_line_advice_remains_eligible():
     sentence = "Benign screening study. Routine follow-up is recommended."
     sections = [{"role": "DIAGNOSTIC_SUMMARY", "start": 0, "text": sentence}]
@@ -104,6 +175,46 @@ def test_numbered_patient_summary_is_not_mistaken_for_reference_list():
     result = output(text, [("stricture", sentence, "DIAGNOSTIC_SUMMARY", "PRESENT")])
     assert any("stricture" in fact["display_label"].casefold() and fact["group"] == "KEY"
                for fact in result["canonical_facts"])
+
+
+def test_multiple_short_impression_items_remain_independent_findings():
+    text = "1. Complex adnexal lesion.\n2. Mild splenic enlargement.\n3. No free fluid."
+    result = output(text, [
+        ("lesion", "1. Complex adnexal lesion.", "DIAGNOSTIC_SUMMARY", "PRESENT"),
+        ("enlargement", "2. Mild splenic enlargement.", "DIAGNOSTIC_SUMMARY", "PRESENT"),
+    ])
+    labels = [fact["display_label"].casefold() for fact in result["canonical_facts"]]
+    assert any("adnexal lesion" in label for label in labels)
+    assert any("splenic enlargement" in label for label in labels)
+
+
+def test_contralateral_negative_preserves_local_anatomical_scope():
+    positive = "Right adnexa shows a complex lesion."
+    negative = "Left adnexa is normal without a lesion."
+    result = output(positive + "\n" + negative, [
+        ("lesion", positive, "FINDINGS_DESCRIPTION", "PRESENT"),
+        ("lesion", negative, "FINDINGS_DESCRIPTION", "ABSENT_NEGATED"),
+    ])
+    positives = [fact for fact in result["canonical_facts"] if fact["assertion_state"] == "PRESENT"]
+    negatives = [fact for fact in result["canonical_facts"] if fact["assertion_state"] == "ABSENT_NEGATED"]
+    assert positives and negatives
+    assert any(fact["laterality"] == "RIGHT" for fact in positives)
+    assert any(fact["laterality"] == "LEFT" and "left adnexa" in fact["display_label"].casefold()
+               for fact in negatives)
+    assert not any(fact["display_label"].casefold() == "no lesion" for fact in negatives)
+
+
+def test_truncated_engine_anchor_recovers_adjacent_measurement_on_secondary_fact():
+    text = "Findings: A complex adnexal lesion is seen, measuring 18 x 15 mm."
+    anchor = "A complex adnexal lesion is seen"
+    start = text.index(anchor)
+    findings = [{"finding_id": "synthetic-size", "source_expression": "lesion",
+                 "assertion_state": "PRESENT", "evidence_anchors": [{"start_offset": start,
+                 "end_offset": start + len(anchor), "quote": anchor, "role": "DETAIL_SUPPORT",
+                 "source_section": "FINDINGS_DESCRIPTION"}]}]
+    result = synthesize({"radiology_findings": findings, "candidate_count": 1}, text, [])
+    assert any("18 x 15 mm" in observation.get("measurements", [])
+               for fact in result["canonical_facts"] for observation in fact["observations"])
 
 
 def test_lowercase_pdf_continuation_keeps_completing_modifier():

@@ -7,7 +7,7 @@
   <title>Document Understanding Workspace — MRJ</title>
   <meta name="description" content="MRJ Medical Document Understanding and Recognition.">
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
-  <link rel="stylesheet" href="/understanding-styles.css?v=r6-0a">
+  <link rel="stylesheet" href="/understanding-styles.css?v=full-cycle-v1">
   <link rel="stylesheet" href="/static/mrj-brand.css">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
@@ -64,7 +64,7 @@
 
       <div class="mode-selector" role="tablist" aria-label="Understanding workflow mode">
         <button class="mode-card active" id="singleModeTab" type="button" role="tab" aria-selected="true" aria-controls="singleWorkspace"><i aria-hidden="true">01</i><span><b>Single Report</b><small>One focused medical report.</small></span></button>
-        <button class="mode-card" id="batchModeTab" type="button" role="tab" aria-selected="false" aria-controls="batchWorkspace"><i aria-hidden="true">02</i><span><b>Batch Reports</b><small>Analyze up to 10 reports together.</small></span></button>
+        <button class="mode-card" id="batchModeTab" type="button" role="tab" aria-selected="false" aria-controls="batchWorkspace"><i aria-hidden="true">02</i><span><b>Batch Reports</b><small>Analyze up to 20 reports together.</small></span></button>
       </div>
 
       <section class="mode-workspace" id="singleWorkspace" role="tabpanel" aria-labelledby="singleModeTab">
@@ -93,15 +93,16 @@
       </section>
 
       <section class="mode-workspace" id="batchWorkspace" role="tabpanel" aria-labelledby="batchModeTab" hidden>
+        <div class="batch-name-controls"><label class="policy-field" for="batchSelector">Batch<select id="batchSelector"><option value="new">+ New batch</option></select></label><label class="policy-field" id="batchNameField" for="batchNameInput">Batch name<input id="batchNameInput" type="text" maxlength="80" autocomplete="off" placeholder="e.g. Ultrasound"><small>Names must be unique among active batches.</small></label></div>
         <div id="batchSetup">
-          <header class="mode-heading"><div><p class="mn-eyebrow">Batch Reports</p><h3>Analyze up to 10 clinical reports together.</h3></div><p>Select reports, review the queue, then analyze.</p></header>
+          <header class="mode-heading"><div><p class="mn-eyebrow">Batch Reports</p><h3>Analyze up to 20 clinical reports together.</h3></div><p>Select reports, review the queue, then analyze.</p></header>
           <div class="batch-input-layout">
             <label class="batch-dropzone" id="batchDropzone" for="batchFileInput" tabindex="0">
-              <span class="dropzone-icon" aria-hidden="true">↑</span><strong>Drop up to 10 reports here</strong><span class="dropzone-or">or</span><span class="mn-button mn-button--secondary">Select Reports</span><small>TXT <i>·</i> DOCX <i>·</i> TEXT PDF</small>
+              <span class="dropzone-icon" aria-hidden="true">↑</span><strong>Drop up to 20 reports here</strong><span class="dropzone-or">or</span><span class="mn-button mn-button--secondary">Select Reports</span><small>TXT <i>·</i> DOCX <i>·</i> TEXT PDF</small>
               <input id="batchFileInput" type="file" accept=".txt,.docx,.pdf" multiple>
             </label>
             <section class="prequeue-card" aria-labelledby="prequeueTitle">
-              <header><div><p class="mn-eyebrow">Reports Selected</p><h3 id="prequeueTitle">Review your batch</h3></div><strong id="batchCount">0 / 10</strong></header>
+              <header><div><p class="mn-eyebrow">Reports Selected</p><h3 id="prequeueTitle">Review your batch</h3></div><strong id="batchCount">0 / 20</strong></header>
               <div class="queue-head" aria-hidden="true"><span>#</span><span>File</span><span>Type</span><span>Size</span><span>Status</span><span>Action</span></div>
               <ol class="prequeue" id="batchPreQueue"><li class="empty-state">No reports selected yet.</li></ol>
               <div class="primary-action-row batch-actions"><button class="mn-button mn-button--primary primary-action" id="analyzeBatchBtn" type="button" disabled>Analyze Reports <span aria-hidden="true">→</span></button><button class="text-action" id="clearBatchBtn" type="button" disabled>Clear queue</button></div>
@@ -280,6 +281,6 @@
   </main>
 
   <footer class="workspace-footer"><div class="mn-shell mn-shell--wide"><span class="mrj-wordmark"><b>MRJ</b><small>Medical Report Journey</small></span><p>UNDERSTAND</p><a href="/app">Back to platform</a></div></footer>
-  <script src="/understanding.js?v=r6-0a"></script>
+  <script src="/understanding.js?v=full-cycle-v2"></script>
 </body>
 </html>

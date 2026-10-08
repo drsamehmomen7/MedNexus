@@ -1,6 +1,16 @@
 # MRJ Current State
 
-**Authoritative date:** 6 October 2026
+**Authoritative date:** 8 October 2026
+
+## Full-Cycle Validation V1 stabilization — pre-redesign baseline
+
+The existing seven-stage Journey completed a fresh, original-source run of 20 synthetic Ultrasound reports with **zero runtime failures, stage-handoff failures, or zero-fact collapses**. Independent clinical review, performed after MRJ outputs were saved, improved from **6 PASS / 12 PARTIAL / 2 FAIL** to **10 PASS / 10 PARTIAL / 0 FAIL**. The previously missed secondary findings in US_ABD_12 and US_ABD_15 and the right-positive/left-negative scope error in US_ABD_05 passed targeted rechecks. No filename- or report-specific production rule was added.
+
+The causes were overbroad rejection of numbered Impression entries, loss of local anatomical scope in a negative label, measurement loss at short evidence anchors and source continuations, an absent governed route for unowned measurements, an incorrect nested PROTECT-to-ANALYZE context read, and process-only named batches. General corrections retain secondary findings and laterality, attach measurements only with safe ownership, preserve **33 source measurement spans across all 17 reports with source measurements**, type **20 of 27 canonical measurement records** and leave seven types unknown, and keep six unassigned current measurements plus one prior measurement review-only and out of analytic distributions. Protected policy-kept sex, facility, and report-year context now reaches ANALYZE at **20/20** each; report year is a protected clinical date bucket, not upload time.
+
+PROTECT finished 14 COMPLETE / 6 NEEDS_REVIEW; each review case retains an unclassified identity-like signal without weakening privacy. STANDARDIZE finished 1 COMPLETE / 19 NEEDS_REVIEW; all 20 continued through validation-only ANALYZE, VISUALIZE, and INDICATORS. Named batch metadata is durable outside Git under `Analysis_Workspace/batches`: name, technical ID, creation time, membership/order, source digests, stage status, and aggregate references survive inactivity and backend restart. Raw/protected report text and other clinical Journey inputs remain in bounded process memory for 30 minutes; an archived batch reopens read-only and requires fresh upload for further per-report processing. BatchRun remains distinct from ReportCollection.
+
+The external validation result set and deferred-issues note remain outside Git. Unresolved wording fragmentation, ten partial clinical reviews, final visual design, and broader workflow changes remain deferred. The accepted future user-facing model is **Report Workspace → Collection Intelligence**; no redesign, navigation migration, profile feature, branding change, or seven-stage architecture change is part of this checkpoint. Closure verification: **132 focused tests passed, 8 warnings; 1222 backend tests passed, 8 warnings; JavaScript syntax, Python AST, and Git diff checks passed**.
 
 ## Accepted checkpoint — R6.0A INDICATORS V0
 

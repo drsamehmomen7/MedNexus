@@ -204,6 +204,38 @@ def test_review_signal_summary_is_typed_human_readable_and_phi_safe():
     assert "confidence" not in serialized
 
 
+def test_policy_kept_labeled_header_becomes_governed_analytic_context():
+    from backend.app.modules.medical_document_intelligence.contracts.protection import (
+        safe_analytic_context_from_protected_text,
+    )
+    from backend.app.modules.medical_document_intelligence.policies.policy_profiles import PolicyProfile
+
+    protected = "Sex: Female\nFacility: Sample Center\nStudy Date: 2025-04-03\nFINDINGS:\nNo acute finding."
+    clinical = safe_analytic_context_from_protected_text(protected, PolicyProfile.MEDNEXUS_CLINICAL)
+    assert clinical.sex.value == "FEMALE"
+    assert clinical.facility_context.value == "Sample Center"
+    assert clinical.safe_time_context.value == {"report_year": 2025, "representation": "YEAR_BUCKET"}
+    assert "2025-04-03" not in json.dumps(clinical.to_dict())
+
+    strict = safe_analytic_context_from_protected_text(protected, PolicyProfile.MEDNEXUS_STRICT_PRIVACY)
+    assert strict.facility_context.value is None
+    assert strict.safe_time_context.value is None
+    assert strict.sex.value == "FEMALE"
+
+
+def test_unlabeled_clinical_body_does_not_feed_analytic_header():
+    from backend.app.modules.medical_document_intelligence.contracts.protection import (
+        safe_analytic_context_from_protected_text,
+    )
+    from backend.app.modules.medical_document_intelligence.policies.policy_profiles import PolicyProfile
+
+    context = safe_analytic_context_from_protected_text(
+        "FINDINGS:\nSex: Female\nFacility: Sample Center\nStudy Date: 2025-04-03",
+        PolicyProfile.MEDNEXUS_CLINICAL,
+    )
+    assert context.populated_fields == ()
+
+
 def test_protected_pdf_builder_preserves_long_content_across_pages():
     protected_text = "\n".join(
         [

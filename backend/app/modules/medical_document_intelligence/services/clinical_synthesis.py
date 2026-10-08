@@ -327,9 +327,9 @@ def classify_clause(expression: str, anchor: dict, section: str, source_text: st
         nearby = source_text[line_start:min(len(source_text), line_start + 450)]
         current_line = source_text[line_start:source_text.find("\n", line_start) if "\n" in source_text[line_start:] else len(source_text)]
         list_lines = re.findall(r"(?m)^\s*\d+[.)]\s+[^\r\n]+", prior + nearby)
-        generic_options = sum(len(re.findall(r"\w+", item)) <= 10 and not re.search(
+        generic_options = sum(len(re.findall(r"[A-Za-z]+", re.sub(r"^\s*\d+[.)]\s*", "", item))) <= 2 and not re.search(
             r"\b(?:left|right|bilateral|seen|noted|in|at|within)\b", item, re.I) for item in list_lines)
-        generic_entry = (len(re.findall(r"\w+", current_line)) <= 10 and not re.search(
+        generic_entry = (len(re.findall(r"[A-Za-z]+", re.sub(r"^\s*\d+[.)]\s*", "", current_line))) <= 2 and not re.search(
             r"\b(?:left|right|bilateral|involving|with|without|no|not|seen|noted|present|identified|at|within)\b", current_line, re.I))
         if re.match(r"^\s*\d+[.)]\s+", current_line) and generic_entry and len(list_lines) >= 3 and generic_options >= 3:
             return "REFERENCE_OR_EDUCATIONAL_TEXT", "REFERENCE_LIST_NOT_PATIENT_FINDING"
@@ -446,7 +446,14 @@ def _open_label(expression: str, anchor: dict, assertion: str) -> str:
         # entity itself, carrying only a shared anatomical adjective.
         qualifier = _negative_qualifier(expression, anchor["quote"])
         target = re.sub(r"\s+", " ", expression).strip(" .;")
-        return "No " + (qualifier + " " if qualifier and not target.lower().startswith(qualifier.lower()) else "") + target
+        expression_match = re.search(re.escape(expression).replace(r"\ ", r"\s+"), fragment, re.I)
+        before = fragment[:expression_match.start()] if expression_match else fragment
+        scopes = re.findall(r"\b(?:left|right|bilateral)\s+[A-Za-z][A-Za-z-]*\b", before, re.I)
+        scope = scopes[-1].lower() if scopes else ""
+        scoped = " ".join(part for part in (scope, qualifier, target) if part and part.casefold() not in target.casefold())
+        if target.casefold() not in scoped.casefold():
+            scoped = (scoped + " " + target).strip()
+        return "No " + scoped
     if assertion == "UNCERTAIN":
         name = re.sub(r"\s+", " ", expression).strip(" .;")
         return name if name.isupper() else name.capitalize()
@@ -464,6 +471,7 @@ def _open_label(expression: str, anchor: dict, assertion: str) -> str:
     phrase = re.sub(r"\b(?:is|remains)\s+(?:possible|favou?red|less likely|less favou?red)\b.*$", "", phrase, flags=re.I)
     phrase = re.sub(r"\b(?:present|noted|seen)\s*$", "", phrase, flags=re.I)
     phrase = re.sub(r"(?<![\d.])\d+(?:\.\d+)?\s*[- ]?\s*(?:mm|cm|cc|ml)\b", "", phrase, flags=re.I)
+    phrase = re.sub(r"\b(?:(?:with\s+)?(?:an?\s+)?(?:estimated\s+)?(?:volume|size|diameter|length|depth|thickness)\s+(?:of|is|at)?|measur\w*)\s*$", "", phrase, flags=re.I)
     phrase = re.sub(r"\b(?:in\s+transverse\s+diameter|in\s+depth)\b.*$", "", phrase, flags=re.I)
     phrase = re.sub(r"\bwith\s+some\b.*$", "", phrase, flags=re.I)
     phrase = re.sub(r"\b(?:suggesting|suggests|suspicious\s+for)\b.*$", "", phrase, flags=re.I)
@@ -639,6 +647,128 @@ def _source_narrative_state_evidence(protected_text: str, sections: list[dict], 
     return recovered
 
 
+def _source_measured_positive_evidence(protected_text: str, sections: list[dict], evidence: list[tuple]) -> list[tuple]:
+    """Recover a measured, explicitly positive source observation missed by the engine."""
+    recovered = []
+    for section in sections:
+        if section.get("role") != "FINDINGS_DESCRIPTION":
+            continue
+        start = section["start"]
+        end = section.get("end", start + len(section["text"]))
+        for measurement in MEASUREMENT.finditer(section["text"]):
+            point = start + measurement.start()
+            sentence = _sentence(protected_text, point, start + measurement.end())
+            if sentence["start_offset"] < start or sentence["end_offset"] > end or len(sentence["quote"]) > 200:
+                continue
+            heading = re.match(r"(?i)^FINDINGS\s*:\s*", sentence["quote"])
+            if heading:
+                sentence = {"start_offset": sentence["start_offset"] + heading.end(),
+                            "end_offset": sentence["end_offset"], "quote": sentence["quote"][heading.end():]}
+            phrase = sentence["quote"].strip()
+            if not (re.search(r"\b(?:is|are|was|were)\s+(?:mildly\s+|markedly\s+|moderately\s+)?(?:enlarged|reduced|dilated|thickened|present|seen)\b", phrase, re.I)
+                    or re.search(r"\b(?:demonstrates?|shows?)\b.{0,90}\b(?:increased|decreased|abnormal)\b", phrase, re.I)):
+                continue
+            if NEGATION.search(phrase):
+                continue
+            if any(source_anchor["start_offset"] == sentence["start_offset"]
+                   and source_anchor["end_offset"] == sentence["end_offset"]
+                   for _, _, source_anchor, _, _, _ in recovered):
+                continue
+            expression = re.split(r",\s*(?:measur\w*|estimated\s+volume)\b", phrase, maxsplit=1, flags=re.I)[0].strip()
+            if not expression or len(expression.split()) > 24:
+                continue
+            anchor = {**sentence, "role": "DETAIL_SUPPORT", "source_section": "FINDINGS_DESCRIPTION"}
+            if classify_clause(expression, anchor, "FINDINGS_DESCRIPTION", protected_text)[1]:
+                continue
+            recovered.append((expression, "PRESENT", anchor, f"mrj-source:{sentence['start_offset']}",
+                              "FINDINGS_DESCRIPTION", None))
+    return recovered
+
+
+def _attach_local_source_measurements(protected_text: str, sections: list[dict], facts: list[dict]) -> None:
+    """Attach a source size only to a uniquely grounded positive in its sentence."""
+    for section in sections:
+        if section.get("role") != "FINDINGS_DESCRIPTION":
+            continue
+        start = section["start"]
+        end = section.get("end", start + len(section["text"]))
+        for measurement in MEASUREMENT.finditer(section["text"]):
+            value = measurement.group()
+            if any(value in observation.get("measurements", []) for fact in facts
+                   for observation in fact["observations"]):
+                continue
+            sentence = _sentence(protected_text, start + measurement.start(), start + measurement.end())
+            if sentence["start_offset"] < start or sentence["end_offset"] > end:
+                continue
+            grounded = [fact for fact in facts if fact["assertion_state"] == "PRESENT"
+                        and any(anchor.get("section_role") == "FINDINGS_DESCRIPTION"
+                                and anchor["start_offset"] < sentence["end_offset"]
+                                and anchor["end_offset"] > sentence["start_offset"]
+                                for anchor in fact["evidence_anchors"])]
+            if not grounded and re.search(r"\bmeasur\w*\b", sentence["quote"], re.I):
+                line_start = protected_text.rfind("\n", 0, sentence["start_offset"]) + 1
+                preceding = protected_text[line_start:sentence["start_offset"]].rstrip()
+                if preceding.endswith(".") and len(preceding) <= 180:
+                    def subjects(value: str) -> set[str]:
+                        words = re.findall(r"[a-z]{5,}", value.casefold())
+                        return {word[:-3] + "y" if word.endswith("ies") else
+                                word[:-1] if word.endswith("s") and not word.endswith("ss") else word
+                                for word in words} - {"measure", "enlarge", "mildly", "markedly",
+                                                     "right", "left", "both", "normal", "demonstrate"}
+                    measured_subjects = subjects(sentence["quote"])
+                    grounded = [fact for fact in facts if fact["assertion_state"] == "PRESENT"
+                                and subjects(fact["display_label"]) & measured_subjects
+                                and any(anchor.get("section_role") == "FINDINGS_DESCRIPTION"
+                                        and line_start <= anchor["start_offset"] < sentence["start_offset"]
+                                        for anchor in fact["evidence_anchors"])]
+            if len(grounded) != 1:
+                continue
+            fact = grounded[0]
+            anchor = {**sentence, "role": "ATTRIBUTE_SUPPORT", "source_section": "FINDINGS_DESCRIPTION"}
+            observation = {"source_context": _context(protected_text, anchor, sections),
+                           "evidence_anchor": anchor, "measurements": [value]}
+            preceding_measure = sentence["quote"][:start + measurement.start() - sentence["start_offset"]]
+            sides = re.findall(r"\b(?:left|right)\b", preceding_measure, re.I)
+            if sides:
+                observation["laterality"] = sides[-1].upper()
+            fact["observations"].append(observation)
+            fact["evidence_anchors"].append({**anchor, "section_role": "FINDINGS_DESCRIPTION",
+                                             "source_context": _context(protected_text, anchor, sections),
+                                             "engine_evidence_ids": [], "source_rule_evidence_ids": []})
+
+
+def _governed_measurement_ledger(protected_text: str, sections: list[dict], facts: list[dict]) -> list[dict]:
+    """Retain protected measurements without promoting unowned values to facts."""
+    ledger = []
+    for section in sections:
+        if section.get("role") != "FINDINGS_DESCRIPTION":
+            continue
+        for match in MEASUREMENT.finditer(section["text"]):
+            start = section["start"] + match.start()
+            end = section["start"] + match.end()
+            if protected_text[start:end] != match.group():
+                continue
+            sentence = _sentence(protected_text, start, end)
+            prior = bool(re.search(r"\b(?:previously|prior|historical|formerly)\b",
+                                   protected_text[sentence["start_offset"]:start], re.I))
+            owners = [fact["fact_id"] for fact in facts
+                      if any(match.group() in observation.get("measurements", [])
+                             and observation["evidence_anchor"]["start_offset"] < sentence["end_offset"]
+                             and observation["evidence_anchor"]["end_offset"] > sentence["start_offset"]
+                             for observation in fact["observations"])]
+            if not owners and sum(other.group() == match.group() for other in MEASUREMENT.finditer(section["text"])) == 1:
+                owners = [fact["fact_id"] for fact in facts
+                          if any(match.group() in observation.get("measurements", [])
+                                 for observation in fact["observations"])]
+            state = "PRIOR_CONTEXT" if prior else "LINKED_TO_FACT" if len(owners) == 1 else "UNASSIGNED_REVIEW"
+            ledger.append({"measurement_id": f"source-measurement-{len(ledger) + 1}",
+                           "source_text": match.group(), "source_section": "FINDINGS_DESCRIPTION",
+                           "evidence_span": {"start_offset": start, "end_offset": end, "quote": match.group()},
+                           "assignment_state": state,
+                           "source_fact_id": owners[0] if state == "LINKED_TO_FACT" else None})
+    return ledger
+
+
 def _hypothesis_status(sentence: str, expression: str) -> str | None:
     match = re.search(re.escape(expression), sentence, re.I)
     if not match:
@@ -763,6 +893,13 @@ def _finish_fact(fact: dict) -> None:
             fact["laterality"] = "RIGHT"
     if fact["fact_type"] == "DIAGNOSTIC_HYPOTHESIS":
         fact["assertion_state"] = "UNCERTAIN"
+    if not fact.get("laterality"):
+        label = fact["display_label"]
+        sides = {side.upper() for side in re.findall(r"\b(?:left|right|bilateral)\b", label, re.I)}
+        if "BILATERAL" in sides or sides == {"LEFT", "RIGHT"}:
+            fact["laterality"] = "BILATERAL"
+        elif len(sides) == 1:
+            fact["laterality"] = next(iter(sides))
 
 
 def _general_relations(facts: list[dict]) -> None:
@@ -980,6 +1117,7 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
     evidence.extend(_source_assertion_evidence(protected_text, sections, evidence))
     evidence.extend(_source_assessment_evidence(protected_text, sections, evidence))
     evidence.extend(_source_narrative_state_evidence(protected_text, sections, evidence))
+    evidence.extend(_source_measured_positive_evidence(protected_text, sections, evidence))
     # Preserve the accepted bounded profile. Strongly supported functional
     # positives may augment it; broader source-grounded negatives are a
     # fallback for an otherwise empty clinical view.
@@ -1143,6 +1281,15 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
                 fragment = _source_fragment(anchor, expression)
                 fragment = re.sub(r"(?<=[A-Za-z])(?=\d+(?:\.\d+)?\s*(?:mm|cm)\b)", " ", fragment, flags=re.I)
                 measures = [match.group() for match in MEASUREMENT.finditer(fragment)]
+                # Validated entity anchors can end before a same-clause size
+                # continuation. Extend only through an adjacent measurement
+                # predicate, never across the next independent sentence.
+                line_end = protected_text.find("\n", anchor["end_offset"])
+                line_end = len(protected_text) if line_end < 0 else line_end
+                continuation_text = protected_text[anchor["end_offset"]:line_end]
+                if re.match(r"^\s*(?:at\b|,?\s*(?:(?:the\s+(?:largest|smallest)\s+)?measur\w*|estimated\s+volume)\b)", continuation_text, re.I):
+                    continuation_text = re.split(r"(?<!\d)\.(?!\d)|;", continuation_text, maxsplit=1)[0]
+                    measures.extend(match.group() for match in MEASUREMENT.finditer(continuation_text))
                 # A comma may introduce only a second dimension, not a new
                 # condition: "lesion 1.4 cm ..., and 4 mm in depth". Retain
                 # its own exact source span instead of borrowing another
@@ -1363,6 +1510,7 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
                     if value not in preferred["synthesis_provenance"][key])
             facts.remove(other)
         preferred["hypothesis_statuses"] = sorted(statuses)
+    _attach_local_source_measurements(protected_text, sections, facts)
     for fact in facts:
         # Engine mentions may point to different anchors for the same observation.
         # Keep all anchors above, but present a source-specific observation once.
@@ -1414,7 +1562,10 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
     coverage_failure = bool(clinically_grounded_ids and not facts)
     if coverage_failure:
         rejected["SYNTHESIS_COVERAGE_FAILURE"] += 1
-    return {"profile": PROFILE, "canonical_facts": facts, "clinical_synthesis": _summary(facts),
+    measurement_ledger = _governed_measurement_ledger(protected_text, sections, facts)
+    return {"profile": PROFILE, "canonical_facts": facts,
+            "governed_measurements": measurement_ledger,
+            "clinical_synthesis": _summary(facts),
             "counts": {"key_findings": counts["KEY"], "diagnostic_considerations": counts["DIAGNOSTIC"],
                        "secondary_findings": counts["SECONDARY"], "pertinent_negatives": counts["NEGATIVE"],
                        "technical_engine_entities": len(result["radiology_findings"]),
