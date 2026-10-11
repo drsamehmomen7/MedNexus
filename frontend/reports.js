@@ -411,20 +411,23 @@
     }
   }
 
-  async function saveReviewDecision() {
+  async function saveReviewDecision(majorReviewAcknowledged = false) {
     const entry = activeEntry();
     if (!entry?.record || entry.record.reviewed || savingReview) return;
     savingReview = true;
     byId('accept-record').disabled = true;
     setStatus('Saving your review decision…');
     try {
-      const payload = await json(await fetch(`${docPath(entry)}/accept`, { method: 'POST', cache: 'no-store' }));
+      const payload = await postJson(`${docPath(entry)}/accept`,
+        { major_review_acknowledged: majorReviewAcknowledged });
+      const accepted = ownDocument(payload, entry, entry.document.order);
+      if (accepted?.review_status !== 'REVIEWED' || !accepted.durably_reviewed ||
+          !accepted.reviewed_record_id) throw new Error('Review decision was not saved.');
       updateFromRun(entry, payload, entry.document.order);
-      if (entry.document.review_status !== 'REVIEWED') throw new Error('Review decision was not recorded.');
       entry.record = model.projection(entry.document);
       entry.status = 'REVIEWED';
       entry.file = null;
-      setStatus('Review decision recorded for this session.');
+      setStatus('Reviewed clinical record saved.');
       const next = model.nextReviewEntry(entries);
       if (next) selectEntry(next);
       else {
@@ -434,7 +437,7 @@
       }
     } catch {
       byId('accept-record').disabled = false;
-      setStatus('Could not save this review decision. Please try again.');
+      setStatus('We couldn’t save this reviewed record. Please try again.');
     } finally {
       savingReview = false;
       render();
@@ -504,7 +507,7 @@
     const entry = activeEntry();
     if (!entry || entry.key !== majorConfirmationKey || !entry.record || entry.record.reviewed) return;
     byId('major-review-dialog').close();
-    saveReviewDecision();
+    saveReviewDecision(true);
   });
   byId('major-review-dialog').addEventListener('close', () => { majorConfirmationKey = null; });
   byId('view-original').addEventListener('click', showOriginal);

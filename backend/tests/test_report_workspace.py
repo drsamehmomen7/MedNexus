@@ -1,6 +1,7 @@
 """Review decisions belong to a prepared Journey document, never to a queue row."""
 
 import json
+import hashlib
 
 from fastapi.testclient import TestClient
 
@@ -12,6 +13,7 @@ from backend.app.modules.medical_document_intelligence.understanding.journey imp
     JourneyStore,
     StageStatus,
 )
+from backend.app.modules.medical_document_intelligence.services.reviewed_record_repository import SqliteReviewedClinicalRecordRepository
 
 
 def _ready_document(document_id: str, order: int) -> JourneyDocument:
@@ -20,7 +22,10 @@ def _ready_document(document_id: str, order: int) -> JourneyDocument:
     item.stage_status[JourneyStage.PROTECT] = StageStatus.NEEDS_REVIEW
     item.stage_status[JourneyStage.EXTRACT] = StageStatus.NEEDS_REVIEW
     item.stage_status[JourneyStage.STANDARDIZE] = StageStatus.COMPLETE
-    item.stage_results[JourneyStage.PROTECT] = {"protected_document": {"report_id": document_id}}
+    protected_text = "No focal consolidation."
+    item.stage_results[JourneyStage.PROTECT] = {"protected_document": {
+        "report_id": document_id, "protected_text": protected_text,
+        "integrity_sha256": hashlib.sha256(protected_text.encode()).hexdigest()}}
     item.stage_results[JourneyStage.EXTRACT] = {"report_id": document_id,
                                                 "clinical_synthesis": {"canonical_facts": []}}
     item.stage_results[JourneyStage.STANDARDIZE] = {"report_id": document_id}
@@ -28,7 +33,8 @@ def _ready_document(document_id: str, order: int) -> JourneyDocument:
 
 
 def test_accept_requires_current_record_and_is_independent_per_report(monkeypatch, tmp_path):
-    store = JourneyStore(batch_root=tmp_path / "batches")
+    store = JourneyStore(batch_root=tmp_path / "batches",
+                         reviewed_records=SqliteReviewedClinicalRecordRepository(tmp_path / "reviewed.sqlite3"))
     run = store.create_run("batch", display_name="Synthetic review test")
     first = _ready_document("a" * 32, 0)
     second = _ready_document("b" * 32, 1)
@@ -61,7 +67,8 @@ def test_accept_requires_current_record_and_is_independent_per_report(monkeypatc
 
 
 def test_accept_rejects_stale_standardization_and_unknown_report(monkeypatch, tmp_path):
-    store = JourneyStore(batch_root=tmp_path / "batches")
+    store = JourneyStore(batch_root=tmp_path / "batches",
+                         reviewed_records=SqliteReviewedClinicalRecordRepository(tmp_path / "reviewed.sqlite3"))
     run = store.create_run("single")
     item = _ready_document("c" * 32, 0)
     item.stage_results[JourneyStage.STANDARDIZE]["report_id"] = "d" * 32

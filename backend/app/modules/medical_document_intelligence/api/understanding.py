@@ -56,6 +56,23 @@ class JourneyRunRequest(BaseModel):
     batch_name: str | None = Field(default=None, max_length=80)
 
 
+class ReviewAcceptanceRequest(BaseModel):
+    major_review_acknowledged: bool = False
+
+
+class ReviewedRecordResponse(BaseModel):
+    record: dict[str, Any]
+
+
+class ReviewedRecordListResponse(BaseModel):
+    records: list[dict[str, Any]]
+
+
+class ReviewedRecordVersionsResponse(BaseModel):
+    reviewed_record_id: str
+    versions: list[dict[str, Any]]
+
+
 class CollectionReportRef(BaseModel):
     run_id: str
     document_id: str
@@ -389,15 +406,65 @@ def standardize_journey_document(run_id: str, document_id: str) -> JSONResponse:
 
 
 @router.post("/journey-runs/{run_id}/documents/{document_id}/accept")
-def accept_journey_document(run_id: str, document_id: str) -> JSONResponse:
+def accept_journey_document(run_id: str, document_id: str,
+                            request: ReviewAcceptanceRequest | None = None) -> JSONResponse:
     """Record an explicit human acceptance of the current clinical record."""
     try:
-        journey_store.accept_clinical_review(run_id, document_id)
+        journey_store.accept_clinical_review(run_id, document_id,
+            major_review_acknowledged=bool(request and request.major_review_acknowledged))
         return JSONResponse(content=journey_store.run_payload(run_id), headers={"Cache-Control": "no-store, private"})
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="We couldn't save this reviewed record. Please try again.") from exc
+
+
+@router.get("/reviewed-records", response_model=ReviewedRecordListResponse)
+def list_reviewed_records(response: Response, limit: int = 100, offset: int = 0) -> ReviewedRecordListResponse:
+    try:
+        records = journey_store.reviewed_records.list(limit, offset)
+        response.headers["Cache-Control"] = "no-store, private"
+        return ReviewedRecordListResponse(records=[record.to_dict() for record in records])
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Reviewed records are temporarily unavailable.") from exc
+
+
+@router.get("/reviewed-records/{record_id}", response_model=ReviewedRecordResponse)
+def get_reviewed_record(record_id: str, response: Response,
+                        version: int | None = None) -> ReviewedRecordResponse:
+    try:
+        record = (journey_store.reviewed_records.get(record_id, version) if version is not None
+                  else journey_store.reviewed_records.get_current(record_id))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Reviewed record is temporarily unavailable.") from exc
+    if record is None:
+        raise HTTPException(status_code=404, detail="Reviewed record was not found.")
+    response.headers["Cache-Control"] = "no-store, private"
+    return ReviewedRecordResponse(record=record.to_dict())
+
+
+@router.get("/reviewed-records/{record_id}/versions", response_model=ReviewedRecordVersionsResponse)
+def list_reviewed_record_versions(record_id: str, response: Response) -> ReviewedRecordVersionsResponse:
+    try:
+        versions = journey_store.reviewed_records.list_versions(record_id)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Reviewed record history is temporarily unavailable.") from exc
+    if not versions:
+        raise HTTPException(status_code=404, detail="Reviewed record was not found.")
+    response.headers["Cache-Control"] = "no-store, private"
+    return ReviewedRecordVersionsResponse(reviewed_record_id=record_id, versions=versions)
+
+
+@router.get("/journey-runs/{run_id}/documents/{document_id}/reviewed-record",
+            response_model=ReviewedRecordResponse)
+def get_document_reviewed_record(run_id: str, document_id: str,
+                                 response: Response) -> ReviewedRecordResponse:
+    from backend.app.modules.medical_document_intelligence.contracts.reviewed_clinical_record import logical_record_id
+    return get_reviewed_record(logical_record_id(run_id, document_id), response)
 
 
 def _collection_snapshots(refs: list[CollectionReportRef]) -> list[dict[str, Any]]:

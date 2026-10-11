@@ -1,6 +1,12 @@
 # MRJ
 
-## Current checkpoint — Report Workspace V1 accepted (11 October 2026)
+## Current checkpoint — Phase C.3 durable reviewed records accepted (11 October 2026)
+
+MRJ now owns a versioned `ReviewedClinicalRecord` and repository contract with a local SQLite implementation. Report Workspace **Accept & Save** commits the protected clinical record before reporting success. The reviewed decision, clinical facts, protected evidence, exact evidence verification, current version, and history survived a full Uvicorn stop and fresh-process restart without re-upload or reprocessing. The original identified upload is not stored by this repository by default. Future Collections must admit durable reviewed-record IDs and versions rather than transient Journey state; Collection Intelligence is not implemented yet.
+
+The default local database is `%LOCALAPPDATA%\MRJ\reviewed_records.sqlite3`, configurable with `MRJ_REVIEWED_RECORD_DB`. Protected clinical content is plaintext at rest; deployment hardening remains future work. OpenMed remains **USE LATER**, with no integration or dependency. The seven-stage clinical backend and its authorities are unchanged. See [the C.3 architecture note](docs/architecture/phase_c3_reviewed_clinical_records.md), [CURRENT_STATE.md](CURRENT_STATE.md), and [BUILD_HISTORY.md](BUILD_HISTORY.md).
+
+## Historical checkpoint — Report Workspace V1 accepted (11 October 2026)
 
 Human product review accepted the Report Workspace redesign. **Reports | Collections** is the primary operational navigation: `/reports` supports single and bulk upload, automatic background Journey orchestration, a Review Queue, and one Clinical Record at a time from real backend outputs. Clinicians can inspect protected evidence or the original report, then accept each record; Major Review requires explicit confirmation. Review Complete appears deterministically after all reviewable reports are reviewed. `/collections` is the product shell for existing governed collections; the Collection Intelligence experience is not implemented yet. The legacy `/understanding` workspace remains available.
 

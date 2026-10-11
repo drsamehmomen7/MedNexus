@@ -15,6 +15,13 @@ from time import monotonic
 from typing import Any
 from uuid import uuid4
 
+from backend.app.modules.medical_document_intelligence.contracts.reviewed_clinical_record import (
+    build_reviewed_record, logical_record_id,
+)
+from backend.app.modules.medical_document_intelligence.services.reviewed_record_repository import (
+    ReviewedClinicalRecordRepository, SqliteReviewedClinicalRecordRepository,
+)
+
 from backend.app.modules.medical_document_intelligence.contracts.document_content import DocumentContent
 from backend.app.modules.medical_document_intelligence.contracts.protection import (
     ProtectedArtifact,
@@ -109,6 +116,7 @@ class JourneyDocument:
     warnings: tuple[str, ...] = ()
     review_status: str = "PENDING"
     reviewed_at: str | None = None
+    reviewed_record_id: str | None = None
     error: str | None = None
     document: DocumentContent | None = field(default=None, repr=False)
     context: MedNexusDocumentContext | None = field(default=None, repr=False)
@@ -155,6 +163,8 @@ class JourneyDocument:
             "warnings": list(self.warnings),
             "review_status": self.review_status,
             "reviewed_at": self.reviewed_at,
+            "reviewed_record_id": self.reviewed_record_id,
+            "durably_reviewed": self.review_status == "REVIEWED" and bool(self.reviewed_record_id),
             "error": self.error,
         }
 
@@ -172,12 +182,7 @@ class JourneyRun:
 
 
 class JourneyStore:
-    """Bounded live journeys with durable, nonclinical batch metadata.
-
-    Extracted clinical content lives only in application memory. It is never
-    written to Git, logs, browser storage, or a durable database. Live runs
-    expire after a sliding TTL; batch membership survives in the workspace.
-    """
+    """Bounded live journeys; accepted protected records have separate authority."""
 
     def __init__(
         self,
@@ -185,6 +190,7 @@ class JourneyStore:
         ttl_seconds: int = 30 * 60,
         max_batch_documents: int = 20,
         batch_root: str | Path | None = None,
+        reviewed_records: ReviewedClinicalRecordRepository | None = None,
     ) -> None:
         if capacity < 1 or ttl_seconds < 1 or max_batch_documents < 1:
             raise ValueError("Journey store limits must be positive integers.")
@@ -195,6 +201,7 @@ class JourneyStore:
         self._lock = RLock()
         default_root = "D:/MedNexus/Analysis_Workspace/batches" if os.name == "nt" else "/tmp/mrj-analysis/batches"
         self._batch_root = Path(batch_root or os.getenv("MRJ_BATCH_STORE_DIR", default_root))
+        self.reviewed_records = reviewed_records or SqliteReviewedClinicalRecordRepository()
 
     def _batch_path(self, run_id: str) -> Path:
         if not re.fullmatch(r"[0-9a-f]{32}", run_id):
@@ -445,6 +452,7 @@ class JourneyStore:
             item.warnings = ()
             item.review_status = "PENDING"
             item.reviewed_at = None
+            item.reviewed_record_id = None
             item.stage_results.pop(JourneyStage.UNDERSTAND, None)
             item.stage_errors.pop(JourneyStage.UNDERSTAND, None)
             for stage in PUBLIC_JOURNEY_STAGES[1:]:
@@ -804,6 +812,7 @@ class JourneyStore:
             item.review_status = ("NEEDS_REVIEW" if item.stage_status[JourneyStage.PROTECT]
                                   is StageStatus.NEEDS_REVIEW else "CLEAR")
             item.reviewed_at = None
+            item.reviewed_record_id = None
             item.stage_results.pop(JourneyStage.STANDARDIZE, None)
             item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
             item.stage_status[JourneyStage.STANDARDIZE] = StageStatus.NOT_STARTED
@@ -891,6 +900,7 @@ class JourneyStore:
             item.review_status = ("NEEDS_REVIEW" if item.stage_status[JourneyStage.PROTECT]
                                   is StageStatus.NEEDS_REVIEW else "CLEAR")
             item.reviewed_at = None
+            item.reviewed_record_id = None
             item.stage_results.pop(JourneyStage.ANALYZE, None)
             item.stage_errors.pop(JourneyStage.ANALYZE, None)
             item.stage_status[JourneyStage.ANALYZE] = StageStatus.NOT_STARTED
@@ -922,14 +932,9 @@ class JourneyStore:
             run.current_stage = JourneyStage.STANDARDIZE
             self._touch_locked(run)
 
-    def accept_clinical_review(self, run_id: str, document_id: str) -> None:
-        """Record an explicit human decision on the current live clinical result.
-
-        This records the decision in the Journey authority; it does not alter
-        extraction, terminology, or the underlying clinical facts. Batch
-        metadata retains only the nonclinical decision after the live result
-        expires.
-        """
+    def accept_clinical_review(self, run_id: str, document_id: str,
+                               major_review_acknowledged: bool = False) -> None:
+        """Persist the protected aggregate before mirroring review in Journey."""
         with self._lock:
             run = self._get_run_locked(run_id)
             item = self._find_document(run, document_id)
@@ -948,10 +953,33 @@ class JourneyStore:
                     or not isinstance(standardized, dict)
                     or standardized.get("report_id") != document_id):
                 raise ValueError("A current clinical review record is required before acceptance.")
-            if item.review_status != "REVIEWED":
-                item.review_status = "REVIEWED"
-                item.reviewed_at = _timestamp()
-                self._touch_locked(run)
+            record_id = logical_record_id(run_id, document_id)
+            identity = (item.context.identity if item.context is not None else None)
+            exam_identity = ({"document_subtype": identity.document_subtype,
+                              "subdomain_or_family": identity.subdomain_or_family}
+                             if identity is not None else None)
+            existing = self.reviewed_records.get_current(record_id)
+            if existing is not None:
+                old = existing.to_dict()
+                candidate = build_reviewed_record(
+                    run_id=run_id, document_id=document_id, reviewed_at=old["reviewed_at"],
+                    protect=protect, extract=extract, standardized=standardized,
+                    exam_identity=exam_identity,
+                    major_review_acknowledged=old["major_review_acknowledged"])
+                if old["record_version"] != 1 or candidate.to_json() != existing.to_json():
+                    raise ValueError("The saved clinical record differs from the current review.")
+                record = existing
+            else:
+                record = build_reviewed_record(
+                    run_id=run_id, document_id=document_id, reviewed_at=_timestamp(),
+                    protect=protect, extract=extract, standardized=standardized,
+                    exam_identity=exam_identity,
+                    major_review_acknowledged=major_review_acknowledged)
+                self.reviewed_records.save(record)
+            item.review_status = "REVIEWED"
+            item.reviewed_at = record.to_dict()["reviewed_at"]
+            item.reviewed_record_id = record_id
+            self._touch_locked(run)
 
     def attach_collection_analysis(self, run_id: str, analysis: dict[str, Any], report_ids: set[str]) -> None:
         """Project a completed collection run onto its current Journey members."""
