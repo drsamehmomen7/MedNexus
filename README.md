@@ -1,10 +1,16 @@
 # MRJ
 
-## Current checkpoint — Full-Cycle Validation V1 stabilization
+## Current checkpoint — Report Workspace V1 accepted (11 October 2026)
+
+Human product review accepted the Report Workspace redesign. **Reports | Collections** is the primary operational navigation: `/reports` supports single and bulk upload, automatic background Journey orchestration, a Review Queue, and one Clinical Record at a time from real backend outputs. Clinicians can inspect protected evidence or the original report, then accept each record; Major Review requires explicit confirmation. Review Complete appears deterministically after all reviewable reports are reviewed. `/collections` is the product shell for existing governed collections; the Collection Intelligence experience is not implemented yet. The legacy `/understanding` workspace remains available.
+
+The internal seven-stage backend remains **UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS**. Durable reviewed-record persistence, Clinical Extraction Profiles, and governed exam-identity/content mismatch detection remain pending. OpenMed 3.0 was classified **USE LATER** as a possible future persistence/provenance substrate behind an MRJ-owned adapter; it is not integrated. See [CURRENT_STATE.md](CURRENT_STATE.md) for the current boundaries and [BUILD_HISTORY.md](BUILD_HISTORY.md) for the checkpoint record.
+
+## Historical checkpoint — Full-Cycle Validation V1 stabilization
 
 The seven-stage Journey is functionally complete. A fresh run of the 20-report synthetic Ultrasound cohort completed UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS with no runtime or stage-handoff failures. Independent clinical review improved from **6 PASS / 12 PARTIAL / 2 FAIL** to **10 PASS / 10 PARTIAL / 0 FAIL**. No validation source files changed, and processing did not read ground truth.
 
-General synthesis corrections retain secondary and numbered Impression findings, preserve local laterality for negatives, and keep source measurements in a governed ledger. All 17 reports with source measurements retain them in governed output; uncertain current measurements remain review-only and prior measurements cannot enter current analytic distributions. Policy-kept protected context supplies sex, facility, and report-year coverage for all 20 reports. Named batch metadata survives restart with stable ID and membership; clinical inputs remain ephemeral and require re-upload for further per-report work. Wording normalization, remaining clinical review items, and final UX remain deferred. The accepted future user-facing direction is **Report Workspace → Collection Intelligence**; that redesign has **not** been implemented. See [CURRENT_STATE.md](CURRENT_STATE.md) for the measured limits and [BUILD_HISTORY.md](BUILD_HISTORY.md) for the closure record.
+General synthesis corrections retain secondary and numbered Impression findings, preserve local laterality for negatives, and keep source measurements in a governed ledger. All 17 reports with source measurements retain them in governed output; uncertain current measurements remain review-only and prior measurements cannot enter current analytic distributions. Policy-kept protected context supplies sex, facility, and report-year coverage for all 20 reports. Named batch metadata survives restart with stable ID and membership; clinical inputs remain ephemeral and require re-upload for further per-report work. Wording normalization, remaining clinical review items, and final UX remained deferred. The accepted future user-facing direction was **Report Workspace → Collection Intelligence**; that redesign had **not** been implemented at this checkpoint. See [CURRENT_STATE.md](CURRENT_STATE.md) for the measured limits and [BUILD_HISTORY.md](BUILD_HISTORY.md) for the closure record.
 
 ## Historical checkpoint — R2.0C accepted and closed
 
@@ -51,7 +57,7 @@ The public MRJ journey is:
 → 05 ANALYZE → 06 VISUALIZE → 07 INDICATORS
 ```
 
-All seven stages are now functionally connected; final product/UX acceptance remains separate. INGEST remains an internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction.
+All seven stages are now functionally connected. The Report Workspace product UX is accepted; Collection Intelligence and broader cross-domain UX remain separate future work. INGEST remains an internal technical operation inside UNDERSTAND, covering file/text intake, extraction/parsing, and `DocumentContent` construction.
 
 Public identity: **MRJ — Medical Report Journey**. The former MEDNEXUS⁷ signature is historical. The seven-stage architecture is unchanged; internal code, policy IDs, APIs, schemas, provenance values, filenames, and `D:\MedNexus` paths retain their existing names.
 

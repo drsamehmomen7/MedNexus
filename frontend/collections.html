@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f6f0">
+  <title>Collections — MRJ</title>
+  <meta name="description" content="MRJ Collection Intelligence. Browse governed report collections.">
+  <link rel="stylesheet" href="/static/mednexus-design-system.css">
+  <link rel="stylesheet" href="/static/mrj-brand.css">
+  <link rel="stylesheet" href="/static/product-shell.css">
+  <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
+</head>
+<body data-product-brand="mrj" class="product-workspace">
+  <a class="product-skip-link" href="#main">Skip to content</a>
+  <header class="product-header">
+    <div class="product-container product-header-inner">
+      <a class="product-brand" href="/reports" aria-label="MRJ Reports home">
+        <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="40" height="40" alt="">
+        <span>MRJ</span>
+      </a>
+      <nav class="product-nav" aria-label="Primary navigation">
+        <a href="/reports">Reports</a>
+        <a href="/collections" aria-current="page">Collections</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="product-container product-main" tabindex="-1">
+    <section class="product-intro" aria-labelledby="page-title">
+      <div>
+        <p class="product-eyebrow">Collection Intelligence</p>
+        <h1 id="page-title">Collections</h1>
+        <p class="product-lead">From information to decision. Find the governed report groups already available in MRJ.</p>
+      </div>
+    </section>
+
+    <section class="product-section" aria-labelledby="collection-area-title">
+      <div class="product-section-heading">
+        <p class="product-eyebrow">Your work</p>
+        <h2 id="collection-area-title">Saved collections</h2>
+      </div>
+      <p class="product-status" id="collections-status" role="status">Loading collections…</p>
+      <ul class="collection-list" id="collection-list" aria-label="Saved collections"></ul>
+      <button class="product-text-button" id="collections-retry" type="button" hidden>Try again</button>
+    </section>
+
+    <section class="product-section collection-detail" id="collection-detail" aria-labelledby="collection-detail-title" hidden>
+      <button class="product-text-button" id="collection-back" type="button">← Back to collections</button>
+      <p class="product-eyebrow">Collection</p>
+      <h2 id="collection-detail-title" tabindex="-1"></h2>
+      <p id="collection-detail-summary"></p>
+      <dl class="collection-counts" id="collection-detail-counts"></dl>
+      <p class="product-muted">Collection analysis and review views will be added in a later phase.</p>
+    </section>
+    <noscript><p class="product-status">Enable JavaScript to view saved collections.</p></noscript>
+  </main>
+  <script src="/static/collections.js" defer></script>
+</body>
+</html>

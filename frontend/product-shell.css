@@ -1,0 +1,84 @@
+/* Report Workspace and Collection Intelligence share this small operational shell. */
+body.product-workspace {
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f8f6f0;
+  color: var(--mn-ink);
+}
+
+.product-workspace [hidden] { display: none !important; }
+.product-container { width: min(1160px, calc(100% - 64px)); margin-inline: auto; }
+.product-skip-link { position: fixed; z-index: 100; top: -100px; left: 20px; padding: 12px 18px; border-radius: 8px; background: var(--mn-teal-strong); color: #fff; }
+.product-skip-link:focus { top: 12px; }
+.product-header { border-bottom: 1px solid rgba(19, 95, 89, .13); background: #fcfaf5; }
+.product-header-inner { display: flex; min-height: 80px; align-items: center; justify-content: space-between; gap: 28px; }
+.product-brand { display: inline-flex; align-items: center; gap: 10px; flex: 0 0 auto; color: var(--mn-teal-strong); font-size: 1.15rem; font-weight: 800; letter-spacing: .035em; }
+.product-brand .mrj-brand-icon { width: 40px; height: 40px; }
+.product-nav { display: flex; align-items: center; gap: 8px; }
+.product-nav a { display: inline-flex; min-height: 44px; align-items: center; padding: 10px 18px; border-radius: 10px; color: #50645d; font-size: .94rem; font-weight: 650; }
+.product-nav a:hover { color: var(--mn-teal-strong); background: #edf3ed; }
+.product-nav a[aria-current="page"] { color: var(--mn-teal-strong); background: #e5eee7; }
+.product-workspace :focus-visible { outline: 3px solid var(--mn-teal); outline-offset: 3px; }
+
+.product-main { padding-block: clamp(44px, 7vw, 86px) 100px; }
+.product-intro { display: flex; align-items: end; justify-content: space-between; gap: 40px; padding-bottom: 54px; border-bottom: 1px solid rgba(19, 95, 89, .17); }
+.product-intro > div { min-width: 0; }
+.product-eyebrow { margin: 0 0 13px; color: var(--mn-teal); font-size: .75rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.product-intro h1 { margin: 0; color: var(--mn-teal-strong); font-size: clamp(3rem, 6vw, 5.2rem); font-weight: 650; letter-spacing: -.06em; line-height: 1.02; }
+.product-lead { max-width: 58ch; margin: 24px 0 0; color: #53625a; font-size: clamp(1rem, 1.7vw, 1.2rem); line-height: 1.65; }
+.product-action { display: inline-flex; min-height: 50px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 18px; padding: 11px 21px; border-radius: 10px; background: var(--mn-teal-strong); color: #fff; font-size: .94rem; font-weight: 700; }
+.product-action:hover { background: #14645e; }
+.product-action span { font-size: 1.15rem; }
+
+.product-section { padding-top: 56px; }
+.product-section-heading h2 { margin: 0; color: var(--mn-ink); font-size: clamp(1.5rem, 2.5vw, 2rem); font-weight: 650; letter-spacing: -.035em; }
+.product-empty-region { display: flex; align-items: flex-start; gap: 24px; margin-top: 28px; padding: 42px; border: 1px solid rgba(19, 95, 89, .16); border-radius: 16px; background: #fffcf7; }
+.product-empty-mark { position: relative; display: block; width: 42px; height: 50px; flex: 0 0 auto; border: 2px solid #8eafa2; border-radius: 6px; }
+.product-empty-mark::before, .product-empty-mark::after { content: ""; position: absolute; left: 9px; width: 20px; height: 2px; background: #8eafa2; }
+.product-empty-mark::before { top: 19px; }
+.product-empty-mark::after { top: 27px; }
+.product-empty-region h3 { margin: 0; font-size: 1.17rem; font-weight: 650; }
+.product-empty-region p { max-width: 63ch; margin: 8px 0 0; color: #53625a; line-height: 1.7; }
+
+.product-status { margin: 26px 0 0; color: #53625a; }
+.collection-list { display: grid; margin: 24px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(19, 95, 89, .17); }
+.collection-row { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; border-bottom: 1px solid rgba(19, 95, 89, .17); }
+.collection-row-copy { min-width: 0; }
+.collection-row h3 { margin: 0; color: var(--mn-teal-strong); font-size: 1.13rem; font-weight: 700; overflow-wrap: anywhere; }
+.collection-row p { margin: 6px 0 0; color: #53625a; font-size: .91rem; }
+.product-text-button { min-height: 44px; padding: 8px 0; border: 0; background: none; color: var(--mn-teal-strong); cursor: pointer; font-weight: 700; text-align: left; }
+.product-text-button:hover { text-decoration: underline; }
+.collection-row .product-text-button { flex: 0 0 auto; }
+.collection-detail { margin-top: 52px; padding: 34px; border: 1px solid rgba(19, 95, 89, .17); border-radius: 16px; background: #fffcf7; }
+.collection-detail .product-eyebrow { margin-top: 22px; }
+.collection-detail h2 { margin: 0; color: var(--mn-teal-strong); font-size: clamp(1.6rem, 3vw, 2.35rem); overflow-wrap: anywhere; }
+.collection-detail > p:not(.product-eyebrow) { color: #53625a; }
+.collection-counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 28px 0; }
+.collection-counts > div { min-width: 0; padding-top: 14px; border-top: 1px solid rgba(19, 95, 89, .17); }
+.collection-counts dt { color: #53625a; font-size: .83rem; }
+.collection-counts dd { margin: 6px 0 0; color: var(--mn-teal-strong); font-size: 1.5rem; font-weight: 700; }
+.product-muted { font-size: .9rem; }
+
+@media (max-width: 800px) {
+  .product-container { width: min(100% - 40px, 1160px); }
+  .product-intro { align-items: flex-start; flex-direction: column; gap: 26px; }
+  .collection-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .product-container { width: calc(100% - 32px); }
+  .product-header-inner { min-height: 72px; flex-wrap: wrap; gap: 0 16px; padding-block: 9px; }
+  .product-nav { width: 100%; gap: 4px; }
+  .product-nav a { flex: 1 1 0; justify-content: center; padding-inline: 8px; }
+  .product-main { padding-block: 42px 70px; }
+  .product-intro { padding-bottom: 38px; }
+  .product-action { width: 100%; }
+  .product-section { padding-top: 42px; }
+  .product-empty-region { gap: 16px; padding: 24px 20px; }
+  .product-empty-mark { width: 30px; height: 38px; }
+  .product-empty-mark::before, .product-empty-mark::after { left: 6px; width: 14px; }
+  .product-empty-mark::before { top: 15px; }
+  .product-empty-mark::after { top: 22px; }
+  .collection-row { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .collection-detail { padding: 24px 20px; }
+}

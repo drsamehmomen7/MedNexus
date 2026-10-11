@@ -1,6 +1,12 @@
 # MRJ Current State
 
-**Authoritative date:** 8 October 2026
+**Authoritative date:** 11 October 2026
+
+## Accepted checkpoint — Report Workspace V1
+
+**Human product/UX acceptance: ACCEPTED.** The operational model is **Report Workspace → Collection Intelligence**, with **Reports | Collections** as the primary navigation. `/reports` provides single and bulk upload, independent automatic Journey orchestration, a Review Queue, and one selected Clinical Record built from real protected, extracted, and standardized backend results. Clinicians can inspect protected evidence with exact-match highlighting, explicitly open the original report, and accept records. Genuine Major Review alerts precede **Review & Accept** and require confirmation. Review Complete appears only when every reviewable report is Reviewed and none remains Ready, Needs Review, or Processing; failed items use a failure-aware completion state. `/collections` exposes a shell for existing governed collections, but the Collection Intelligence experience is not implemented. The landing workspace entry points to `/reports`, and legacy `/understanding` remains available.
+
+The unchanged internal backend remains **UNDERSTAND → PROTECT → EXTRACT → STANDARDIZE → ANALYZE → VISUALIZE → INDICATORS**. Clinical synthesis, privacy policy, terminology, measurement governance, AnalysisRun, VisualizationRun, and Indicator authority are unchanged by this product checkpoint. Durable reviewed-record persistence remains pending; current review decisions do not provide a restart-durable clinical record. Clinical Extraction Profiles, governed exam/content mismatch detection, and formal exam-coverage UI remain pending. Clinical Summary and Key Findings may repeat Impression wording; presentation deduplication is deferred. OpenMed 3.0 is classified **USE LATER** as a possible future persistence/provenance substrate behind an MRJ-owned adapter; no OpenMed integration or dependency is present.
 
 ## Full-Cycle Validation V1 stabilization — pre-redesign baseline
 

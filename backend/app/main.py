@@ -100,6 +100,16 @@ def application():
     )
 
 
+@app.get("/reports")
+def reports_workspace():
+    return FileResponse(FRONTEND_DIR / "reports.html")
+
+
+@app.get("/collections")
+def collections_workspace():
+    return FileResponse(FRONTEND_DIR / "collections.html")
+
+
 @app.get("/styles.css")
 def homepage_styles():
     return FileResponse(

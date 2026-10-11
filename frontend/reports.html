@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f6f0">
+  <title>Reports — MRJ</title>
+  <meta name="description" content="MRJ Report Workspace. Prepare and review clinical reports.">
+  <link rel="stylesheet" href="/static/mednexus-design-system.css">
+  <link rel="stylesheet" href="/static/mrj-brand.css">
+  <link rel="stylesheet" href="/static/product-shell.css">
+  <link rel="stylesheet" href="/static/report-workspace.css?v=c2c">
+  <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
+</head>
+<body data-product-brand="mrj" class="product-workspace report-workspace">
+  <a class="product-skip-link" href="#main">Skip to content</a>
+  <header class="product-header">
+    <div class="product-container product-header-inner">
+      <a class="product-brand" href="/reports" aria-label="MRJ Reports home">
+        <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="40" height="40" alt="">
+        <span>MRJ</span>
+      </a>
+      <nav class="product-nav" aria-label="Primary navigation">
+        <a href="/reports" aria-current="page">Reports</a>
+        <a href="/collections">Collections</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="product-container product-main" tabindex="-1">
+    <section class="product-intro report-intro" aria-labelledby="page-title">
+      <div>
+        <p class="product-eyebrow" id="session-eyebrow">Report Workspace</p>
+        <h1 id="page-title">Reports</h1>
+        <p class="product-lead" id="page-guidance">Add one report or several reports. MRJ will prepare each for clinical review.</p>
+        <p id="queue-summary" class="report-session-summary" aria-live="polite" hidden></p>
+      </div>
+      <button class="product-action" id="add-reports" type="button">Add reports <span aria-hidden="true">+</span></button>
+    </section>
+
+    <input id="report-files" class="report-file-input" type="file" accept=".pdf,.docx,.txt" multiple aria-label="Choose reports to upload">
+    <p id="workspace-status" class="report-live-status" role="status" aria-live="polite"></p>
+
+    <section class="report-empty" id="report-empty" aria-labelledby="upload-title">
+      <div class="report-drop-zone" id="report-drop-zone">
+        <span class="report-upload-mark" aria-hidden="true">+</span>
+        <div>
+          <p class="product-eyebrow">Start a review session</p>
+          <h2 id="upload-title">Your reports, ready for review</h2>
+          <p>Choose one report or up to 20 at a time. Each is prepared as a separate clinical record.</p>
+          <button id="empty-add-reports" class="product-action" type="button">Choose reports</button>
+          <p class="report-file-hint">PDF, DOCX, or TXT · You can also drop files here</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="report-work-area" id="report-work-area" aria-label="Clinical review workspace" hidden>
+      <aside class="report-queue" aria-labelledby="queue-title">
+        <div class="report-queue-heading">
+          <div><p class="product-eyebrow">Session</p><h2 id="queue-title">Review queue</h2></div>
+          <p id="queue-count" class="report-queue-count"></p>
+        </div>
+        <label class="report-filter"><input id="needs-review-filter" type="checkbox"> Needs review only</label>
+        <ol id="report-queue-list" class="report-queue-list" aria-label="Reports in review session"></ol>
+      </aside>
+
+      <article class="clinical-record" id="clinical-record" aria-label="Clinical review">
+        <div id="review-complete" class="review-complete" hidden>
+          <span class="completion-mark" aria-hidden="true">✓</span>
+          <p class="product-eyebrow" id="completion-eyebrow">Review session</p>
+          <h2 id="completion-title" tabindex="-1">Review complete</h2>
+          <p id="completion-count" class="completion-count"></p>
+          <p id="completion-message" class="completion-message"></p>
+          <div class="completion-actions">
+            <button id="back-to-reports" class="product-action" type="button">Back to Reports</button>
+            <button id="review-again" class="product-text-button" type="button">Review reports</button>
+            <button id="analyze-reports" class="product-text-button" type="button" hidden>Analyze these reports</button>
+            <button id="retry-failed" class="product-text-button" type="button" hidden>Retry failed report</button>
+          </div>
+          <p id="analyze-message" class="product-muted" role="status" hidden></p>
+        </div>
+        <div id="record-pending" class="record-pending" role="status">
+          <span class="record-pending-mark" aria-hidden="true"></span>
+          <h2 id="pending-title">Preparing clinical record…</h2>
+          <p id="pending-message">The report will appear here when it is ready for review.</p>
+          <div class="pending-actions"><button id="retry-report" class="product-action" type="button" hidden>Retry report</button><button id="remove-report" class="product-text-button" type="button" hidden>Remove from queue</button></div>
+          <details id="processing-details" hidden><summary>Processing details</summary><p id="processing-detail-text"></p></details>
+        </div>
+
+        <div id="record-ready" hidden>
+          <header class="record-header">
+            <div>
+              <p class="product-eyebrow">Clinical Record</p>
+              <h2 id="record-title" tabindex="-1"></h2>
+              <p id="record-descriptor" class="record-descriptor"></p>
+              <p id="record-filename" class="record-filename"></p>
+            </div>
+            <div class="record-header-actions">
+              <span id="record-state" class="record-state"></span>
+              <button id="view-original" class="product-text-button" type="button">View original report ↗</button>
+            </div>
+          </header>
+
+          <section id="summary-section" class="record-section" aria-labelledby="summary-title" hidden>
+            <h3 id="summary-title">Clinical summary</h3><p id="record-summary" class="record-summary"></p>
+          </section>
+          <section id="findings-section" class="record-section" aria-labelledby="findings-title" hidden>
+            <h3 id="findings-title">Key findings</h3><ul id="record-findings" class="record-fact-list"></ul>
+          </section>
+          <section id="measurements-section" class="record-section" aria-labelledby="measurements-title" hidden>
+            <h3 id="measurements-title">Measurements</h3>
+            <div class="record-table-wrap"><table><thead><tr><th scope="col">Measurement</th><th scope="col">Value</th><th scope="col">Context</th></tr></thead><tbody id="record-measurements"></tbody></table></div>
+          </section>
+          <section id="negative-section" class="record-section" aria-labelledby="negative-title" hidden>
+            <h3 id="negative-title">Pertinent negatives</h3><ul id="record-negatives" class="record-fact-list"></ul>
+          </section>
+          <section id="diagnostic-section" class="record-section" aria-labelledby="diagnostic-title" hidden>
+            <h3 id="diagnostic-title">Diagnostic considerations</h3><ul id="record-diagnostics" class="record-fact-list"></ul>
+          </section>
+          <section id="secondary-section" class="record-section" aria-labelledby="secondary-title" hidden>
+            <h3 id="secondary-title">Additional findings</h3><ul id="record-secondary" class="record-fact-list"></ul>
+            <details id="secondary-more" hidden><summary>Show more findings</summary><ul id="record-secondary-more" class="record-fact-list"></ul></details>
+          </section>
+          <section id="review-section" class="record-section record-review" aria-labelledby="review-title" hidden>
+            <h3 id="review-title">Needs review</h3><ul id="record-review-issues"></ul>
+          </section>
+          <div class="record-actions">
+            <p id="record-save-note">Review the clinical record and its source evidence before accepting.</p>
+            <button id="accept-record" class="product-action" type="button">Accept &amp; Save</button>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+  <dialog id="evidence-dialog" class="report-dialog evidence-drawer" aria-labelledby="evidence-title">
+    <div class="report-dialog-head"><div><p class="product-eyebrow">Source evidence</p><h2 id="evidence-title">Finding evidence</h2></div><button class="dialog-close" type="button" data-close="evidence-dialog" aria-label="Close evidence">×</button></div>
+    <p class="drawer-label">Finding</p><p id="evidence-fact" class="evidence-fact"></p>
+    <p class="drawer-label">Structured interpretation</p><p id="evidence-interpretation" class="evidence-interpretation"></p>
+    <p class="drawer-label">Protected source context</p>
+    <div id="evidence-context" class="evidence-context"></div>
+    <p id="evidence-message" class="product-muted"></p>
+    <details id="evidence-provenance"><summary>Technical provenance</summary><p id="evidence-provenance-text"></p></details>
+    <button id="evidence-original" class="product-text-button" type="button">View original report ↗</button>
+  </dialog>
+  <dialog id="original-dialog" class="report-dialog original-dialog" aria-labelledby="original-title">
+    <div class="report-dialog-head"><div><p class="product-eyebrow">Source report</p><h2 id="original-title">Original report</h2></div><button class="dialog-close" type="button" data-close="original-dialog" aria-label="Close original report">×</button></div>
+    <p class="product-muted">The original may contain identifying information. It is shown only after this explicit action.</p>
+    <p id="original-status" role="status"></p>
+    <div class="original-compare-layout">
+      <section class="original-reference" aria-labelledby="original-reference-title">
+        <h3 id="original-reference-title">Clinical record</h3>
+        <p id="original-record-identity"></p>
+        <p id="original-record-summary"></p>
+        <ul id="original-record-findings"></ul>
+      </section>
+      <div class="original-source">
+        <iframe id="original-pdf" title="Original report PDF" hidden></iframe>
+        <pre id="original-text" tabindex="0" hidden></pre>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="major-review-dialog" class="report-dialog major-review-dialog" aria-labelledby="major-review-title" aria-describedby="major-review-message">
+    <p class="product-eyebrow">Major review</p>
+    <h2 id="major-review-title">Confirm acceptance</h2>
+    <p id="major-review-message">This record contains a major review issue. Confirm that you reviewed the source evidence before accepting.</p>
+    <div class="major-review-actions">
+      <button id="cancel-major-acceptance" class="product-text-button" type="button">Cancel</button>
+      <button id="confirm-major-acceptance" class="product-action" type="button">Confirm acceptance</button>
+    </div>
+  </dialog>
+  <script src="/static/report-workspace-model.js?v=c2c" defer></script>
+  <script src="/static/report-workspace-flow.js?v=c2c" defer></script>
+  <script src="/static/reports.js?v=c2c" defer></script>
+</body>
+</html>

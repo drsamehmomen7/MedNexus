@@ -388,6 +388,18 @@ def standardize_journey_document(run_id: str, document_id: str) -> JSONResponse:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+@router.post("/journey-runs/{run_id}/documents/{document_id}/accept")
+def accept_journey_document(run_id: str, document_id: str) -> JSONResponse:
+    """Record an explicit human acceptance of the current clinical record."""
+    try:
+        journey_store.accept_clinical_review(run_id, document_id)
+        return JSONResponse(content=journey_store.run_payload(run_id), headers={"Cache-Control": "no-store, private"})
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 def _collection_snapshots(refs: list[CollectionReportRef]) -> list[dict[str, Any]]:
     return journey_store.governed_report_snapshots([(ref.run_id, ref.document_id) for ref in refs])
 

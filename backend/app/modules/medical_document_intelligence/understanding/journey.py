@@ -108,6 +108,7 @@ class JourneyDocument:
     stage_history: list[dict[str, str]] = field(default_factory=list)
     warnings: tuple[str, ...] = ()
     review_status: str = "PENDING"
+    reviewed_at: str | None = None
     error: str | None = None
     document: DocumentContent | None = field(default=None, repr=False)
     context: MedNexusDocumentContext | None = field(default=None, repr=False)
@@ -153,6 +154,7 @@ class JourneyDocument:
             "stage_history": list(self.stage_history),
             "warnings": list(self.warnings),
             "review_status": self.review_status,
+            "reviewed_at": self.reviewed_at,
             "error": self.error,
         }
 
@@ -209,6 +211,7 @@ class JourneyStore:
                 {"document_id": item.document_id, "order": item.order,
                  "display_label": f"Report {item.order + 1}", "source_type": item.source_type,
                  "source_sha256": item.content_digest,
+                 "review_status": item.review_status, "reviewed_at": item.reviewed_at,
                  "stage_status": {stage.value: {"status": item.stage_status[stage].value}
                                   for stage in PUBLIC_JOURNEY_STAGES},
                  "stage_references": {
@@ -247,6 +250,8 @@ class JourneyStore:
                 "order": member["order"], "source_type": member["source_type"],
                 "stage_status": member["stage_status"], "stage_results": member.get("stage_references", {}),
                 "stage_errors": {}, "error": None,
+                "review_status": member.get("review_status", "PENDING"),
+                "reviewed_at": member.get("reviewed_at"),
             })
         return {"run_id": metadata["run_id"], "batch_id": metadata["batch_id"],
                 "mode": "batch", "batch_name": metadata["batch_name"],
@@ -439,6 +444,7 @@ class JourneyStore:
             item.error = None
             item.warnings = ()
             item.review_status = "PENDING"
+            item.reviewed_at = None
             item.stage_results.pop(JourneyStage.UNDERSTAND, None)
             item.stage_errors.pop(JourneyStage.UNDERSTAND, None)
             for stage in PUBLIC_JOURNEY_STAGES[1:]:
@@ -795,6 +801,9 @@ class JourneyStore:
             if item.stage_status[JourneyStage.STANDARDIZE] is StageStatus.PROCESSING:
                 raise ValueError("STANDARDIZE is already processing this report.")
             # A rerun cannot retain a Stage 04 projection of an older EXTRACT.
+            item.review_status = ("NEEDS_REVIEW" if item.stage_status[JourneyStage.PROTECT]
+                                  is StageStatus.NEEDS_REVIEW else "CLEAR")
+            item.reviewed_at = None
             item.stage_results.pop(JourneyStage.STANDARDIZE, None)
             item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
             item.stage_status[JourneyStage.STANDARDIZE] = StageStatus.NOT_STARTED
@@ -879,6 +888,9 @@ class JourneyStore:
                 raise ValueError(item.stage_errors[JourneyStage.STANDARDIZE])
             item.stage_results.pop(JourneyStage.STANDARDIZE, None)
             item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
+            item.review_status = ("NEEDS_REVIEW" if item.stage_status[JourneyStage.PROTECT]
+                                  is StageStatus.NEEDS_REVIEW else "CLEAR")
+            item.reviewed_at = None
             item.stage_results.pop(JourneyStage.ANALYZE, None)
             item.stage_errors.pop(JourneyStage.ANALYZE, None)
             item.stage_status[JourneyStage.ANALYZE] = StageStatus.NOT_STARTED
@@ -909,6 +921,37 @@ class JourneyStore:
             item.transition(JourneyStage.STANDARDIZE, StageStatus(result["state"]))
             run.current_stage = JourneyStage.STANDARDIZE
             self._touch_locked(run)
+
+    def accept_clinical_review(self, run_id: str, document_id: str) -> None:
+        """Record an explicit human decision on the current live clinical result.
+
+        This records the decision in the Journey authority; it does not alter
+        extraction, terminology, or the underlying clinical facts. Batch
+        metadata retains only the nonclinical decision after the live result
+        expires.
+        """
+        with self._lock:
+            run = self._get_run_locked(run_id)
+            item = self._find_document(run, document_id)
+            protect = item.stage_results.get(JourneyStage.PROTECT)
+            extract = item.stage_results.get(JourneyStage.EXTRACT)
+            standardized = item.stage_results.get(JourneyStage.STANDARDIZE)
+            ready = {StageStatus.COMPLETE, StageStatus.NEEDS_REVIEW}
+            if (item.stage_status[JourneyStage.PROTECT] not in ready
+                    or item.stage_status[JourneyStage.EXTRACT] not in ready
+                    or item.stage_status[JourneyStage.STANDARDIZE] not in ready
+                    or not isinstance(protect, dict)
+                    or (protect.get("protected_document") or {}).get("report_id") != document_id
+                    or not isinstance(extract, dict)
+                    or extract.get("report_id") != document_id
+                    or not isinstance(extract.get("clinical_synthesis"), dict)
+                    or not isinstance(standardized, dict)
+                    or standardized.get("report_id") != document_id):
+                raise ValueError("A current clinical review record is required before acceptance.")
+            if item.review_status != "REVIEWED":
+                item.review_status = "REVIEWED"
+                item.reviewed_at = _timestamp()
+                self._touch_locked(run)
 
     def attach_collection_analysis(self, run_id: str, analysis: dict[str, Any], report_ids: set[str]) -> None:
         """Project a completed collection run onto its current Journey members."""
