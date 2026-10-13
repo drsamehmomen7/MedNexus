@@ -36,3 +36,11 @@ test('skip link stays offscreen until focus and remains keyboard reachable', () 
   assert.match(shellCss, /\.product-skip-link\s*\{[^}]*top:\s*-100px;/);
   assert.match(shellCss, /\.product-skip-link:focus\s*\{[^}]*top:\s*12px;/);
 });
+
+test('exam coverage and profile details use the accepted record layout', () => {
+  assert.ok(html.indexOf('id="exam-coverage-section"') < html.indexOf('id="findings-section"'));
+  assert.match(html, /id="view-profile-details"/);
+  assert.match(html, /id="profile-dialog"/);
+  assert.match(script, /byId\('exam-coverage-section'\)\.hidden = !record\.profile/);
+  assert.match(script, /byId\('profile-dialog'\)\.showModal\(\)/);
+});

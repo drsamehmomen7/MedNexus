@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
   <link rel="stylesheet" href="/static/mrj-brand.css">
   <link rel="stylesheet" href="/static/product-shell.css">
-  <link rel="stylesheet" href="/static/report-workspace.css?v=c2c">
+  <link rel="stylesheet" href="/static/report-workspace.css?v=d1">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
 </head>
@@ -105,6 +105,12 @@
           <section id="summary-section" class="record-section" aria-labelledby="summary-title" hidden>
             <h3 id="summary-title">Clinical summary</h3><p id="record-summary" class="record-summary"></p>
           </section>
+          <section id="exam-coverage-section" class="record-section" aria-labelledby="exam-coverage-title" hidden>
+            <div class="coverage-heading"><h3 id="exam-coverage-title">Exam coverage</h3>
+              <button id="view-profile-details" class="product-text-button" type="button">View profile details</button></div>
+            <ul id="exam-coverage-list" class="exam-coverage-list"></ul>
+            <p class="product-muted">Coverage describes documentation, not a clinical finding.</p>
+          </section>
           <section id="findings-section" class="record-section" aria-labelledby="findings-title" hidden>
             <h3 id="findings-title">Key findings</h3><ul id="record-findings" class="record-fact-list"></ul>
           </section>
@@ -114,6 +120,12 @@
           </section>
           <section id="negative-section" class="record-section" aria-labelledby="negative-title" hidden>
             <h3 id="negative-title">Pertinent negatives</h3><ul id="record-negatives" class="record-fact-list"></ul>
+          </section>
+          <section id="assessment-section" class="record-section" aria-labelledby="assessment-title" hidden>
+            <h3 id="assessment-title">Report assessment</h3><ul id="record-assessments" class="record-fact-list"></ul>
+          </section>
+          <section id="recommendation-section" class="record-section" aria-labelledby="recommendation-title" hidden>
+            <h3 id="recommendation-title">Recommendations</h3><ul id="record-recommendations" class="record-fact-list"></ul>
           </section>
           <section id="diagnostic-section" class="record-section" aria-labelledby="diagnostic-title" hidden>
             <h3 id="diagnostic-title">Diagnostic considerations</h3><ul id="record-diagnostics" class="record-fact-list"></ul>
@@ -143,6 +155,12 @@
     <details id="evidence-provenance"><summary>Technical provenance</summary><p id="evidence-provenance-text"></p></details>
     <button id="evidence-original" class="product-text-button" type="button">View original report ↗</button>
   </dialog>
+  <dialog id="profile-dialog" class="report-dialog evidence-drawer" aria-labelledby="profile-title">
+    <div class="report-dialog-head"><div><p class="product-eyebrow">Exam profile</p><h2 id="profile-title">Profile details</h2></div><button class="dialog-close" type="button" data-close="profile-dialog" aria-label="Close profile details">×</button></div>
+    <p id="profile-scope" class="product-muted"></p>
+    <ul id="profile-coverage-list" class="profile-coverage-list"></ul>
+    <details><summary>Technical provenance</summary><p id="profile-provenance"></p></details>
+  </dialog>
   <dialog id="original-dialog" class="report-dialog original-dialog" aria-labelledby="original-title">
     <div class="report-dialog-head"><div><p class="product-eyebrow">Source report</p><h2 id="original-title">Original report</h2></div><button class="dialog-close" type="button" data-close="original-dialog" aria-label="Close original report">×</button></div>
     <p class="product-muted">The original may contain identifying information. It is shown only after this explicit action.</p>
@@ -169,8 +187,8 @@
       <button id="confirm-major-acceptance" class="product-action" type="button">Confirm acceptance</button>
     </div>
   </dialog>
-  <script src="/static/report-workspace-model.js?v=c2c" defer></script>
+  <script src="/static/report-workspace-model.js?v=d1" defer></script>
   <script src="/static/report-workspace-flow.js?v=c2c" defer></script>
-  <script src="/static/reports.js?v=c2c" defer></script>
+  <script src="/static/reports.js?v=d1" defer></script>
 </body>
 </html>

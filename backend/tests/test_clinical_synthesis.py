@@ -405,7 +405,8 @@ def test_generalized_negative_and_peripheral_edema_across_other_radiology_subtyp
     doppler = "No DVT identified.\nThere is bilateral edema of the lower extremities."
     output = raw(doppler, [("DVT", "No DVT identified.", "DIAGNOSTIC_SUMMARY", "ABSENT_NEGATED"),
                            ("edema", "There is bilateral edema of the lower extremities.", "DIAGNOSTIC_SUMMARY", "PRESENT")])
-    assert {f["display_label"] for f in output["canonical_facts"]} == {"No DVT", "Bilateral edema"}
+    assert {f["display_label"] for f in output["canonical_facts"]} == {
+        "No DVT", "Bilateral edema of the lower extremities"}
     assert not facts(output, "vasogenic_edema")
     thyroid = "There are no discrete nodules."
     output = raw(thyroid, [("nodules", thyroid, "FINDINGS_DESCRIPTION", "ABSENT_NEGATED")])
@@ -482,8 +483,10 @@ def test_present_organ_atrophy_is_positive_and_muscular_absence_is_not_cerebral(
     negative = "There is no muscular tear, contusion, or atrophy."
     present_output = raw(positive, [("atrophy", positive, "FINDINGS_DESCRIPTION", "PRESENT")])
     absent_output = raw(negative, [("atrophy", negative, "FINDINGS_DESCRIPTION", "ABSENT_NEGATED")])
-    assert facts(present_output, "atrophy")[0]["group"] == "SECONDARY"
-    assert facts(present_output, "atrophy")[0]["assertion_state"] == "PRESENT"
+    cerebral = next(f for f in present_output["canonical_facts"] if "atrophy" in f["display_label"].lower())
+    assert cerebral["group"] == "SECONDARY"
+    assert cerebral["assertion_state"] == "PRESENT"
+    assert cerebral["display_label"] == "Cerebral atrophy"
     muscular = next(f for f in absent_output["canonical_facts"] if f["assertion_state"] == "ABSENT_NEGATED")
     assert muscular["display_label"] == "No muscular atrophy"
     assert muscular["group"] == "NEGATIVE"

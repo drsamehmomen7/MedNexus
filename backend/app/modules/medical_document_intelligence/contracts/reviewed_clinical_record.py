@@ -14,13 +14,14 @@ from typing import Any
 from uuid import UUID, uuid5
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 _NAMESPACE = UUID("a5aab50d-2fbd-45fc-86bf-a6c5a35ee498")
 _RECORD_KEYS = {"schema_version", "record_version", "reviewed_record_id", "journey_run_id",
                 "document_id", "reviewed_at", "review_decision", "durably_reviewed",
                 "major_review_required", "major_review_acknowledged", "review_issues",
                 "protected_source", "exam_context", "clinical_summary", "canonical_facts",
                 "standardized_facts", "unassigned_measurements", "provenance"}
+_PROFILE_KEYS = {"profile_id", "profile_version", "scope", "evaluation_status"}
 _SOURCE_KEYS = {"representation", "text", "sha256", "artifact_id", "output_version",
                 "selected_policy_id", "selected_policy_version", "protected_pdf_sha256"}
 _FACT_KEYS = {"fact_id", "fact_type", "canonical_concept", "display_label", "assertion_state",
@@ -86,10 +87,17 @@ class ReviewedClinicalRecord:
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> "ReviewedClinicalRecord":
-        if not isinstance(value, dict) or value.get("schema_version") != SCHEMA_VERSION:
+        if not isinstance(value, dict) or value.get("schema_version") not in {1, SCHEMA_VERSION}:
             raise ValueError("Unsupported reviewed record schema.")
-        if set(value) != _RECORD_KEYS:
+        expected = _RECORD_KEYS | ({"profile_provenance"} if value["schema_version"] == 2 else set())
+        if set(value) != expected:
             raise ValueError("Reviewed record contains unexpected or missing fields.")
+        if value["schema_version"] == 2:
+            profile = value["profile_provenance"]
+            if profile is not None and (not isinstance(profile, dict) or set(profile) != _PROFILE_KEYS
+                                        or not all(isinstance(profile.get(key), str) and profile[key]
+                                                   for key in _PROFILE_KEYS)):
+                raise ValueError("Reviewed record profile provenance is malformed.")
         for key in ("reviewed_record_id", "journey_run_id", "document_id", "reviewed_at"):
             if not isinstance(value.get(key), str) or not value[key]:
                 raise ValueError("Reviewed record identity is incomplete.")
@@ -155,7 +163,11 @@ def build_reviewed_record(*, run_id: str, document_id: str, reviewed_at: str,
                           protect: dict[str, Any], extract: dict[str, Any],
                           standardized: dict[str, Any],
                           exam_identity: dict[str, Any] | None = None,
+                          profile_evaluation: dict[str, Any] | None = None,
+                          schema_version: int = SCHEMA_VERSION,
                           major_review_acknowledged: bool = False) -> ReviewedClinicalRecord:
+    if schema_version not in {1, SCHEMA_VERSION}:
+        raise ValueError("Unsupported reviewed record schema.")
     protected = protect.get("protected_document") or {}
     text = protected.get("protected_text")
     if not isinstance(text, str) or not text.strip():
@@ -235,7 +247,7 @@ def build_reviewed_record(*, run_id: str, document_id: str, reviewed_at: str,
     context["procedure_mapping"] = _pick(procedure, ("system", "code", "display", "mapping_status",
                                                      "review_required", "review_reason"))
     value = {
-        "schema_version": SCHEMA_VERSION, "record_version": 1,
+        "schema_version": schema_version, "record_version": 1,
         "reviewed_record_id": logical_record_id(run_id, document_id),
         "journey_run_id": run_id, "document_id": document_id,
         "reviewed_at": reviewed_at, "review_decision": "ACCEPTED", "durably_reviewed": True,
@@ -255,6 +267,13 @@ def build_reviewed_record(*, run_id: str, document_id: str, reviewed_at: str,
                        "standardize_profile": standardized.get("profile")},
     }
     artifact = protected.get("artifact")
+    if schema_version == 2:
+        value["profile_provenance"] = (
+            {"profile_id": profile_evaluation["profile_id"],
+             "profile_version": profile_evaluation["profile_version"],
+             "scope": profile_evaluation["scope"],
+             "evaluation_status": profile_evaluation["status"]}
+            if isinstance(profile_evaluation, dict) else None)
     if isinstance(artifact, dict) and isinstance(artifact.get("integrity_sha256"), str):
         value["protected_source"]["protected_pdf_sha256"] = artifact["integrity_sha256"]
     return ReviewedClinicalRecord.from_dict(value)

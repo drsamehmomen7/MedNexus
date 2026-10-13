@@ -49,6 +49,24 @@ test('real Journey fields become distinct findings, explicit negatives, and meas
   assert.equal(value.protectedText, report().stage_results.PROTECT.protected_document.protected_text);
 });
 
+test('current Addendum, primary negative, assessment and recommendation project separately', () => {
+  const item = report();
+  const facts = item.stage_results.EXTRACT.clinical_synthesis.canonical_facts;
+  facts[0].temporal_status = 'SUPERSEDED';
+  facts[1].salience = 'PRIMARY';
+  facts.push({ fact_id: 'current', group: 'KEY', display_label: 'Implant stable',
+    assertion_state: 'PRESENT', temporal_status: 'CURRENT', evidence_anchors: [] });
+  facts.push({ fact_id: 'assessment', group: 'ASSESSMENT', display_label: 'CATEGORY 2 benign',
+    assertion_state: 'NOT_APPLICABLE', evidence_anchors: [] });
+  facts.push({ fact_id: 'recommendation', group: 'RECOMMENDATION', display_label: 'Follow-up advised',
+    assertion_state: 'NOT_APPLICABLE', evidence_anchors: [] });
+  const value = projection(item);
+  assert.deepEqual(value.groups.key.map(fact => fact.display_label), ['Implant stable']);
+  assert.deepEqual(value.groups.negative.map(fact => fact.fact_id), ['two']);
+  assert.deepEqual(value.groups.assessment.map(fact => fact.fact_id), ['assessment']);
+  assert.deepEqual(value.groups.recommendation.map(fact => fact.fact_id), ['recommendation']);
+});
+
 test('review issues are conditional and not-documented is never negative', () => {
   const quiet = report();
   quiet.stage_results.EXTRACT.clinical_synthesis.canonical_facts.splice(2, 1);
@@ -139,4 +157,28 @@ test('a record is never ready before current protected extraction and standardiz
   const mismatched = report();
   mismatched.stage_results.STANDARDIZE.report_id = 'b'.repeat(32);
   assert.equal(reviewable(mismatched), false);
+});
+
+test('governed exam coverage stays separate from negative findings and review alerts', () => {
+  const item = report();
+  item.stage_results.EXTRACT.clinical_synthesis.canonical_facts.splice(2, 1);
+  item.stage_results.STANDARDIZE.profile_evaluation = {
+    status: 'EVALUATED', profile_id: 'MRJ_RAD_US_ABDOMEN', profile_version: '0.1',
+    profile_name: 'Ultrasound Abdomen', scope: 'COMPLETE', compatibility: 'INSUFFICIENT_INFORMATION',
+    review_alerts: [], coverage: [
+      { section_id: 'liver', label: 'Liver', coverage: 'NOT_DOCUMENTED', assertion: 'INDETERMINATE', elements: [] },
+      { section_id: 'pancreas', label: 'Pancreas', coverage: 'LIMITED_OR_NOT_VISUALIZED',
+        assertion: 'INDETERMINATE', elements: [] },
+    ],
+  };
+  const value = projection(item);
+  assert.equal(value.title, 'Ultrasound Abdomen');
+  assert.deepEqual(value.profile.coverage.map(row => row.coverage),
+    ['NOT_DOCUMENTED', 'LIMITED_OR_NOT_VISUALIZED']);
+  assert.equal(value.groups.negative.length, 1);
+  assert.deepEqual(value.reviewAlerts, []);
+  item.stage_results.STANDARDIZE.profile_evaluation.compatibility = 'POSSIBLE_ANATOMY_MISMATCH';
+  item.stage_results.STANDARDIZE.profile_evaluation.review_alerts = [{ code: 'PROFILE_ANATOMY_MISMATCH' }];
+  assert.match(projection(item).reviewIssues.join(' '), /Extracted anatomy may not match the exam/);
+  assert.equal(projection(item).reviewAlerts.find(alert => /Extracted anatomy/.test(alert.message)).severity, 'major');
 });

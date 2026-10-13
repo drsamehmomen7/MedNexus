@@ -26,7 +26,6 @@ RULES = (
     ("scleral_calcification", r"\b(?:scleral?|calcif\w*)\b", r"\b(?:scleral?|sclera)\b", "Degenerative scleral calcification", "BACKGROUND_FINDING", "SECONDARY", "SECONDARY"),
     ("tendon_calcification", r"\b(?:tendon|oblique|calcif\w*)\b", r"\b(?:superior oblique|tendon)\b", "Dystrophic superior oblique tendon calcification", "BACKGROUND_FINDING", "SECONDARY", "SECONDARY"),
     ("atherosclerosis", r"\b(?:atherosclero\w*|vascular|arterial|calcif\w*)\b", r"\b(?:atherosclero\w*|vascular calcif\w*|arterial calcif\w*)\b", "Atherosclerosis / vascular calcifications", "BACKGROUND_FINDING", "BACKGROUND", "SECONDARY"),
-    ("atrophy", r"\b(?:atrophy|volume loss)\b", r"\b(?:atrophy|volume loss)\b", "Cerebral atrophy", "BACKGROUND_FINDING", "BACKGROUND", "SECONDARY"),
     ("senescent_wm", r"\b(?:white[- ]matter|senescent|microvascular)\b", r"\b(?:senescen\w*|microvascular|small[- ]vessel)\b", "Senescent white-matter changes", "BACKGROUND_FINDING", "BACKGROUND", "SECONDARY"),
     ("sinus_disease", r"\b(?:sinus\w*|mucosal|thickening|maxillary)\b", r"\b(?:maxillary|sinus\w*)\b", "Chronic maxillary sinus disease", "BACKGROUND_FINDING", "SECONDARY", "SECONDARY"),
     ("dentigerous_cyst", r"\b(?:dentigerous|cyst|odontogenic)\b", r"\b(?:dentigerous|odontogenic)\b", "Possible dentigerous cyst formation", "BACKGROUND_FINDING", "SECONDARY", "SECONDARY"),
@@ -89,10 +88,6 @@ def _rule(expression: str, sentence: str):
         if key == "dentigerous_cyst" and not re.search(r"\bcyst\b", sentence, re.I):
             continue
         if key == "primary_brain_tumor" and re.search(r"\bmetasta\w*\b", expression, re.I):
-            continue
-        if key == "atrophy" and re.search(r"\b(?:muscul\w*|skelet\w*|tendon\w*)\b", sentence, re.I):
-            # This legacy neuro display mapping must not relabel an explicit
-            # musculoskeletal negative as cerebral atrophy.
             continue
         if key == "mass_effect" and re.fullmatch(r"(?:compression|effacement)", expression, re.I) and not re.search(
                 r"\b(?:mass effect|ventricular effect|effacement|compress\w*\s+(?:of|on)\s+\w+\s+(?:by|from))\b", sentence, re.I):
@@ -164,7 +159,7 @@ def _negative_qualifier(expression: str, sentence: str) -> str:
         return ""
     start = sentence.rfind("\n", 0, position.start()) + 1
     before = sentence[start:position.start()]
-    negations = list(re.finditer(r"\b(?:no|without)\b", before, re.I))
+    negations = list(re.finditer(r"\b(?:no|without|negative\s+for)\b", before, re.I))
     if not negations:
         return ""
     between = before[negations[-1].end():].strip()
@@ -234,7 +229,7 @@ ISOLATED_ATTRIBUTE = re.compile(
 CLINICAL_PREDICATE = re.compile(
     r"\b(?:is|are|was|were|has|have|seen|present|noted|identified|demonstrat\w*|"
     r"show\w*|measur\w*|involv\w*|torn|tear\w*|fractur\w*|effusion|lesion|abnormal|impaired|absen\w*)\b", re.I)
-NEGATION = re.compile(r"\b(?:no|without|absen\w*\s+of|lack\s+of|not\s+seen)\b", re.I)
+NEGATION = re.compile(r"\b(?:no|without|absen\w*\s+of|lack\s+of|not\s+seen|negative\s+for)\b", re.I)
 LOW_INFORMATION_HEAD = re.compile(
     r"^(?:(?:still|underlying|major|extensive|adjacent|mild|modest|chronic|persistent)\s+)*"
     r"(?:findings?|changes?|disease|process|problem|material)\b", re.I)
@@ -296,6 +291,12 @@ def _source_fragment(anchor: dict, expression: str) -> str:
     return local["quote"] if local else ""
 
 
+def _nominal_source_finding(expression: str, fragment: str) -> bool:
+    """Recognize a source-described nominal observation, without naming diseases."""
+    return bool(re.search(r"\b(?:[A-Za-z-]+\s+){1,4}" + re.escape(expression) +
+                          r"\b(?:\s+of\b[^.!?]+)?\s*[.!?]?\s*$", fragment, re.I))
+
+
 def classify_clause(expression: str, anchor: dict, section: str, source_text: str = "") -> tuple[str, str | None]:
     """Classify the source clause before any terminology rule can create a fact.
 
@@ -334,6 +335,10 @@ def classify_clause(expression: str, anchor: dict, section: str, source_text: st
         if re.match(r"^\s*\d+[.)]\s+", current_line) and generic_entry and len(list_lines) >= 3 and generic_options >= 3:
             return "REFERENCE_OR_EDUCATIONAL_TEXT", "REFERENCE_LIST_NOT_PATIENT_FINDING"
     if re.search(r"\b(?:images? (?:were|was) (?:obtained|acquired)|contrast (?:was|is) (?:administered|instilled|injected)|(?:was|is) performed under|opacification .* (?:is|was) visualized)\b", clause, re.I):
+        return "TECHNIQUE_OR_PROCEDURE", "PROCEDURE_OR_TECHNIQUE"
+    # An acquisition-action predicate is not a patient finding even when its
+    # object contains a lesion noun or a PDF line omits the preceding "view".
+    if re.search(r"\b(?:was|were|is|are)\s+(?:also\s+|subsequently\s+)?(?:performed|obtained|acquired)\b", clause, re.I):
         return "TECHNIQUE_OR_PROCEDURE", "PROCEDURE_OR_TECHNIQUE"
     if re.search(r"\b(?:catheter|implant|prosthesis|hardware|replacement|fixation)\b", clause, re.I) and re.search(r"\b(?:in situ|is (?:noted|seen|present)|was placed|intact|stable|redemonstration)\b", clause, re.I) and not re.search(r"\b(?:malposition|fractur\w*|displac\w*|infect\w*|obstruct\w*)\b", clause, re.I):
         return "DEVICE_OR_ADMIN_CONTEXT", "DEVICE_STATUS_NOT_FINDING"
@@ -382,8 +387,8 @@ def _basic_candidate(expression: str, anchor: dict, assertion: str, section: str
         # predicate. The noun itself is not the eligibility whitelist.
         if not (expression.casefold() in {"lesion", "mass", "calcification", "calcifications"}
                 and len(re.findall(r"[A-Za-z-]+", fragment)) >= 3
-                and (CLINICAL_PREDICATE.search(fragment) or re.search(
-                    r"\b(?:in|at|within|of)\s+(?:the\s+)?[A-Za-z-]+", fragment, re.I))):
+                and (CLINICAL_PREDICATE.search(fragment) or _nominal_source_finding(expression, fragment)
+                     or re.search(r"\b(?:in|at|within|of)\s+(?:the\s+)?[A-Za-z-]+", fragment, re.I))):
             return "SUPPRESSED_NOISE", "GENERIC_NOUN_OR_MODIFIER"
     if LOW_INFORMATION_HEAD.search(expression):
         return "SUPPRESSED_NOISE", "LOW_INFORMATION_GENERIC_HEAD"
@@ -399,6 +404,14 @@ def _basic_candidate(expression: str, anchor: dict, assertion: str, section: str
         if expression.casefold() == "torn" and re.search(r"\b(?:ligament|tendon|muscle|structure)\w*\b", fragment, re.I):
             return "CURRENT_FINDING", None
         return "ATTRIBUTE", "ISOLATED_ATTRIBUTE"
+    # An engine adjective before a longer measured subject is morphology,
+    # not the subject's clinical head. The source/summary corroboration path
+    # below can still recover the complete abnormal noun phrase.
+    expression_match = re.search(re.escape(expression).replace(r"\ ", r"\s+"), fragment, re.I)
+    if (expression_match and re.fullmatch(r"[A-Za-z]+(?:-[A-Za-z]+)+", expression)
+            and re.match(r"\s+(?:[A-Za-z-]+\s+){2,}[A-Za-z-]+\s+measur\w*\b",
+                         fragment[expression_match.end():], re.I)):
+        return "ATTRIBUTE", "MORPHOLOGY_ATTRIBUTE"
     if re.search(r"\bthroughout\s+(?:this|that|the)\b", fragment, re.I) and not re.search(
             r"\b(?:abnormal|increased|decreased|reduced|absent|reversed|turbulent)\b", fragment, re.I):
         return "ATTRIBUTE", "SOURCE_DESCRIPTIVE_ATTRIBUTE"
@@ -434,7 +447,11 @@ def _basic_candidate(expression: str, anchor: dict, assertion: str, section: str
         return "DIAGNOSTIC_HYPOTHESIS", None
     if ROUTINE_NORMAL.search(fragment):
         return "NORMAL_OBSERVATION", "ROUTINE_NORMAL_OBSERVATION"
-    if section in {"FINDINGS_DESCRIPTION", "COMPARISON"} and not CLINICAL_PREDICATE.search(fragment):
+    # A validated Observation can be an explicitly described nominal finding
+    # without a finite verb: "mild X of the Y" or "Y X". Preserve its whole
+    # source phrase instead of expanding the generic head into a named organ.
+    nominal = _nominal_source_finding(expression, fragment)
+    if section in {"FINDINGS_DESCRIPTION", "COMPARISON"} and not CLINICAL_PREDICATE.search(fragment) and not nominal:
         return "ATTRIBUTE", "NO_CLINICAL_ASSERTION_IN_LOCAL_CLAUSE"
     return "CURRENT_FINDING", None
 
@@ -463,6 +480,7 @@ def _open_label(expression: str, anchor: dict, assertion: str) -> str:
         return headed_state.group(2).capitalize() + " " + headed_state.group(1).strip()
     phrase = re.sub(r"\s+", " ", fragment)
     phrase = re.sub(r"^[\s\x7f■•*-]*(?:\d+[.)]\s*)?", "", phrase)
+    phrase = re.sub(r"^(?:findings?|observations?|impression|conclusion|summary)\s*:\s*", "", phrase, flags=re.I)
     phrase = re.sub(r"^(?:there\s+is|there\s+are|the|associated)\s+", "", phrase, flags=re.I)
     phrase = re.sub(r"^(?:is\s+made\s+that|note\s+is\s+made\s+that)\s+", "", phrase, flags=re.I)
     phrase = re.sub(r"^incidentally\s+noted\s+is\s+(?:an?\s+)?", "", phrase, flags=re.I)
@@ -583,6 +601,78 @@ def _source_assertion_evidence(protected_text: str, sections: list[dict], eviden
                 (phrase, "PRESENT", detail_anchor, f"mrj-source:{detail_anchor['start_offset']}", "FINDINGS_DESCRIPTION", None),
             ))
             break
+    return recovered
+
+
+def _corroborated_measured_evidence(protected_text: str, sections: list[dict], candidates: list[dict]) -> list[tuple]:
+    """Recover a measured noun phrase only when an independent summary asserts it.
+
+    The engine may label an adjective rather than the abnormality head. Neither
+    that adjective nor a measurement alone is allowed to create a clinical fact.
+    """
+    details = [s for s in sections if s.get("role") == "FINDINGS_DESCRIPTION"]
+    summaries = [s for s in sections if s.get("role") == "DIAGNOSTIC_SUMMARY"]
+    recovered = []
+
+    def terms(value: str) -> set[str]:
+        return {term for term in re.findall(r"[a-z]+(?:-[a-z]+)*", value.casefold())
+                if term not in {"a", "an", "the", "is", "are", "was", "were", "with", "of", "and"}}
+
+    for detail in details:
+        for sentence in re.finditer(r"[^.!?\n]+(?:[.!?]|$)", detail["text"]):
+            raw = sentence.group()
+            heading = re.match(r"\s*(?:findings?|observations?)\s*:\s*", raw, re.I)
+            content = raw[heading.end():] if heading else raw
+            measured = re.match(r"\s*(?:a|an|the)?\s*(?P<subject>[A-Za-z][A-Za-z\s-]{5,90}?)\s+"
+                                r"measur(?:es?|ed)\s+\d", content, re.I)
+            if not measured or NEGATION.search(raw) or re.search(r"\b(?:possible|may|might|could)\b", raw, re.I):
+                continue
+            subject = measured.group("subject").strip()
+            subject_start = detail["start"] + sentence.start() + (heading.end() if heading else 0) + measured.start("subject")
+            subject_end = subject_start + len(subject)
+            if protected_text[subject_start:subject_end] != subject or len(terms(subject)) < 3:
+                continue
+            modifiers = [c for c in candidates if c.get("candidate_type") == "Observation"
+                         and c.get("assertion_candidate") == "PRESENT"
+                         and isinstance(c.get("source_start"), int) and isinstance(c.get("source_end"), int)
+                         and subject_start <= c["source_start"] < c["source_end"] <= subject_end]
+            if not modifiers:
+                continue
+            for summary in summaries:
+                for summary_sentence in re.finditer(r"[^.!?\n]+(?:[.!?]|$)", summary["text"]):
+                    summary_raw = summary_sentence.group()
+                    summary_heading = re.match(r"\s*(?:impression|conclusion|summary)\s*:\s*", summary_raw, re.I)
+                    summary_content = summary_raw[summary_heading.end():] if summary_heading else summary_raw
+                    summary_phrase = re.split(r"\s+with\b|[.;]", summary_content, maxsplit=1, flags=re.I)[0].strip()
+                    shared = terms(subject) & terms(summary_phrase)
+                    if (len(shared) < 3 or len(shared) / min(len(terms(subject)), len(terms(summary_phrase))) < 0.75
+                            or NEGATION.search(summary_raw) or re.search(r"\b(?:possible|may|might|could)\b", summary_raw, re.I)):
+                        continue
+                    summary_start = summary["start"] + summary_sentence.start() + (summary_heading.end() if summary_heading else 0) + summary_content.index(summary_phrase)
+                    summary_end = summary_start + len(summary_phrase)
+                    if protected_text[summary_start:summary_end] != summary_phrase:
+                        continue
+                    detail_start = detail["start"] + sentence.start()
+                    detail_end = detail_start + len(raw)
+                    detail_anchor = {"start_offset": detail_start, "end_offset": detail_end,
+                                     "quote": raw, "role": "DETAIL_SUPPORT", "source_section": "FINDINGS_DESCRIPTION"}
+                    if classify_clause(subject, detail_anchor, "FINDINGS_DESCRIPTION", protected_text)[1]:
+                        continue
+                    # When the model only recognized a leading modifier, the
+                    # intervening noun phrase is a source-grounded site.
+                    first = next((c for c in modifiers if c["source_start"] == subject_start), None)
+                    remaining = subject[len(first["source_text"]):].strip() if first else ""
+                    anatomy = " ".join(remaining.split()[:-1]) if len(remaining.split()) >= 3 else ""
+                    detail_anchor["source_anatomy"] = anatomy
+                    anchor = {"start_offset": summary_start, "end_offset": summary_end,
+                              "quote": summary_phrase, "role": "SUMMARY_ASSERTION",
+                              "source_section": "DIAGNOSTIC_SUMMARY", "corroborating_detail": detail_anchor}
+                    recovered.append((summary_phrase, "PRESENT", anchor, f"mrj-source:{summary_start}",
+                                      "DIAGNOSTIC_SUMMARY", None))
+                    break
+                else:
+                    continue
+                break
     return recovered
 
 
@@ -988,10 +1078,219 @@ def _summary(facts: list[dict]) -> str:
                                and fact["canonical_concept"].startswith("general:functional_absence:relaxation"))]
         if associated:
             clauses.append("Additional findings include " + ", ".join(associated) + ".")
-        negatives = [fact["display_label"].lower() for fact in facts if fact["group"] == "NEGATIVE"]
+        negatives = [fact["display_label"].lower() for fact in facts if fact["group"] == "NEGATIVE"
+                     and fact.get("salience") != "PRIMARY"]
         if negatives:
             clauses.append("Pertinent negatives include " + ", ".join(negatives) + ".")
+    primary_negative = next((fact for fact in facts if fact["group"] == "NEGATIVE"
+                             and fact.get("salience") == "PRIMARY"), None)
+    if primary_negative:
+        clauses.insert(0, primary_negative["display_label"].rstrip(".") + ".")
     return " ".join(clauses)
+
+
+def _source_fact(text: str, start: int, end: int, label: str, kind: str,
+                 group: str, *, assertion: str = "PRESENT", measurement: str | None = None,
+                 source_section: str | None = None) -> dict:
+    """Build an exactly anchored source fact without claiming model support."""
+    quote = text[start:end]
+    if not quote or text[start:end] != quote:
+        raise ValueError("Source fact requires an exact protected span")
+    source_id = f"mrj-source:{start}"
+    section_role = source_section or ("DIAGNOSTIC_SUMMARY" if group in
+                                      {"KEY", "ASSESSMENT", "RECOMMENDATION"} else "FINDINGS_DESCRIPTION")
+    anchor = {"start_offset": start, "end_offset": end, "quote": quote,
+              "role": "SOURCE_ASSERTION", "section_role": section_role,
+              "source_section": section_role,
+              "source_context": "UNSPECIFIED", "engine_evidence_ids": [],
+              "source_rule_evidence_ids": [source_id]}
+    observation = {"source_context": "UNSPECIFIED", "evidence_anchor": anchor}
+    if measurement:
+        observation["measurements"] = [measurement]
+    words = re.findall(r"[a-z]+", label.casefold())
+    return {"fact_id": "", "fact_type": kind,
+            "canonical_concept": "general:source:" + ":".join(words[:12]),
+            "display_label": label, "assertion_state": assertion,
+            "salience": "PRIMARY" if group in {"KEY", "ASSESSMENT"} else "SECONDARY",
+            "group": group, "anatomy": [], "observations": [observation], "relationships": [],
+            "evidence_anchors": [anchor], "confidence": {"state": "NOT_CALIBRATED"},
+            "review_required": True, "review_reason": ["SOURCE_ONLY_INTERPRETATION"],
+            "synthesis_provenance": {"profile": PROFILE, "engine_evidence_ids": [],
+                                     "source_rule_evidence_ids": [source_id]}}
+
+
+def _source_nonfinding_statements(text: str, sections: list[dict], facts: list[dict]) -> None:
+    """Retain explicit report assessments/actions as non-disease assertions."""
+    for section in sections:
+        if section["role"] not in {"DIAGNOSTIC_SUMMARY", "RECOMMENDATION"}:
+            continue
+        offset = section["start"]
+        for line in section["text"].splitlines(keepends=True):
+            raw_clean = line.strip()
+            clean = re.split(r"(?<=[.!?])\s+", raw_clean, maxsplit=1)[0]
+            start = offset + (line.index(raw_clean) if raw_clean else 0)
+            end = start + len(clean)
+            offset += len(line)
+            if not clean or not 0 <= start < end <= len(text) or text[start:end] != clean:
+                continue
+            assessment = bool(re.search(r"\b(?:category|grade|class)\s*[-:]?\s*[A-Z0-9]+\b", clean, re.I)
+                              and re.search(r"\b(?:assessment|classification|findings?|benign|suspicious|negative)\b", clean, re.I))
+            recommendation = bool(re.search(
+                r"\b(?:should|could|may)\s+be\s+(?:considered|performed|obtained|provided|recommended)\b|"
+                r"\brecommend(?:ed|ation)?\s+(?:for|that|to)\b", clean, re.I))
+            if assessment:
+                facts.append(_source_fact(text, start, end, re.sub(r"\s+", " ", clean),
+                                          "REPORT_ASSESSMENT", "ASSESSMENT", assertion="NOT_APPLICABLE",
+                                          source_section=section["role"]))
+            elif recommendation and not re.search(r"\b(?:was|were)\s+discussed\b", clean, re.I):
+                facts.append(_source_fact(text, start, end, re.sub(r"\s+", " ", clean),
+                                          "RECOMMENDATION", "RECOMMENDATION", assertion="NOT_APPLICABLE",
+                                          source_section=section["role"]))
+
+
+def _addendum_authority(text: str, sections: list[dict], facts: list[dict]) -> None:
+    """Promote only an explicit resolving addendum; retain matched prior facts."""
+    headings = list(re.finditer(r"(?im)^[ \t]*(?:ADDENDUM|AMENDED REPORT|CORRECTION)[ \t]*\r?$", text))
+    if not headings:
+        return
+    start = headings[-1].end()
+    later = text[start:]
+    definitive = list(re.finditer(
+        r"\b(?:this|the|these|those)\s+(?:[A-Za-z-]+\s+){0,4}?(?:is|are)\s+"
+        r"(?:definitely|clearly|confirmed\s+to\s+be)\s+(?:an?\s+)?[A-Za-z][A-Za-z -]{2,55}?"
+        r"(?=\s+and\b|[.;]|$)", later, re.I | re.S))
+    stable = list(re.finditer(
+        r"\b(?:[A-Za-z-]+\s+){0,5}(?:hardware|prosthesis|component|implant|device|construct|structure|lesion|finding)"
+        r"\s+(?:is|are|appears?|remains?)\s+(?:stable|unchanged)(?:\s+and\s+(?:stable|unchanged))?",
+        later, re.I | re.S))
+    resolved = definitive[-1] if definitive else stable[-1] if stable else None
+    if resolved is None:
+        if re.search(r"\b(?:uncertain|indeterminate|possible|may|cannot exclude)\b", later, re.I):
+            later_terms = {word for word in re.findall(r"[a-z]{5,}", later.casefold())
+                           if word not in {"possible", "uncertain", "indeterminate", "addendum",
+                                           "comparison", "previous", "report", "study"}}
+            for fact in facts:
+                prior = " ".join(a["quote"] for a in fact["evidence_anchors"]
+                                 if a["start_offset"] < start)
+                prior_terms = set(re.findall(r"[a-z]{5,}", prior.casefold()))
+                if len(prior_terms & later_terms) >= 2:
+                    fact["review_required"] = True
+                    if "ADDENDUM_UNRESOLVED_CONFLICT" not in fact["review_reason"]:
+                        fact["review_reason"].append("ADDENDUM_UNRESOLVED_CONFLICT")
+        return
+    resolution_start, resolution_end = start + resolved.start(), start + resolved.end()
+    sentence = _sentence(text, resolution_start, resolution_end)
+    # Exact evidence is the resolving phrase, with the sentence as a separate
+    # contextual anchor for co-reference and later measurement association.
+    label = re.sub(r"\s+", " ", text[resolution_start:resolution_end]).strip(" .;,")
+    current = _source_fact(text, resolution_start, resolution_end, label[0].upper() + label[1:],
+                           "REPORT_STATUS", "KEY")
+    source_section = next((section["role"] for section in sections
+                           if section["start"] <= resolution_start <
+                           section.get("end", section["start"] + len(section["text"]))),
+                          "DIAGNOSTIC_SUMMARY")
+    current["evidence_anchors"][0]["section_role"] = source_section
+    current["evidence_anchors"][0]["source_section"] = source_section
+    current["review_reason"] = ["ADDENDUM_CURRENT_INTERPRETATION"]
+    current["temporal_status"] = "CURRENT"
+    if sentence["start_offset"] != resolution_start or sentence["end_offset"] != resolution_end:
+        context = {**current["evidence_anchors"][0], "start_offset": sentence["start_offset"],
+                   "end_offset": sentence["end_offset"], "quote": sentence["quote"],
+                   "role": "ADDENDUM_CONTEXT"}
+        current["evidence_anchors"].append(context)
+    facts.append(current)
+    # Compare the earlier uncertainty's own source clause with the focused
+    # addendum context, not merely with the entire report or a later sentence.
+    context_text = text[max(start, sentence["start_offset"] - 280):sentence["end_offset"]]
+    stop = {"this", "that", "there", "which", "with", "from", "have", "been", "were",
+            "also", "study", "prior", "previous", "today", "right", "left", "lesion",
+            "finding", "stable", "unchanged", "and", "the", "for", "was", "are"}
+    context_terms = {w for w in re.findall(r"[a-z]{4,}", context_text.casefold()) if w not in stop}
+    candidates = []
+    for fact in facts[:-1]:
+        anchors = [a for a in fact["evidence_anchors"] if a["start_offset"] < resolution_start]
+        if not anchors:
+            continue
+        support = " ".join(a["quote"] for a in anchors)
+        # A conditional pronominal clause can omit its anatomical subject.
+        # Resolve that antecedent only from the immediately preceding source
+        # context; never use distant report-wide token overlap.
+        if re.search(r"\bif\s+(?:this|that|it)\b", fact["display_label"], re.I):
+            earliest = min(a["start_offset"] for a in anchors)
+            support += " " + text[max(0, earliest - 260):earliest]
+        if not re.search(r"\b(?:indeterminate|possible|may|might|could|uncertain|suggest\w*|suspect\w*|if\s+(?:this|that|it))\b",
+                         fact["display_label"] + " " + support, re.I):
+            continue
+        terms = {w for w in re.findall(r"[a-z]{4,}", (fact["display_label"] + " " + support).casefold())
+                 if w not in stop}
+        overlap = terms & context_terms
+        if len(overlap) >= 2:
+            candidates.append((len(overlap), fact))
+    if candidates:
+        best = max(score for score, _ in candidates)
+        for score, fact in candidates:
+            if score != best:
+                continue
+            fact["temporal_status"] = "SUPERSEDED"
+            fact["group"] = "HISTORICAL"
+            fact["review_required"] = True
+            if "SUPERSEDED_BY_ADDENDUM" not in fact["review_reason"]:
+                fact["review_reason"].append("SUPERSEDED_BY_ADDENDUM")
+            fact["relationships"].append({"relation_type": "SUPERSEDED_BY",
+                                          "target_fact_id": "", "evidence_anchor": current["evidence_anchors"][0]})
+    else:
+        current["review_reason"].append("ADDENDUM_RELATION_REQUIRES_REVIEW")
+
+
+def _source_measured_observations(text: str, sections: list[dict], facts: list[dict]) -> None:
+    """Give a clear local measurement a neutral owner, never an inferred disease."""
+    for section in sections:
+        if section["role"] != "FINDINGS_DESCRIPTION":
+            continue
+        for measurement in MEASUREMENT.finditer(section["text"]):
+            start = section["start"] + measurement.start()
+            end = section["start"] + measurement.end()
+            sentence = _sentence(text, start, end)
+            if (sentence["start_offset"] < section["start"] or sentence["end_offset"] >
+                    section.get("end", section["start"] + len(section["text"]))):
+                continue
+            if any(fact["assertion_state"] == "PRESENT" and any(
+                    anchor.get("section_role") == "FINDINGS_DESCRIPTION"
+                    and anchor["start_offset"] < sentence["end_offset"]
+                    and anchor["end_offset"] > sentence["start_offset"]
+                    for anchor in fact["evidence_anchors"]) for fact in facts):
+                continue
+            line_start = text.rfind("\n", section["start"], start) + 1
+            prefix = text[line_start:start]
+            headed = re.search(r"^\s*(?P<subject>[A-Za-z][A-Za-z -]{2,55}):\s*Measur\w*\s*$", prefix, re.I)
+            same_clause = re.search(r"\bthere\s+(?:is|are)\s+(?:an?\s+)?$", prefix, re.I)
+            if headed:
+                subject = headed.group("subject").strip()
+                label = subject + " measurement"
+                anchor_start = line_start + headed.start("subject")
+                anchor_end = end
+            elif same_clause:
+                following = text[end:sentence["end_offset"]]
+                subject = re.match(r"\s+(?:diameter\s+)?(?P<subject>[A-Za-z][A-Za-z\s-]{5,90}?)(?=[.;]|$)",
+                                   following, re.I | re.S)
+                if not subject:
+                    continue
+                label = "Measured " + re.sub(r"\s+", " ", subject.group("subject")).strip()
+                anchor_start = line_start + same_clause.start()
+                anchor_end = end + subject.end("subject")
+            else:
+                continue
+            if not 0 <= anchor_start < start < end <= anchor_end <= len(text):
+                continue
+            owner = _source_fact(text, anchor_start, anchor_end, label,
+                                 "MEASURED_OBSERVATION", "MEASUREMENT", measurement=measurement.group())
+            owner["anatomy"] = [subject] if headed else []
+            side = re.search(r"\b(left|right|bilateral)\b", text[anchor_start:anchor_end], re.I)
+            if side:
+                owner["laterality"] = side.group(1).upper()
+                owner["observations"][0]["laterality"] = side.group(1).upper()
+            owner["review_reason"] = ["SOURCE_MEASUREMENT_CONTEXT"]
+            facts.append(owner)
 
 
 def synthesize(result: dict, protected_text: str, candidates: list[dict], sections: list[dict] = ()) -> dict:
@@ -1115,6 +1414,7 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
                 evidence.append((match.group(), "UNCERTAIN", anchor,
                                  f"mrj-source:{start}", section["role"], None))
     evidence.extend(_source_assertion_evidence(protected_text, sections, evidence))
+    evidence.extend(_corroborated_measured_evidence(protected_text, sections, candidates))
     evidence.extend(_source_assessment_evidence(protected_text, sections, evidence))
     evidence.extend(_source_narrative_state_evidence(protected_text, sections, evidence))
     evidence.extend(_source_measured_positive_evidence(protected_text, sections, evidence))
@@ -1145,6 +1445,8 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
             candidate_decisions.append({**decision, "eligibility": "REJECTED", "rejection_reason": source_rejection})
             continue
         rule = _rule(expression, anchor["quote"])
+        if not rule and semantic_role == "CURRENT_FINDING" and _nominal_source_finding(expression, _source_fragment(anchor, expression)):
+            rule = _open_rule(expression, anchor, assertion, section)
         if not rule:
             general = _general_rule(expression, anchor["quote"], assertion, section)
             if general and (not bounded_active or general[4] != "NEGATIVE"):
@@ -1336,6 +1638,30 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
                 source_fact = validated_by_id.get(evidence_id)
                 if source_fact and source_fact.get("anatomic_site") and source_fact["anatomic_site"] not in fact["anatomy"]:
                     fact["anatomy"].append(source_fact["anatomic_site"])
+                # Retain exact, same-clause Anatomy entities even when the
+                # engine relation points only at a generic tissue head.
+                for candidate in candidates:
+                    if (candidate.get("candidate_type") == "Anatomy"
+                            and isinstance(candidate.get("source_start"), int)
+                            and isinstance(candidate.get("source_end"), int)
+                            and anchor["start_offset"] <= candidate["source_start"] < candidate["source_end"] <= anchor["end_offset"]
+                            and candidate.get("source_text") not in fact["anatomy"]):
+                        fact["anatomy"].append(candidate["source_text"])
+                detail = source_anchor.get("corroborating_detail")
+                if detail and protected_text[detail["start_offset"]:detail["end_offset"]] == detail["quote"]:
+                    detail_id = f"mrj-source:{detail['start_offset']}"
+                    if detail_id not in fact["synthesis_provenance"]["source_rule_evidence_ids"]:
+                        fact["synthesis_provenance"]["source_rule_evidence_ids"].append(detail_id)
+                    if not any(a["start_offset"] == detail["start_offset"] and a["end_offset"] == detail["end_offset"]
+                               for a in fact["evidence_anchors"]):
+                        fact["evidence_anchors"].append({k: v for k, v in detail.items() if k != "source_anatomy"} |
+                            {"section_role": "FINDINGS_DESCRIPTION", "source_context": _context(protected_text, detail, sections),
+                             "engine_evidence_ids": [], "source_rule_evidence_ids": [detail_id]})
+                    if detail.get("source_anatomy") and detail["source_anatomy"] not in fact["anatomy"]:
+                        fact["anatomy"].append(detail["source_anatomy"])
+                    measures = [m.group() for m in MEASUREMENT.finditer(detail["quote"])]
+                    if measures:
+                        observation["measurements"] = list(dict.fromkeys(observation.get("measurements", []) + measures))
             context = observation["source_context"]
             existing = next((o for o in fact["observations"] if o["source_context"] == context and o["evidence_anchor"]["start_offset"] == anchor["start_offset"]), None)
             if not existing:
@@ -1510,6 +1836,19 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
                     if value not in preferred["synthesis_provenance"][key])
             facts.remove(other)
         preferred["hypothesis_statuses"] = sorted(statuses)
+    _addendum_authority(protected_text, sections, facts)
+    _source_nonfinding_statements(protected_text, sections, facts)
+    _source_measured_observations(protected_text, sections, facts)
+    for index, fact in enumerate(facts, 1):
+        fact["fact_id"] = f"canonical-{index}"
+    for fact in facts:
+        for relation in fact["relationships"]:
+            if relation.get("relation_type") == "SUPERSEDED_BY" and not relation.get("target_fact_id"):
+                current = next((item for item in facts if item.get("temporal_status") == "CURRENT"
+                                and item["evidence_anchors"][0]["start_offset"] ==
+                                relation["evidence_anchor"]["start_offset"]), None)
+                if current:
+                    relation["target_fact_id"] = current["fact_id"]
     _attach_local_source_measurements(protected_text, sections, facts)
     for fact in facts:
         # Engine mentions may point to different anchors for the same observation.
@@ -1524,6 +1863,12 @@ def synthesize(result: dict, protected_text: str, candidates: list[dict], sectio
                 unique_observations.append(observation)
         fact["observations"] = unique_observations
         _finish_fact(fact)
+        if fact["group"] == "NEGATIVE" and any(
+                anchor.get("section_role") == "DIAGNOSTIC_SUMMARY"
+                and re.search(r"\bnegative\s+for\b", anchor["quote"], re.I)
+                for anchor in fact["evidence_anchors"]):
+            fact["salience"] = "PRIMARY"
+            fact["salience_reason"] = "EXPLICIT_PRIMARY_NEGATIVE_CONCLUSION"
     # Open-vocabulary concepts may have different surface wording despite an
     # identical clinical phrase. Keep opposing assertions as separate facts
     # and flag only exact phrase equivalence, not a shared anatomy or noun.

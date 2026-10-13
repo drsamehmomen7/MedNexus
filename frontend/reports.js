@@ -178,8 +178,37 @@
     byId('record-filename').textContent = record.filename;
     byId('record-summary').textContent = record.summary;
     byId('summary-section').hidden = !record.summary;
+    byId('exam-coverage-section').hidden = !record.profile;
+    if (record.profile) {
+      const labels = { DOCUMENTED: 'Documented', NOT_DOCUMENTED: 'Not documented',
+        LIMITED_OR_NOT_VISUALIZED: 'Limited / not visualized', NOT_APPLICABLE: 'Not applicable' };
+      const coverageItem = item => {
+        const row = document.createElement('li');
+        row.dataset.coverage = item.coverage;
+        const name = document.createElement('span');
+        name.textContent = item.label;
+        const status = document.createElement('span');
+        status.textContent = labels[item.coverage] || 'Unknown';
+        row.append(name, status);
+        return row;
+      };
+      byId('exam-coverage-list').replaceChildren(...record.profile.coverage.map(coverageItem));
+      byId('profile-title').textContent = record.profile.name;
+      byId('profile-scope').textContent = `Exam scope: ${record.profile.scope.replaceAll('_', ' ').toLowerCase()}`;
+      byId('profile-coverage-list').replaceChildren(...record.profile.coverage.flatMap(section => [
+        coverageItem(section), ...(section.elements || []).map(element => {
+          const row = coverageItem(element);
+          row.classList.add('profile-element');
+          return row;
+        }),
+      ]));
+      byId('profile-provenance').textContent = `${record.profile.id} · version ${record.profile.version}. ` +
+        record.profile.references.map(ref => `${ref.organization}: ${ref.title}`).join('; ');
+    }
     renderFactList('record-findings', 'findings-section', record.groups.key);
     renderFactList('record-negatives', 'negative-section', record.groups.negative);
+    renderFactList('record-assessments', 'assessment-section', record.groups.assessment || []);
+    renderFactList('record-recommendations', 'recommendation-section', record.groups.recommendation || []);
     renderFactList('record-diagnostics', 'diagnostic-section', record.groups.diagnostic);
     renderFactList('record-secondary', 'secondary-section', record.groups.secondary.slice(0, 4));
     renderFactList('record-secondary-more', 'secondary-section', record.groups.secondary.slice(4));
@@ -228,6 +257,7 @@
 
   function selectEntry(entry) {
     if (byId('evidence-dialog').open) byId('evidence-dialog').close();
+    if (byId('profile-dialog').open) byId('profile-dialog').close();
     if (byId('original-dialog').open) byId('original-dialog').close();
     if (byId('major-review-dialog').open) byId('major-review-dialog').close();
     selected = entry.key;
@@ -511,6 +541,9 @@
   });
   byId('major-review-dialog').addEventListener('close', () => { majorConfirmationKey = null; });
   byId('view-original').addEventListener('click', showOriginal);
+  byId('view-profile-details').addEventListener('click', () => {
+    if (activeEntry()?.record?.profile) byId('profile-dialog').showModal();
+  });
   byId('evidence-original').addEventListener('click', showOriginal);
   document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () =>
     byId(button.dataset.close).close()));

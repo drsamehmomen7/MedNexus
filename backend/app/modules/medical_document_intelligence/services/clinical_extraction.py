@@ -41,7 +41,7 @@ def protected_sections(original, protected, context):
     sections, review = [], []
     for region in context.semantic_regions:
         role = ROLES.get(getattr(region.role, "value", region.role), "OTHER")
-        if role not in {"DIAGNOSTIC_SUMMARY", "FINDINGS_DESCRIPTION", "CLINICAL_CONTEXT", "COMPARISON"}:
+        if role not in {"DIAGNOSTIC_SUMMARY", "FINDINGS_DESCRIPTION", "CLINICAL_CONTEXT", "COMPARISON", "RECOMMENDATION"}:
             continue
         start, end = boundary(region.start), boundary(region.end)
         if start is None or end is None or not 0 <= start < end <= len(protected):
@@ -53,7 +53,7 @@ def protected_sections(original, protected, context):
         sections.append({"section_id": region.region_id, "role": role, "heading": heading,
                          "start": start, "end": end, "text": text})
     sections.sort(key=lambda s: ({"DIAGNOSTIC_SUMMARY": 0, "FINDINGS_DESCRIPTION": 1,
-                                 "CLINICAL_CONTEXT": 2, "COMPARISON": 3}[s["role"]], s["start"]))
+                                 "CLINICAL_CONTEXT": 2, "COMPARISON": 3, "RECOMMENDATION": 4}[s["role"]], s["start"]))
     return sections, review
 
 

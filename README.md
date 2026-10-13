@@ -1,5 +1,11 @@
 # MRJ
 
+## Current checkpoint — Clinical Extraction Profiles V1 accepted (13 October 2026)
+
+Human clinical review accepted Phase D, D.1, and D.2 as one checkpoint. MRJ owns a versioned Clinical Extraction Profile registry with Radiology Core, US Abdomen V0.1, and MRI Shoulder V0.1. Report Workspace shows governed exam coverage with profile details; coverage and clinical assertion remain separate, so undocumented, limited/not visualized, and out-of-scope structures are never converted into negative findings. Profile ID, version, and scope persist in durable reviewed records, with V1 record compatibility. Conservative anatomy mismatch evaluation raises review signals without rewriting facts.
+
+EXTRACT remains the authority for clinical meaning; STANDARDIZE only enriches it. D.1/D.2 **did change clinical-engine semantics** through generalized corrections for source-grounded anatomy, corroborated measured findings, resolving Addendum authority with earlier provenance retained, primary explicit negative salience, procedure-text filtering, separate assessment/recommendation retention, and evidence-grounded measurement attachment. A governed measurement can satisfy an explicitly matching profile element when type, anatomy, and laterality agree; ambiguous measurements cannot. Five independent synthetic hold-out PDFs passed clinical review. The seven-stage backend is preserved. OpenMed is not integrated, and Collection Intelligence is not implemented. See [the Phase D architecture reference](docs/architecture/phase_d_clinical_extraction_profiles.md) and [CURRENT_STATE.md](CURRENT_STATE.md).
+
 ## Current checkpoint — Phase C.3 durable reviewed records accepted (11 October 2026)
 
 MRJ now owns a versioned `ReviewedClinicalRecord` and repository contract with a local SQLite implementation. Report Workspace **Accept & Save** commits the protected clinical record before reporting success. The reviewed decision, clinical facts, protected evidence, exact evidence verification, current version, and history survived a full Uvicorn stop and fresh-process restart without re-upload or reprocessing. The original identified upload is not stored by this repository by default. Future Collections must admit durable reviewed-record IDs and versions rather than transient Journey state; Collection Intelligence is not implemented yet.

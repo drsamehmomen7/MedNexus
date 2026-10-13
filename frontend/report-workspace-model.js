@@ -63,7 +63,7 @@
       protectedText.slice(item.start_offset, item.end_offset) === item.quote) || null;
   }
 
-  function reviewAlerts({ facts, protection, standardized, synthesis, document }) {
+  function reviewAlerts({ facts, protection, standardized, synthesis, document, profile }) {
     const alerts = [];
     const add = (message, severity = 'review') => {
       if (!alerts.some(item => item.message === message)) alerts.push({ message, severity });
@@ -91,6 +91,9 @@
       add('Measurement assignment or normalization requires review.');
     if (synthesis.technical_diagnostics?.code === 'SYNTHESIS_COVERAGE_FAILURE')
       add('Clinical findings could not be fully prepared from validated evidence.', 'major');
+    if (profile?.compatibility === 'POSSIBLE_ANATOMY_MISMATCH' &&
+        profile.review_alerts?.some(alert => alert.code === 'PROFILE_ANATOMY_MISMATCH'))
+      add('Extracted anatomy may not match the exam.', 'major');
     if (!alerts.length && ['EXTRACT', 'STANDARDIZE'].some(name => stage(document, name) === 'NEEDS_REVIEW'))
       add('The clinical record requires confirmation.');
     return alerts;
@@ -105,16 +108,24 @@
     const synthesis = extraction.clinical_synthesis;
     const study = standardized.standardized_study_context || {};
     const facts = Array.isArray(synthesis.canonical_facts) ? synthesis.canonical_facts : [];
-    const present = fact => fact.assertion_state === 'PRESENT';
+    const current = fact => fact.temporal_status !== 'SUPERSEDED';
+    const present = fact => fact.assertion_state === 'PRESENT' && current(fact);
     const groups = {
       key: facts.filter(fact => fact.group === 'KEY' && present(fact)),
       secondary: facts.filter(fact => fact.group === 'SECONDARY' && present(fact)),
-      negative: facts.filter(fact => fact.group === 'NEGATIVE' && fact.assertion_state === 'ABSENT_NEGATED'),
-      diagnostic: facts.filter(fact => fact.group === 'DIAGNOSTIC'),
+      negative: facts.filter(fact => fact.group === 'NEGATIVE' && current(fact) && fact.assertion_state === 'ABSENT_NEGATED')
+        .sort((a, b) => (b.salience === 'PRIMARY') - (a.salience === 'PRIMARY')),
+      diagnostic: facts.filter(fact => fact.group === 'DIAGNOSTIC' && current(fact)),
+      assessment: facts.filter(fact => fact.group === 'ASSESSMENT' && current(fact)),
+      recommendation: facts.filter(fact => fact.group === 'RECOMMENDATION' && current(fact)),
     };
     const protectedText = typeof protection.protected_document?.protected_text === 'string'
       ? protection.protected_document.protected_text : '';
-    const reviewAlertsValue = reviewAlerts({ facts, protection, standardized, synthesis, document });
+    const rawProfile = standardized.profile_evaluation;
+    const profile = rawProfile?.status === 'EVALUATED' &&
+      ['MRJ_RAD_US_ABDOMEN', 'MRJ_RAD_MRI_SHOULDER'].includes(rawProfile.profile_id) &&
+      Array.isArray(rawProfile.coverage) ? rawProfile : null;
+    const reviewAlertsValue = reviewAlerts({ facts, protection, standardized, synthesis, document, profile });
     const measurements = [];
     for (const item of standardized.standardized_facts || []) {
       const owner = facts.find(fact => fact.fact_id === item.source_fact_id);
@@ -135,7 +146,10 @@
       });
     }
     const identity = understanding.document_context?.identity || {};
-    const title = text(study.original_exam_name) || text(document.original_filename) || 'Clinical report';
+    const laterality = text(study.normalized_laterality);
+    const title = profile ? profile.profile_id === 'MRJ_RAD_MRI_SHOULDER' && ['LEFT', 'RIGHT'].includes(laterality)
+      ? `MRI ${readable(laterality)} Shoulder` : text(profile.profile_name)
+      : text(study.original_exam_name) || text(document.original_filename) || 'Clinical report';
     const descriptor = unique([
       text(study.normalized_modality), text(study.normalized_body_region),
       text(study.normalized_laterality),
@@ -145,6 +159,11 @@
       title, descriptor: descriptor || readable(identity.subdomain_or_family),
       filename: text(document.original_filename),
       summary: text(synthesis.clinical_synthesis), groups, measurements,
+      profile: profile ? { name: text(profile.profile_name), scope: text(profile.scope),
+        coverage: profile.coverage.filter(item => item && typeof item.label === 'string' &&
+          ['DOCUMENTED', 'NOT_DOCUMENTED', 'LIMITED_OR_NOT_VISUALIZED', 'NOT_APPLICABLE'].includes(item.coverage)),
+        references: Array.isArray(profile.references) ? profile.references : [],
+        id: text(profile.profile_id), version: text(profile.profile_version) } : null,
       protectedText, reviewAlerts: reviewAlertsValue,
       reviewIssues: reviewAlertsValue.map(item => item.message),
       needsReview: ['PROTECT', 'EXTRACT', 'STANDARDIZE'].some(name => stage(document, name) === 'NEEDS_REVIEW') ||

@@ -1,6 +1,14 @@
 # MRJ Current State
 
-**Authoritative date:** 11 October 2026
+**Authoritative date:** 13 October 2026
+
+## Accepted checkpoint — Phase D + D.1 + D.2 Clinical Extraction Profiles V1
+
+**Human/clinical acceptance: ACCEPTED.** The MRJ-owned registry provides explicit profile IDs and versions, Radiology Core, US Abdomen V0.1, and MRI Shoulder V0.1. Scope-aware exam coverage is shown in Report Workspace with progressive profile details. Coverage and assertion are separate: `NOT_DOCUMENTED`, `LIMITED_OR_NOT_VISUALIZED`, and `NOT_APPLICABLE` do not imply clinical negatives. Focused scope excludes out-of-scope structures. Conservative exam/content compatibility can request review for strong source-grounded anatomy mismatch without creating findings or changing facts. Profile ID, version, scope, and provenance persist in durable `ReviewedClinicalRecord` records; V1 records remain readable. Routine MRI versus MR arthrogram stays UNKNOWN when identity metadata is insufficient.
+
+EXTRACT still owns clinical meaning and STANDARDIZE remains enrichment only. **Clinical-engine semantics did change in D.1/D.2** through generalized, source-grounded corrections: anatomy outranks terminology labels; corroborated measured abnormalities can be recovered; an evidence-matched resolving Addendum controls the current interpretation while earlier evidence remains historical; primary explicit negatives retain appropriate salience; imaging technique/procedure actions are filtered from patient findings; source-anchored assessments/classifications and recommendations remain separate; and measurements attach only through grounded anatomy, laterality, and context. A governed, fact-linked measurement may document an explicitly matching profile measurement element; ambiguous or unassigned measurements cannot. Five independent synthetic hold-out PDFs were clinically reviewed. The seven-stage backend remains intact. OpenMed and Collection Intelligence remain unimplemented. See [the detailed Phase D architecture reference](docs/architecture/phase_d_clinical_extraction_profiles.md).
+
+Accepted non-blocking limits: sparse evidence may make mismatch evaluation abstain; unsupported modality-specific profiles are pending; uncorroborated abnormalities may be missed; terse X-ray presentation and recommendation fragments remain future refinements.
 
 ## Accepted checkpoint — Phase C.3 durable reviewed clinical records
 

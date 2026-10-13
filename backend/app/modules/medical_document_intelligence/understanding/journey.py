@@ -921,6 +921,21 @@ class JourneyStore:
                 item.stage_errors[JourneyStage.STANDARDIZE] = "STANDARDIZATION_RUNTIME_FAILURE"
                 self._touch_locked(run)
             return
+        # Profiles consume the already accepted context and protected evidence.
+        # Their optional projection cannot change STANDARDIZE's clinical result.
+        try:
+            from backend.app.modules.medical_document_intelligence.services.clinical_extraction import protected_sections
+            from backend.app.modules.medical_document_intelligence.services.clinical_profiles import evaluate_profile
+            protected_text = (item.stage_results[JourneyStage.PROTECT].get("protected_document") or {}).get("protected_text", "")
+            sections, _ = protected_sections(item.document.text, protected_text, context)
+            result["profile_evaluation"] = evaluate_profile(
+                context, protected_text, sections,
+                (extract.get("clinical_synthesis") or {}).get("canonical_facts") or [],
+                governed_measurements=(extract.get("clinical_synthesis") or {}).get("governed_measurements") or [],
+                standardized_facts=result.get("standardized_facts") or [])
+        except Exception as exc:
+            logging.getLogger(__name__).warning("PROFILE_EVALUATION_UNAVAILABLE %s", type(exc).__name__)
+            result["profile_evaluation"] = None
         with self._lock:
             if item.stage_results.get(JourneyStage.EXTRACT) is not extract:
                 item.transition(JourneyStage.STANDARDIZE, StageStatus.FAILED)
@@ -965,6 +980,8 @@ class JourneyStore:
                     run_id=run_id, document_id=document_id, reviewed_at=old["reviewed_at"],
                     protect=protect, extract=extract, standardized=standardized,
                     exam_identity=exam_identity,
+                    profile_evaluation=standardized.get("profile_evaluation"),
+                    schema_version=old["schema_version"],
                     major_review_acknowledged=old["major_review_acknowledged"])
                 if old["record_version"] != 1 or candidate.to_json() != existing.to_json():
                     raise ValueError("The saved clinical record differs from the current review.")
@@ -974,6 +991,7 @@ class JourneyStore:
                     run_id=run_id, document_id=document_id, reviewed_at=_timestamp(),
                     protect=protect, extract=extract, standardized=standardized,
                     exam_identity=exam_identity,
+                    profile_evaluation=standardized.get("profile_evaluation"),
                     major_review_acknowledged=major_review_acknowledged)
                 self.reviewed_records.save(record)
             item.review_status = "REVIEWED"
