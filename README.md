@@ -1,6 +1,10 @@
 # MRJ
 
-## Current checkpoint — Phase E Reviewed Collection Intelligence V1 accepted (14 October 2026)
+## Current checkpoint — Phase F Clinical Intelligence Profiles and Insights V1 accepted (14 October 2026)
+
+Human product review accepted the US Abdomen and MRI Shoulder Clinical Intelligence Profiles V0.1, their eight governed report-level questions, and the Clinical Insights UI. Exact version-pinned reviewed records feed question-specific eligibility and denominators; the backend binds descriptive Insight results to the Collection and AnalysisRun. `NOT_DOCUMENTED` is never treated as absent, and the MRJ V1 descriptive support policy abstains when support is insufficient. Exam/profile references are separate from verified clinical-relationship references; unverified relationships remain pending. The browser presents backend results without recalculating relational metrics. Coverage-quality lineage reaches the exact reviewed-record profile coverage state, with no fabricated fact-level evidence pointer. Demographic and inferential Insights remain outside V1. OpenMed and MedGemma are not integrated. See [the Phase F architecture reference](docs/architecture/phase_f_clinical_intelligence_profiles.md) and [CURRENT_STATE.md](CURRENT_STATE.md).
+
+## Historical checkpoint — Phase E Reviewed Collection Intelligence V1 accepted (14 October 2026)
 
 Human product review accepted the reviewed-only Collection architecture and final visual implementation against the five approved MRJ references. Product Collections admit only durable, human-accepted `ReviewedClinicalRecord` versions; membership snapshots pin exact versions, remain reproducible after later record updates, and bind immutable AnalysisRuns to a Collection ID and version. Overview, Findings, and Measurements use the existing backend numerical authority, with contributor drill-down through the reviewed fact or governed comparable measurement to protected evidence. Data Quality keeps Clinical Extraction Profile scope and mixed-profile denominators separate, excluding `NOT_APPLICABLE` from eligible coverage. Review Complete can create a Collection through **Analyze these reports** from the session's durably reviewed records.
 

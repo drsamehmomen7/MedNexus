@@ -27,6 +27,7 @@
     item.not_documented === item.denominator ? `Not documented ${item.not_documented}/${item.denominator}` :
     `Mixed coverage · ${item.denominator} eligible`;
   let current = null, analysis = null, openingButton = null;
+  let insightRun = null, insightPromise = null;
   async function request(path, options = {}) {
     const response = await fetch(base + path, { cache: 'no-store', ...options });
     if (!response.ok) throw new Error('Collection request failed');
@@ -55,6 +56,7 @@
       else button.removeAttribute('aria-current');
     });
     document.querySelectorAll('.collection-tab-panel').forEach(panel => { panel.hidden = panel.id !== 'tab-' + name; });
+    if (name === 'insights' && current) void loadInsights();
   }
   function renderOverview() {
     const summary = analysis.collection_summary || {};
@@ -241,6 +243,176 @@
       table.append(body); wrap.append(table); details.append(wrap); section.append(details); target.append(section);
     }
   }
+  const insightState = {
+    OBSERVATION_AVAILABLE: 'Collection observation',
+    INSUFFICIENT_DATA: 'Insufficient data',
+    NO_CLEAR_DESCRIPTIVE_PATTERN: 'No clear pattern',
+    NOT_APPLICABLE: 'Not applicable',
+    UNAVAILABLE: 'Unavailable'
+  };
+  function insightBar(parent, group) {
+    const row = node('div', '', 'insight-bar-row');
+    const heading = node('div', '', 'insight-bar-heading');
+    heading.append(node('span', group.label), node('strong', `${count(group.numerator)} / ${count(group.denominator)}`));
+    const track = node('div', '', 'insight-bar-track');
+    const fill = node('span', '', 'insight-bar-fill');
+    fill.style.width = `${Math.max(0, Math.min(100, Number(group.bar_percent) || 0))}%`;
+    track.append(fill); row.append(heading, track); parent.append(row);
+  }
+  function renderInsightWhy(result, group) {
+    const target = clear('insights-why');
+    const section = (heading, value) => {
+      const block = node('div', '', 'insight-why-block');
+      block.append(node('h3', heading), node('p', value));
+      target.append(block);
+    };
+    section('Clinical question', result.question);
+    section('Eligibility rule', result.eligibility_rule);
+    section('Numerator / denominator', group ?
+      `${count(group.numerator)} of ${count(group.denominator)} eligible reviewed reports: ${group.label}.` :
+      result.groups.map(item => `${item.label}: ${count(item.numerator)} of ${count(item.denominator)}.`).join(' '));
+    const reference = node('div', '', 'insight-why-block');
+    reference.append(node('h3', 'Reference basis'));
+    const source = (heading, item) => {
+      const block = node('div', '', 'insight-reference-source');
+      block.append(node('strong', heading),
+        node('p', `${item.organization} · ${item.title}${item.version_or_date ? ' · ' + item.version_or_date : ''}`));
+      if (typeof item.url === 'string' && item.url.startsWith('https://')) {
+        const link = node('a', 'Open reference ↗');
+        link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        block.append(link);
+      }
+      reference.append(block);
+    };
+    source('Exam/profile basis', result.exam_profile_reference);
+    if (result.insight_type === 'COVERAGE_QUALITY') {
+      reference.append(node('strong', 'Clinical relationship basis'),
+        node('p', 'Not applicable to this coverage-quality question; no disease-relationship citation is required.'));
+    } else if (result.relationship_reference_status === 'VERIFIED' && result.clinical_relationship_reference) {
+      source('Clinical relationship basis', result.clinical_relationship_reference);
+    } else {
+      reference.append(node('strong', 'Clinical relationship basis'), node('p', 'Pending verification.'));
+    }
+    reference.append(node('p', 'References justify why MRJ defines this question; they do not validate the result observed in this Collection.'));
+    target.append(reference);
+    section('Limitations', result.limitations);
+    const details = document.createElement('details');
+    details.className = 'insight-provenance';
+    details.append(node('summary', 'Technical provenance'));
+    const list = node('p', `Intelligence Profile ${result.intelligence_profile_id} v${result.intelligence_profile_version} · Definition ${result.insight_id} v${result.definition_version} · Collection version ${insightRun.collection_version} · AnalysisRun ${insightRun.analysis_run_id}`);
+    details.append(list); target.append(details);
+  }
+  async function renderInsightContributors(result, group) {
+    if (!insightRun) return;
+    const runId = insightRun.insight_run_id;
+    el('insights-contributor-summary').textContent =
+      `${group.label} · ${count(group.numerator)} / ${count(group.denominator)} eligible reviewed reports`;
+    const target = clear('insights-contributors');
+    empty(target, 'Loading contributing reviewed reports…');
+    try {
+      const response = await request(`/reviewed-collection-insights/${runId}/${result.insight_id}/${group.group_id}/contributors`);
+      if (!insightRun || insightRun.insight_run_id !== runId) return;
+      target.replaceChildren();
+      if (!response.contributors.length) empty(target, 'No eligible reviewed reports in this group.');
+      response.contributors.forEach((item, index) => {
+        const card = node('article', '', 'insight-contributor');
+        const context = item.exam_context || {};
+        card.append(node('h3', `Reviewed report ${index + 1}`),
+          node('p', [context.normalized_modality, context.normalized_body_region]
+            .filter(Boolean).join(' · ') || 'Reviewed exam'));
+        if (item.coverage) card.append(node('p', `Profile coverage: ${item.coverage.replaceAll('_', ' ').toLowerCase()}`));
+        (item.facts || []).forEach(fact => {
+          card.append(node('strong', fact.fact_label || 'Reviewed fact'),
+            node('blockquote', fact.quote || 'Evidence unavailable'));
+        });
+        if (!item.facts?.length) card.append(node('p', 'No fact-level anchor accompanies this coverage snapshot.'));
+        target.append(card);
+      });
+    } catch {
+      target.replaceChildren(); empty(target, 'Contributing evidence is unavailable. Please try again.');
+    }
+  }
+  function renderInsightCard(result, order, profileRun) {
+    const card = node('article', '', 'insight-card');
+    card.dataset.state = result.state;
+    const top = node('div', '', 'insight-card-top');
+    top.append(node('span', order, 'insight-order'), node('h3', result.title),
+      node('span', insightState[result.state] || 'Unavailable', 'insight-badge'));
+    card.append(top, node('p', result.question, 'insight-question'));
+    const bars = node('div', '', 'insight-bars');
+    (result.groups || []).forEach(group => insightBar(bars, group));
+    card.append(bars, node('p', result.summary, 'insight-statement'));
+    if (result.state === 'INSUFFICIENT_DATA') {
+      card.append(node('p', `${count(result.eligible_n)} eligible; ${result.support_policy.policy_label} requires ${count(result.support_policy.minimum_eligible_n)} for this question. Group and event support rules also apply.`, 'insight-support'));
+    }
+    const actions = node('div', '', 'insight-actions');
+    (result.groups || []).forEach(group => {
+      if (!group.denominator) return;
+      const button = node('button', `View ${group.label.toLowerCase()} reports →`, 'collection-link');
+      button.type = 'button';
+      button.addEventListener('click', () => {
+        renderInsightWhy(result, group); void renderInsightContributors(result, group);
+      });
+      actions.append(button);
+    });
+    const why = node('button', 'Why this insight?', 'collection-link');
+    why.type = 'button';
+    why.addEventListener('click', () => renderInsightWhy(result));
+    actions.append(why); card.append(actions);
+    result.intelligence_profile_id = profileRun.intelligence_profile_id;
+    result.intelligence_profile_version = profileRun.intelligence_profile_version;
+    return card;
+  }
+  function renderInsights() {
+    if (!insightRun) return;
+    const summary = insightRun.summary || {};
+    const stats = clear('insights-stats');
+    [['Questions', summary.relationships_evaluated], ['Observations', summary.OBSERVATION_AVAILABLE],
+      ['Insufficient data', summary.INSUFFICIENT_DATA],
+      ['Other abstentions', count(summary.UNAVAILABLE) + count(summary.NOT_APPLICABLE) +
+        count(summary.NO_CLEAR_DESCRIPTIVE_PATTERN)]].forEach(([label, value]) => {
+      const item = node('div', '', 'insight-stat');
+      item.append(node('strong', count(value)), node('span', label)); stats.append(item);
+    });
+    const target = clear('insights-groups');
+    if (!insightRun.profiles.length) {
+      empty(target, 'No compatible Clinical Intelligence Profile is available for these reviewed reports.');
+      return;
+    }
+    let order = 0;
+    insightRun.profiles.forEach(profileRun => {
+      const section = node('section', '', 'insight-profile-group');
+      const heading = node('div', '', 'insight-profile-heading');
+      heading.append(node('h3', `${profile(profileRun.clinical_profile_id)} Insights`),
+        node('span', plural(profileRun.compatible_reviewed_reports, 'compatible reviewed report')));
+      section.append(heading);
+      const grid = node('div', '', 'insight-card-grid');
+      profileRun.definitions.forEach(result => grid.append(renderInsightCard(result, ++order, profileRun)));
+      section.append(grid); target.append(section);
+    });
+    el('insights-status').textContent = insightRun.unsupported_profile_records ?
+      `${plural(insightRun.unsupported_profile_records, 'reviewed record')} had no compatible Intelligence Profile and did not enter these questions.` :
+      'Questions are evaluated in governed profile order from exact reviewed-record versions.';
+  }
+  async function loadInsights() {
+    if (!current || insightRun || insightPromise) return insightPromise;
+    const collectionId = current.collection_id, version = current.version;
+    el('insights-status').textContent = 'Calculating governed Clinical Insights…';
+    insightPromise = (async () => {
+      try {
+        const result = await request(`/reviewed-collections/${collectionId}/insights?version=${version}`,
+          { method: 'POST' });
+        if (!current || current.collection_id !== collectionId || current.version !== version) return;
+        if (!validId(result.insight_run_id) || result.collection_id !== collectionId ||
+            result.collection_version !== version || result.analysis_run_id !== analysis.analysis_run_id)
+          throw new Error('Invalid Insight run');
+        insightRun = result; renderInsights();
+      } catch {
+        el('insights-status').textContent = 'Clinical Insights could not be calculated for this Collection.';
+      } finally { insightPromise = null; }
+    })();
+    return insightPromise;
+  }
   function renderAnalysis() {
     renderOverview(); renderFindings(); renderMeasurements(); renderQuality();
     el('collection-detail-summary').textContent = [
@@ -257,7 +429,7 @@
       if (!validId(collection.collection_id) || collection.collection_id !== id) throw new Error('Invalid collection');
       const result = await request(`/reviewed-collections/${id}/analyze`, { method: 'POST' });
       if (!validId(result.analysis_run_id) || result.collection_id !== id) throw new Error('Invalid analysis');
-      current = collection; analysis = result; openingButton = button;
+      current = collection; analysis = result; insightRun = null; insightPromise = null; openingButton = button;
       el('collection-detail-title').textContent = collection.name;
       renderAnalysis();
       el('collection-index').hidden = true; el('collection-detail').hidden = false;
@@ -331,7 +503,7 @@
   }
   el('collections-retry').addEventListener('click', loadCollections);
   el('collection-back').addEventListener('click', () => {
-    current = null; analysis = null; showError('');
+    current = null; analysis = null; insightRun = null; insightPromise = null; showError('');
     el('collection-detail').hidden = true; el('collection-index').hidden = false;
     el('collections-status').textContent = plural(el('collection-list').children.length, 'reviewed collection');
     window.history.replaceState(null, '', window.location.pathname);

@@ -83,6 +83,13 @@ class SqliteReviewedCollectionRepository:
                     payload_sha256 TEXT NOT NULL,
                     FOREIGN KEY(collection_id,collection_version)
                         REFERENCES reviewed_collection_versions(collection_id,version))""")
+                db.execute("""CREATE TABLE IF NOT EXISTS reviewed_collection_insights (
+                    insight_run_id TEXT PRIMARY KEY, analysis_id TEXT NOT NULL,
+                    collection_id TEXT NOT NULL, collection_version INTEGER NOT NULL,
+                    payload_json TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
+                    FOREIGN KEY(analysis_id) REFERENCES reviewed_collection_analyses(analysis_id),
+                    FOREIGN KEY(collection_id,collection_version)
+                        REFERENCES reviewed_collection_versions(collection_id,version))""")
             self._connection = db
         return self._connection
 
@@ -248,6 +255,37 @@ class SqliteReviewedCollectionRepository:
         if hashlib.sha256(row["payload_json"].encode()).hexdigest() != row["payload_sha256"]:
             raise ValueError("Analysis integrity failed.")
         self.get_version(row["collection_id"], row["collection_version"])
+        return json.loads(row["payload_json"])
+
+    def save_insights(self, payload: dict[str, Any]) -> None:
+        value = _canonical(payload)
+        digest = hashlib.sha256(value.encode()).hexdigest()
+        with self._lock, self._db():
+            row = self._db().execute(
+                "SELECT payload_sha256 FROM reviewed_collection_insights WHERE insight_run_id=?",
+                (payload["insight_run_id"],)).fetchone()
+            if row is not None:
+                if row[0] != digest:
+                    raise ValueError("Historical Insight run is immutable.")
+                return
+            self._db().execute("INSERT INTO reviewed_collection_insights VALUES (?,?,?,?,?,?)",
+                               (payload["insight_run_id"], payload["analysis_run_id"],
+                                payload["collection_id"], payload["collection_version"], value, digest))
+
+    def get_insights(self, insight_run_id: str) -> dict[str, Any]:
+        with self._lock:
+            row = self._db().execute(
+                "SELECT analysis_id,collection_id,collection_version,payload_json,payload_sha256 "
+                "FROM reviewed_collection_insights WHERE insight_run_id=?",
+                (self._id(insight_run_id),)).fetchone()
+        if row is None:
+            raise LookupError("Insight run was not found.")
+        if hashlib.sha256(row["payload_json"].encode()).hexdigest() != row["payload_sha256"]:
+            raise ValueError("Insight run integrity failed.")
+        analysis = self.get_analysis(row["analysis_id"])
+        if (analysis["collection_id"] != row["collection_id"]
+                or analysis["collection_version"] != row["collection_version"]):
+            raise ValueError("Insight run AnalysisRun binding failed.")
         return json.loads(row["payload_json"])
 
     def close(self) -> None:

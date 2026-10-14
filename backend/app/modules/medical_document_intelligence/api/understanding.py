@@ -15,6 +15,7 @@ from backend.app.modules.medical_document_intelligence.policies.policy_profiles 
 from backend.app.modules.medical_document_intelligence.services.deidentification import DeidentificationService
 from backend.app.modules.medical_document_intelligence.services.collection_analysis import collection_store
 from backend.app.modules.medical_document_intelligence.services.reviewed_collection_intelligence import reviewed_collection_intelligence
+from backend.app.modules.medical_document_intelligence.services.clinical_insights import ClinicalInsightEngine
 from backend.app.modules.medical_document_intelligence.services.collection_visualization import visualization_store
 from backend.app.modules.medical_document_intelligence.services.collection_indicators import indicator_store
 from backend.app.modules.medical_document_intelligence.understanding.journey import (
@@ -547,6 +548,35 @@ def create_reviewed_collection_version(collection_id: str,
 def analyze_reviewed_collection(collection_id: str, version: int | None = None) -> JSONResponse:
     try:
         result = reviewed_collection_intelligence.analyze(collection_id, version)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.post("/reviewed-collections/{collection_id}/insights")
+def analyze_reviewed_collection_insights(collection_id: str, version: int | None = None) -> JSONResponse:
+    try:
+        result = ClinicalInsightEngine(reviewed_collection_intelligence).analyze(collection_id, version)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.get("/reviewed-collection-insights/{insight_run_id}")
+def get_reviewed_collection_insights(insight_run_id: str) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.repository.get_insights(insight_run_id)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.get("/reviewed-collection-insights/{insight_run_id}/{insight_id}/{group_id}/contributors")
+def reviewed_collection_insight_contributors(insight_run_id: str, insight_id: str,
+                                              group_id: str) -> JSONResponse:
+    try:
+        result = ClinicalInsightEngine(reviewed_collection_intelligence).contributors(
+            insight_run_id, insight_id, group_id)
         return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
     except Exception as exc:
         raise _collection_error(exc) from exc

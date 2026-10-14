@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
   <link rel="stylesheet" href="/static/mrj-brand.css">
   <link rel="stylesheet" href="/static/product-shell.css?v=e2">
-  <link rel="stylesheet" href="/static/collections.css?v=e3">
+  <link rel="stylesheet" href="/static/collections.css?v=f2">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
 </head>
 <body data-product-brand="mrj" class="product-workspace collection-workspace">
@@ -64,10 +64,28 @@
           <div id="measurement-results"></div></div>
       </section>
       <section id="tab-insights" class="collection-tab-panel" aria-label="Insights" hidden>
-        <div class="collection-panel insights-future"><span class="insights-icon" aria-hidden="true">✦</span><div>
-          <p class="product-eyebrow">Next phase</p><h2>Clinical Insights</h2>
-          <p>Exam-specific Intelligence Profiles will support relationship insights here after this reviewed-collection foundation is accepted.</p>
-          <p class="collection-note">No relationship results have been calculated for this collection.</p></div></div>
+        <div class="insights-layout">
+          <div class="insights-main">
+            <header class="collection-panel insights-heading">
+              <span class="insights-icon" aria-hidden="true">✦</span>
+              <div><h2>Clinical Insights</h2><p>Governed, report-level observations from the reviewed records in this Collection.</p></div>
+              <div id="insights-stats" class="insights-stats" aria-label="Insight result summary"></div>
+            </header>
+            <p id="insights-status" class="collection-note" role="status"></p>
+            <div id="insights-groups"></div>
+          </div>
+          <aside class="insights-side" aria-label="Insight details">
+            <section class="collection-panel insights-side-panel">
+              <h2>Reports contributing to this insight</h2>
+              <p id="insights-contributor-summary" class="collection-note">Choose an Insight group to inspect its reviewed reports.</p>
+              <div id="insights-contributors"></div>
+            </section>
+            <section class="collection-panel insights-side-panel">
+              <h2>Why this insight?</h2>
+              <div id="insights-why"><p class="collection-note">Choose an Insight to see its question, eligibility, reference basis, and limitations.</p></div>
+            </section>
+          </aside>
+        </div>
       </section>
       <section id="tab-trends" class="collection-tab-panel" aria-label="Trends" hidden>
         <div class="collection-panel"><h2>Trends</h2><p>Not enough governed temporal data for trend analysis.</p></div>
@@ -89,6 +107,6 @@
       <button type="button" class="collection-close" data-close="collection-reports" aria-label="Close reports">×</button></div>
     <p class="collection-note">Each report is pinned to its accepted record version.</p><div id="collection-reports-list"></div>
   </dialog>
-  <script src="/static/collections.js?v=e3" defer></script>
+  <script src="/static/collections.js?v=f2" defer></script>
 </body>
 </html>

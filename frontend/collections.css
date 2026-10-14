@@ -209,3 +209,63 @@
 .contributor blockquote { margin-top: 9px; background: #f1f7f5; }
 .quality-summary .collection-mini-row { min-height: 66px; }
 .quality-strip-item { min-height: 62px; }
+
+/* Phase F Insights follows the accepted two-column clinical dashboard reference. */
+.insights-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 25%); gap: 12px; align-items: start; }
+.insights-main, .insights-side { min-width: 0; }
+.insights-side { display: grid; gap: 10px; position: sticky; top: 12px; }
+.insights-heading { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.insights-heading .insights-icon { flex: 0 0 auto; width: 45px; height: 45px; display: grid; place-items: center; border-radius: 50%; background: #e8f6f2; color: var(--collection-teal); font-size: 1.55rem; }
+.insights-heading > div:nth-child(2) { min-width: 210px; flex: 1; }
+.insights-heading h2 { margin: 0 0 4px; font-size: 1.32rem; }
+.insights-heading p { margin: 0; color: var(--collection-muted); font-size: .81rem; line-height: 1.42; }
+.insights-stats { display: grid; grid-template-columns: repeat(4, minmax(74px, 1fr)); align-self: stretch; min-width: 365px; }
+.insight-stat { display: grid; align-content: center; padding: 3px 9px; border-left: 1px solid var(--collection-line); text-align: center; }
+.insight-stat strong { color: var(--collection-navy); font-size: 1.16rem; }
+.insight-stat span { color: var(--collection-muted); font-size: .68rem; line-height: 1.2; }
+#insights-status { margin: 10px 2px; }
+.insight-profile-group { margin-top: 15px; }
+.insight-profile-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+.insight-profile-heading h3 { margin: 0; font-size: 1.02rem; }
+.insight-profile-heading span { color: var(--collection-muted); font-size: .77rem; }
+.insight-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.insight-card { min-width: 0; padding: 16px; border: 1px solid var(--collection-line); border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(18,41,63,.025); }
+.insight-card[data-state="INSUFFICIENT_DATA"], .insight-card[data-state="UNAVAILABLE"], .insight-card[data-state="NOT_APPLICABLE"] { background: #fbfcfd; }
+.insight-card[data-state="NO_CLEAR_DESCRIPTIVE_PATTERN"] { background: #f8fbfa; }
+.insight-card-top { display: flex; align-items: center; gap: 10px; }
+.insight-order { display: grid; place-items: center; flex: 0 0 26px; height: 26px; border-radius: 50%; background: #198b80; color: #fff; font-size: .75rem; font-weight: 800; }
+.insight-card[data-state="INSUFFICIENT_DATA"] .insight-order { background: #758491; }
+.insight-card[data-state="UNAVAILABLE"] .insight-order, .insight-card[data-state="NOT_APPLICABLE"] .insight-order { background: #8b96a3; }
+.insight-card-top h3 { flex: 1; min-width: 0; margin: 0; color: var(--collection-navy); font-size: .92rem; line-height: 1.3; }
+.insight-badge { padding: 5px 8px; border-radius: 20px; background: #e3f6ef; color: #006c60; font-size: .68rem; font-weight: 700; white-space: nowrap; }
+.insight-card[data-state="INSUFFICIENT_DATA"] .insight-badge { background: #e8edf0; color: #506176; }
+.insight-card[data-state="NO_CLEAR_DESCRIPTIVE_PATTERN"] .insight-badge { background: #eaf1fb; color: #385e8a; }
+.insight-card[data-state="UNAVAILABLE"] .insight-badge, .insight-card[data-state="NOT_APPLICABLE"] .insight-badge { background: #edf0f3; color: #5e6874; }
+.insight-question { min-height: 42px; margin: 10px 0 12px; color: #334866; font-size: .79rem; line-height: 1.45; }
+.insight-bars { display: grid; gap: 9px; }
+.insight-bar-heading { display: flex; justify-content: space-between; gap: 7px; color: var(--collection-navy); font-size: .76rem; }
+.insight-bar-heading strong { white-space: nowrap; }
+.insight-bar-track { height: 7px; margin-top: 5px; overflow: hidden; border-radius: 12px; background: #e9edf0; }
+.insight-bar-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#82cbb7,#168e80); }
+.insight-card[data-state="INSUFFICIENT_DATA"] .insight-bar-fill { background: #b3c0cb; }
+.insight-statement { margin: 13px 0 0; padding: 9px 11px; border-radius: 7px; background: #f0f8f5; color: #183e42; font-size: .77rem; line-height: 1.45; }
+.insight-card[data-state="INSUFFICIENT_DATA"] .insight-statement { background: #eff4fa; color: #38516f; }
+.insight-support { margin: 7px 0 0; color: #64758b; font-size: .71rem; }
+.insight-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 7px 14px; margin-top: 12px; }
+.insight-actions .collection-link { padding: 3px 0; text-align: left; white-space: normal; }
+.insights-side-panel h2 { font-size: .93rem; }
+.insights-side-panel .collection-note { margin-bottom: 8px; }
+.insight-contributor { padding: 10px 0; border-top: 1px solid var(--collection-line); }
+.insight-contributor h3, .insight-why-block h3 { margin: 0 0 4px; font-size: .79rem; }
+.insight-contributor p, .insight-why-block p, .insight-provenance p { margin: 4px 0; color: #4a5f78; font-size: .75rem; line-height: 1.45; }
+.insight-contributor strong { display: block; margin-top: 7px; font-size: .75rem; }
+.insight-contributor blockquote { margin: 5px 0 0; padding: 7px 9px; border-left: 3px solid #148b7d; background: #f3f9f7; font-size: .75rem; line-height: 1.4; }
+.insight-why-block { padding: 9px 0; border-top: 1px solid var(--collection-line); }
+.insight-why-block:first-child { border-top: 0; }
+.insight-reference-source { margin: 8px 0; }
+.insight-why-block strong { font-size: .75rem; }
+.insight-why-block a { color: var(--collection-teal); font-size: .75rem; }
+.insight-provenance { margin-top: 10px; padding: 9px 0; border-top: 1px solid var(--collection-line); color: #415978; font-size: .74rem; }
+@media (max-width: 1180px) { .insights-layout { grid-template-columns: minmax(0, 1fr) 280px; } .insight-card-grid { grid-template-columns: 1fr; } }
+@media (max-width: 850px) { .insights-layout { grid-template-columns: 1fr; } .insights-side { position: static; grid-template-columns: repeat(2,minmax(0,1fr)); } .insight-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 660px) { .insights-side, .insight-card-grid { grid-template-columns: 1fr; } .insights-stats { min-width: 0; width: 100%; } .insight-stat:first-child { border-left: 0; } .insight-profile-heading { display: block; } .insight-profile-heading span { display: block; margin-top: 3px; } }
