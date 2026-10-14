@@ -122,6 +122,15 @@ def governed_report_snapshot(run, item):
 
 
 def eligibility(report):
+    if report.get("reviewed_record_id"):
+        reasons = []
+        if report.get("durably_reviewed") is not True:
+            reasons.append("REVIEW_NOT_ACCEPTED")
+        if report.get("domain") != "RADIOLOGY":
+            reasons.append("INVALID_ANALYTIC_CONTEXT")
+        if not report.get("facts"):
+            reasons.append("NO_CANONICAL_FACTS")
+        return {"status": "EXCLUDED" if reasons else "ELIGIBLE", "reasons": reasons}
     status = report["stage_status"]
     reasons = []
     if status.get("EXTRACT") not in STAGES_OK:
@@ -349,7 +358,8 @@ def analyze_collection(collection, snapshot, *, include_review_required=False, f
                 if not numeric.is_finite():
                     unclassified_measurements += 1
                     continue
-                measurements[(identity, fact.get("fact_type") or "FINDING", kind, dimension, measure["normalized_unit"])].append(
+                measurements[(identity, fact.get("fact_type") or "FINDING", kind, dimension,
+                              measure["normalized_unit"], fact.get("profile_context") or "")].append(
                     (numeric, report_id, measure.get("source_measurement_id"), measure.get("original_text")))
         present_by_report[report_id] = present
 
@@ -381,15 +391,18 @@ def analyze_collection(collection, snapshot, *, include_review_required=False, f
                                  "one_off_pairs": sum(row["numerator"] == 1 for row in cooccurrences)}
 
     distributions = []
-    for (identity, fact_type, kind, dimension, unit), samples in sorted(measurements.items()):
+    for (identity, fact_type, kind, dimension, unit, profile_context), samples in sorted(measurements.items()):
         values = [value for value, *_ in samples]
         ids = {report_id for _, report_id, *_ in samples}
         distributions.append(_metric("measurement_distribution", len(ids), denominator, ids, context,
-                                     concept_identity=identity[0], fact_type=fact_type,
+                                     concept_identity=identity[0], display_label=labels[identity],
+                                     anatomy=list(identity[1]),
+                                     laterality=identity[2], fact_type=fact_type,
                                      measurement_type=kind, dimension=dimension,
                                      normalized_unit=unit, sample_count=len(samples),
                                      minimum=str(min(values)), maximum=str(max(values)),
                                      mean=str(Decimal(str(mean(values)))), median=str(Decimal(str(median(values)))),
+                                     **({"profile_context": profile_context} if profile_context else {}),
                                      source_measurement_ids=sorted(source for _, _, source, _ in samples if source),
                                      original_measurements=[{"report_id": report_id, "source_measurement_id": source,
                                                              "original_text": original}

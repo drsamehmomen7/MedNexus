@@ -14,7 +14,7 @@ from typing import Any
 from uuid import UUID, uuid5
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 _NAMESPACE = UUID("a5aab50d-2fbd-45fc-86bf-a6c5a35ee498")
 _RECORD_KEYS = {"schema_version", "record_version", "reviewed_record_id", "journey_run_id",
                 "document_id", "reviewed_at", "review_decision", "durably_reviewed",
@@ -67,7 +67,7 @@ def _safe_anchor(value: Any, protected_text: str, digest: str) -> dict[str, Any]
 
 
 def _safe_measurement(value: Any, protected_text: str) -> dict[str, Any]:
-    data = _pick(value, ("measurement_id", "source_fact_id", "original_text", "normalized_value",
+    data = _pick(value, ("measurement_id", "source_measurement_id", "source_fact_id", "original_text", "normalized_value",
                          "normalized_unit", "dimension", "measurement_type", "mapping_status",
                          "assignment_state", "review_required", "review_reason", "analytically_eligible"))
     if data.get("original_text") and data["original_text"] not in protected_text:
@@ -87,17 +87,31 @@ class ReviewedClinicalRecord:
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> "ReviewedClinicalRecord":
-        if not isinstance(value, dict) or value.get("schema_version") not in {1, SCHEMA_VERSION}:
+        if not isinstance(value, dict) or value.get("schema_version") not in {1, 2, SCHEMA_VERSION}:
             raise ValueError("Unsupported reviewed record schema.")
-        expected = _RECORD_KEYS | ({"profile_provenance"} if value["schema_version"] == 2 else set())
+        expected = (_RECORD_KEYS | ({"profile_provenance"} if value["schema_version"] >= 2 else set())
+                    | ({"profile_coverage"} if value["schema_version"] >= 3 else set()))
         if set(value) != expected:
             raise ValueError("Reviewed record contains unexpected or missing fields.")
-        if value["schema_version"] == 2:
+        if value["schema_version"] >= 2:
             profile = value["profile_provenance"]
             if profile is not None and (not isinstance(profile, dict) or set(profile) != _PROFILE_KEYS
                                         or not all(isinstance(profile.get(key), str) and profile[key]
                                                    for key in _PROFILE_KEYS)):
                 raise ValueError("Reviewed record profile provenance is malformed.")
+        if value["schema_version"] >= 3:
+            coverage = value["profile_coverage"]
+            if coverage is not None:
+                allowed = {"DOCUMENTED", "NOT_DOCUMENTED", "LIMITED_OR_NOT_VISUALIZED", "NOT_APPLICABLE"}
+                if (not isinstance(coverage, list) or not value["profile_provenance"]
+                        or not all(isinstance(item, dict) and isinstance(item.get("section_id"), str)
+                                   and item.get("coverage") in allowed
+                                   and isinstance(item.get("elements"), list)
+                                   and all(isinstance(element, dict)
+                                           and isinstance(element.get("element_id"), str)
+                                           and element.get("coverage") in allowed
+                                           for element in item["elements"]) for item in coverage)):
+                    raise ValueError("Reviewed record profile coverage is malformed.")
         for key in ("reviewed_record_id", "journey_run_id", "document_id", "reviewed_at"):
             if not isinstance(value.get(key), str) or not value[key]:
                 raise ValueError("Reviewed record identity is incomplete.")
@@ -166,7 +180,7 @@ def build_reviewed_record(*, run_id: str, document_id: str, reviewed_at: str,
                           profile_evaluation: dict[str, Any] | None = None,
                           schema_version: int = SCHEMA_VERSION,
                           major_review_acknowledged: bool = False) -> ReviewedClinicalRecord:
-    if schema_version not in {1, SCHEMA_VERSION}:
+    if schema_version not in {1, 2, SCHEMA_VERSION}:
         raise ValueError("Unsupported reviewed record schema.")
     protected = protect.get("protected_document") or {}
     text = protected.get("protected_text")
@@ -267,12 +281,19 @@ def build_reviewed_record(*, run_id: str, document_id: str, reviewed_at: str,
                        "standardize_profile": standardized.get("profile")},
     }
     artifact = protected.get("artifact")
-    if schema_version == 2:
+    if schema_version >= 2:
         value["profile_provenance"] = (
             {"profile_id": profile_evaluation["profile_id"],
              "profile_version": profile_evaluation["profile_version"],
              "scope": profile_evaluation["scope"],
              "evaluation_status": profile_evaluation["status"]}
+            if isinstance(profile_evaluation, dict) else None)
+    if schema_version >= 3:
+        value["profile_coverage"] = (
+            [{"section_id": section["section_id"], "coverage": section["coverage"],
+              "elements": [{"element_id": element["element_id"], "coverage": element["coverage"]}
+                           for element in section.get("elements", [])]}
+             for section in profile_evaluation.get("coverage", [])]
             if isinstance(profile_evaluation, dict) else None)
     if isinstance(artifact, dict) and isinstance(artifact.get("integrity_sha256"), str):
         value["protected_source"]["protected_pdf_sha256"] = artifact["integrity_sha256"]

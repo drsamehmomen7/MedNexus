@@ -21,7 +21,8 @@ def test_reports_and_collections_routes_use_two_destination_mrj_shell():
         assert 'data-product-brand="mrj"' in page
         assert 'class="product-skip-link" href="#main"' in page
         assert '<main id="main"' in page
-        assert '/assets/brand/mrj/icon_only/png/MRJ_icon_128.png' in page
+        assert '/assets/brand/mrj/icon_only/png/MRJ_icon_master_transparent.png' in page
+        assert client.get('/assets/brand/mrj/icon_only/png/MRJ_icon_master_transparent.png').status_code == 200
         navigation = primary_navigation(page)
         assert re.findall(r'<a[^>]+>(Reports|Collections)</a>', navigation) == ["Reports", "Collections"]
         assert navigation.count('aria-current="page"') == 1
@@ -36,22 +37,24 @@ def test_reports_shell_preserves_functional_single_and_batch_entry():
     assert 'id="add-reports" type="button">Add reports' in page
     assert 'id="report-files"' in page and 'multiple aria-label="Choose reports to upload"' in page
     assert 'id="report-queue-list"' in page and 'id="clinical-record"' in page
-    assert 'src="/static/reports.js?v=d1"' in page
+    assert 'src="/static/reports.js?v=e2"' in page
     assert '/understanding' not in page
     assert client.get("/understanding").status_code == 200
     assert client.get("/privacy").status_code == 200
 
 
-def test_collections_shell_reuses_existing_governed_collection_api():
+def test_collections_shell_uses_durable_reviewed_collection_api():
     page = client.get("/collections").text
     script = client.get("/static/collections.js")
     styles = client.get("/static/product-shell.css")
     assert script.status_code == styles.status_code == 200
     assert '<h1 id="page-title">Collections</h1>' in page
     assert 'id="collection-list"' in page and 'id="collection-detail"' in page
-    assert "'/api/v1/understanding/analysis-collections'" in script.text
+    assert "'/api/v1/understanding'" in script.text
+    assert "'/reviewed-collections'" in script.text
     assert "collection.name" in script.text and "textContent" in script.text
     assert "innerHTML" not in script.text
+    assert client.get("/api/v1/understanding/reviewed-collections").status_code == 200
     assert client.get("/api/v1/understanding/analysis-collections").status_code == 200
     assert "@media (max-width: 800px)" in styles.text
     assert "@media (max-width: 520px)" in styles.text

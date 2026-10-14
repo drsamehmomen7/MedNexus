@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from backend.app.modules.medical_document_intelligence.policies.policy_profiles import resolve_policy_profile
 from backend.app.modules.medical_document_intelligence.services.deidentification import DeidentificationService
 from backend.app.modules.medical_document_intelligence.services.collection_analysis import collection_store
+from backend.app.modules.medical_document_intelligence.services.reviewed_collection_intelligence import reviewed_collection_intelligence
 from backend.app.modules.medical_document_intelligence.services.collection_visualization import visualization_store
 from backend.app.modules.medical_document_intelligence.services.collection_indicators import indicator_store
 from backend.app.modules.medical_document_intelligence.understanding.journey import (
@@ -93,6 +94,33 @@ class CollectionAnalyzeRequest(BaseModel):
     include_review_required_for_validation: bool = False
     filters: dict[str, str | int] = Field(default_factory=dict)
     journey_run_id: str | None = None
+
+
+class ReviewedCollectionMemberRequest(BaseModel):
+    reviewed_record_id: str
+    reviewed_record_version: int = Field(..., ge=1)
+
+
+class ReviewedCollectionCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    members: list[ReviewedCollectionMemberRequest] = Field(..., min_length=1, max_length=500)
+    creation_method: str = "EXPLICIT_SELECTION"
+
+
+class ReviewedCollectionVersionRequest(BaseModel):
+    members: list[ReviewedCollectionMemberRequest] = Field(..., min_length=1, max_length=500)
+
+
+def _reviewed_refs(members: list[ReviewedCollectionMemberRequest]) -> list[tuple[str, int]]:
+    return [(item.reviewed_record_id, item.reviewed_record_version) for item in members]
+
+
+def _collection_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, LookupError):
+        return HTTPException(status_code=404, detail=str(exc))
+    if isinstance(exc, ValueError):
+        return HTTPException(status_code=409, detail=str(exc))
+    return HTTPException(status_code=503, detail="Collection is temporarily unavailable.")
 
 
 class VisualizationRequest(BaseModel):
@@ -465,6 +493,81 @@ def get_document_reviewed_record(run_id: str, document_id: str,
                                  response: Response) -> ReviewedRecordResponse:
     from backend.app.modules.medical_document_intelligence.contracts.reviewed_clinical_record import logical_record_id
     return get_reviewed_record(logical_record_id(run_id, document_id), response)
+
+
+@router.get("/reviewed-collections")
+def list_reviewed_collections() -> JSONResponse:
+    try:
+        collections = reviewed_collection_intelligence.repository.list_collections()
+        return JSONResponse({"collections": collections}, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.post("/reviewed-collections", status_code=201)
+def create_reviewed_collection(request: ReviewedCollectionCreateRequest) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.repository.create_collection(
+            request.name, _reviewed_refs(request.members),
+            membership_source="REVIEWED_RECORD_REPOSITORY", creation_method=request.creation_method)
+        return JSONResponse(result, status_code=201, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.get("/reviewed-collections/{collection_id}")
+def get_reviewed_collection(collection_id: str) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.repository.get_collection(collection_id)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.get("/reviewed-collections/{collection_id}/versions/{version}")
+def get_reviewed_collection_version(collection_id: str, version: int) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.repository.get_version(collection_id, version)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.post("/reviewed-collections/{collection_id}/versions")
+def create_reviewed_collection_version(collection_id: str,
+                                       request: ReviewedCollectionVersionRequest) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.repository.create_version(collection_id, _reviewed_refs(request.members))
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.post("/reviewed-collections/{collection_id}/analyze")
+def analyze_reviewed_collection(collection_id: str, version: int | None = None) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.analyze(collection_id, version)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.get("/reviewed-collection-analyses/{analysis_id}")
+def get_reviewed_collection_analysis(analysis_id: str) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.repository.get_analysis(analysis_id)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
+
+
+@router.get("/reviewed-collection-analyses/{analysis_id}/{kind}/{index}/contributors")
+def reviewed_collection_contributors(analysis_id: str, kind: str, index: int) -> JSONResponse:
+    try:
+        result = reviewed_collection_intelligence.contributors(analysis_id, kind, index)
+        return JSONResponse(result, headers={"Cache-Control": "no-store, private"})
+    except Exception as exc:
+        raise _collection_error(exc) from exc
 
 
 def _collection_snapshots(refs: list[CollectionReportRef]) -> list[dict[str, Any]]:

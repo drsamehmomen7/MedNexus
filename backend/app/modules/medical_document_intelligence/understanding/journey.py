@@ -117,6 +117,7 @@ class JourneyDocument:
     review_status: str = "PENDING"
     reviewed_at: str | None = None
     reviewed_record_id: str | None = None
+    reviewed_record_version: int | None = None
     error: str | None = None
     document: DocumentContent | None = field(default=None, repr=False)
     context: MedNexusDocumentContext | None = field(default=None, repr=False)
@@ -164,6 +165,7 @@ class JourneyDocument:
             "review_status": self.review_status,
             "reviewed_at": self.reviewed_at,
             "reviewed_record_id": self.reviewed_record_id,
+            "reviewed_record_version": self.reviewed_record_version,
             "durably_reviewed": self.review_status == "REVIEWED" and bool(self.reviewed_record_id),
             "error": self.error,
         }
@@ -453,6 +455,7 @@ class JourneyStore:
             item.review_status = "PENDING"
             item.reviewed_at = None
             item.reviewed_record_id = None
+            item.reviewed_record_version = None
             item.stage_results.pop(JourneyStage.UNDERSTAND, None)
             item.stage_errors.pop(JourneyStage.UNDERSTAND, None)
             for stage in PUBLIC_JOURNEY_STAGES[1:]:
@@ -813,6 +816,7 @@ class JourneyStore:
                                   is StageStatus.NEEDS_REVIEW else "CLEAR")
             item.reviewed_at = None
             item.reviewed_record_id = None
+            item.reviewed_record_version = None
             item.stage_results.pop(JourneyStage.STANDARDIZE, None)
             item.stage_errors.pop(JourneyStage.STANDARDIZE, None)
             item.stage_status[JourneyStage.STANDARDIZE] = StageStatus.NOT_STARTED
@@ -901,6 +905,7 @@ class JourneyStore:
                                   is StageStatus.NEEDS_REVIEW else "CLEAR")
             item.reviewed_at = None
             item.reviewed_record_id = None
+            item.reviewed_record_version = None
             item.stage_results.pop(JourneyStage.ANALYZE, None)
             item.stage_errors.pop(JourneyStage.ANALYZE, None)
             item.stage_status[JourneyStage.ANALYZE] = StageStatus.NOT_STARTED
@@ -997,6 +1002,7 @@ class JourneyStore:
             item.review_status = "REVIEWED"
             item.reviewed_at = record.to_dict()["reviewed_at"]
             item.reviewed_record_id = record_id
+            item.reviewed_record_version = record.to_dict()["record_version"]
             self._touch_locked(run)
 
     def attach_collection_analysis(self, run_id: str, analysis: dict[str, Any], report_ids: set[str]) -> None:

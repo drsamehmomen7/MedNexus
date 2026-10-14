@@ -2,7 +2,7 @@
 body.product-workspace {
   min-width: 320px;
   min-height: 100vh;
-  background: #f8f6f0;
+  background: #f7f9fb;
   color: var(--mn-ink);
 }
 
@@ -10,10 +10,13 @@ body.product-workspace {
 .product-container { width: min(1160px, calc(100% - 64px)); margin-inline: auto; }
 .product-skip-link { position: fixed; z-index: 100; top: -100px; left: 20px; padding: 12px 18px; border-radius: 8px; background: var(--mn-teal-strong); color: #fff; }
 .product-skip-link:focus { top: 12px; }
-.product-header { border-bottom: 1px solid rgba(19, 95, 89, .13); background: #fcfaf5; }
-.product-header-inner { display: flex; min-height: 80px; align-items: center; justify-content: space-between; gap: 28px; }
-.product-brand { display: inline-flex; align-items: center; gap: 10px; flex: 0 0 auto; color: var(--mn-teal-strong); font-size: 1.15rem; font-weight: 800; letter-spacing: .035em; }
-.product-brand .mrj-brand-icon { width: 40px; height: 40px; }
+.product-header { border-bottom: 1px solid rgba(19, 95, 89, .13); background: #fff; box-shadow: 0 2px 10px rgba(15, 42, 54, .025); }
+.product-header-inner { display: flex; min-height: 70px; align-items: center; justify-content: flex-start; gap: 34px; }
+.product-brand { display: inline-flex; align-items: center; gap: 11px; flex: 0 0 auto; padding-right: 27px; border-right: 1px solid #e5e9e9; color: var(--mn-teal-strong); font-weight: 800; text-decoration: none; }
+.product-brand .mrj-brand-icon { width: 52px; height: 52px; }
+.product-brand-copy { display: grid; gap: 1px; line-height: 1; }
+.product-brand-copy strong { color: #102348; font-size: 1.45rem; letter-spacing: -.055em; }
+.product-brand-copy small { color: #007b70; font-size: .66rem; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
 .product-nav { display: flex; align-items: center; gap: 8px; }
 .product-nav a { display: inline-flex; min-height: 44px; align-items: center; padding: 10px 18px; border-radius: 10px; color: #50645d; font-size: .94rem; font-weight: 650; }
 .product-nav a:hover { color: var(--mn-teal-strong); background: #edf3ed; }
@@ -68,6 +71,8 @@ body.product-workspace {
 @media (max-width: 520px) {
   .product-container { width: calc(100% - 32px); }
   .product-header-inner { min-height: 72px; flex-wrap: wrap; gap: 0 16px; padding-block: 9px; }
+  .product-brand { padding-right: 0; border-right: 0; }
+  .product-brand-copy small { display: none; }
   .product-nav { width: 100%; gap: 4px; }
   .product-nav a { flex: 1 1 0; justify-content: center; padding-inline: 8px; }
   .product-main { padding-block: 42px 70px; }

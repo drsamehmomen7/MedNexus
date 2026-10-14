@@ -1,6 +1,12 @@
 # MRJ Current State
 
-**Authoritative date:** 13 October 2026
+**Authoritative date:** 14 October 2026
+
+## Accepted checkpoint — Phase E Reviewed Collection Intelligence V1
+
+**Human/product acceptance: ACCEPTED.** Product Collections contain only durable, human-reviewed `ReviewedClinicalRecord` members pinned to exact record versions. Membership snapshots are versioned and restart-durable; historical versions remain reproducible and never substitute a newer reviewed record. Each AnalysisRun binds to its Collection ID and version. Overview, Findings, and Measurements project verified reviewed facts and governed comparable measurements into the existing backend numerical authority; report/fact/measurement contributors resolve to protected evidence without transient Journey state or identified source content. Data Quality is profile- and scope-aware: mixed profiles stay separate and `NOT_APPLICABLE` does not enter eligible coverage denominators. Review Complete offers **Analyze these reports** for the session's durably reviewed records.
+
+The accepted Reports/Collections visual system follows the five approved MRJ references and uses the unchanged approved repository master brand asset. Collections now provide a real list, Overview, Findings, Measurements, Data Quality, safe Trends abstention, and an Insights next-phase state. Clinical Intelligence Profiles and relational Insights are deferred to Phase F. EXTRACT clinical meaning, AnalysisRun semantics, and the seven-stage backend are unchanged. OpenMed remains **USE LATER** and is not integrated; MedGemma is not integrated. See [the Phase E architecture reference](docs/architecture/phase_e_reviewed_collection_intelligence.md).
 
 ## Accepted checkpoint — Phase D + D.1 + D.2 Clinical Extraction Profiles V1
 

@@ -5,57 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f8f6f0">
   <title>Collections — MRJ</title>
-  <meta name="description" content="MRJ Collection Intelligence. Browse governed report collections.">
+  <meta name="description" content="MRJ reviewed clinical collections.">
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
   <link rel="stylesheet" href="/static/mrj-brand.css">
-  <link rel="stylesheet" href="/static/product-shell.css">
+  <link rel="stylesheet" href="/static/product-shell.css?v=e2">
+  <link rel="stylesheet" href="/static/collections.css?v=e3">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
 </head>
-<body data-product-brand="mrj" class="product-workspace">
+<body data-product-brand="mrj" class="product-workspace collection-workspace">
   <a class="product-skip-link" href="#main">Skip to content</a>
-  <header class="product-header">
-    <div class="product-container product-header-inner">
-      <a class="product-brand" href="/reports" aria-label="MRJ Reports home">
-        <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="40" height="40" alt="">
-        <span>MRJ</span>
-      </a>
-      <nav class="product-nav" aria-label="Primary navigation">
-        <a href="/reports">Reports</a>
-        <a href="/collections" aria-current="page">Collections</a>
-      </nav>
-    </div>
-  </header>
-
+  <header class="product-header"><div class="product-container product-header-inner">
+    <a class="product-brand" href="/reports" aria-label="MRJ Reports home">
+      <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_master_transparent.png" width="52" height="52" alt=""><span class="product-brand-copy"><strong>MRJ</strong><small>Medical Report Journey</small></span></a>
+    <nav class="product-nav" aria-label="Primary navigation"><a href="/reports">Reports</a><a href="/collections" aria-current="page">Collections</a></nav>
+  </div></header>
   <main id="main" class="product-container product-main" tabindex="-1">
-    <section class="product-intro" aria-labelledby="page-title">
-      <div>
-        <p class="product-eyebrow">Collection Intelligence</p>
-        <h1 id="page-title">Collections</h1>
-        <p class="product-lead">From information to decision. Find the governed report groups already available in MRJ.</p>
-      </div>
+    <section id="collection-index" aria-labelledby="page-title">
+      <header class="collection-page-head"><div><p class="product-eyebrow">Reviewed clinical intelligence</p>
+        <h1 id="page-title">Collections</h1><p class="collection-subtitle">Explore groups of accepted clinical records.</p></div></header>
+      <p id="collections-status" class="product-status" role="status">Loading collections…</p>
+      <button id="collections-retry" class="product-text-button" type="button" hidden>Try again</button>
+      <div class="collection-table-wrap"><table class="collection-table"><thead><tr>
+        <th scope="col">Collection</th><th scope="col">Reviewed reports</th><th scope="col">Exam types</th>
+        <th scope="col">Updated</th><th scope="col">Readiness</th><th scope="col"></th>
+      </tr></thead><tbody id="collection-list"></tbody></table></div>
     </section>
 
-    <section class="product-section" aria-labelledby="collection-area-title">
-      <div class="product-section-heading">
-        <p class="product-eyebrow">Your work</p>
-        <h2 id="collection-area-title">Saved collections</h2>
+    <section id="collection-detail" class="collection-detail" aria-labelledby="collection-detail-title" hidden>
+      <div class="collection-detail-head"><button id="collection-back" type="button" class="collection-back" aria-label="Back to collections">‹</button>
+        <div class="collection-detail-identity"><p class="product-eyebrow">Reviewed collection</p>
+          <h1 id="collection-detail-title" tabindex="-1"></h1><p id="collection-detail-summary" class="collection-meta"></p></div>
+        <button id="collection-view-reports" type="button" class="collection-outline-action">View reports →</button>
       </div>
-      <p class="product-status" id="collections-status" role="status">Loading collections…</p>
-      <ul class="collection-list" id="collection-list" aria-label="Saved collections"></ul>
-      <button class="product-text-button" id="collections-retry" type="button" hidden>Try again</button>
+      <div id="collection-error" class="collection-error" role="alert" hidden></div>
+      <nav class="collection-tabs" aria-label="Collection views">
+        <button type="button" data-tab="overview" aria-current="page"><span aria-hidden="true">▥</span>Overview</button>
+        <button type="button" data-tab="findings"><span aria-hidden="true">▤</span>Findings</button>
+        <button type="button" data-tab="measurements"><span aria-hidden="true">◫</span>Measurements</button>
+        <button type="button" data-tab="insights"><span aria-hidden="true">✦</span>Insights</button>
+        <button type="button" data-tab="trends"><span aria-hidden="true">⌁</span>Trends</button>
+        <button type="button" data-tab="quality"><span aria-hidden="true">◇</span>Data Quality</button>
+      </nav>
+      <section id="tab-overview" class="collection-tab-panel" aria-label="Overview">
+        <div id="overview-stats" class="overview-stats"></div>
+        <div class="overview-grid">
+          <section class="collection-panel overview-panel-findings"><h2><span class="section-icon" aria-hidden="true">▤</span>Top findings</h2><div id="overview-findings"></div></section>
+          <section class="collection-panel overview-panel-composition"><h2><span class="section-icon" aria-hidden="true">◉</span>Exam composition</h2><div id="overview-composition"></div></section>
+          <section class="collection-panel overview-panel-measurements"><h2><span class="section-icon" aria-hidden="true">◫</span>Measurements</h2><div id="overview-measurements"></div></section>
+          <section class="collection-panel overview-panel-quality"><h2><span class="section-icon" aria-hidden="true">◇</span>Data quality</h2><div id="overview-quality"></div></section>
+        </div>
+      </section>
+      <section id="tab-findings" class="collection-tab-panel" aria-label="Findings" hidden>
+        <div class="collection-panel"><h2>Documented findings</h2><p class="collection-note">Report-level frequency among eligible reviewed records; this is not population prevalence.</p>
+          <div id="findings-results"></div></div>
+      </section>
+      <section id="tab-measurements" class="collection-tab-panel" aria-label="Measurements" hidden>
+        <div class="collection-panel"><h2>Comparable measurements</h2><p class="collection-note">Only governed values with compatible clinical identity, anatomy, laterality, type, unit, and profile context are grouped.</p>
+          <div id="measurement-results"></div></div>
+      </section>
+      <section id="tab-insights" class="collection-tab-panel" aria-label="Insights" hidden>
+        <div class="collection-panel insights-future"><span class="insights-icon" aria-hidden="true">✦</span><div>
+          <p class="product-eyebrow">Next phase</p><h2>Clinical Insights</h2>
+          <p>Exam-specific Intelligence Profiles will support relationship insights here after this reviewed-collection foundation is accepted.</p>
+          <p class="collection-note">No relationship results have been calculated for this collection.</p></div></div>
+      </section>
+      <section id="tab-trends" class="collection-tab-panel" aria-label="Trends" hidden>
+        <div class="collection-panel"><h2>Trends</h2><p>Not enough governed temporal data for trend analysis.</p></div>
+      </section>
+      <section id="tab-quality" class="collection-tab-panel" aria-label="Data Quality" hidden>
+        <div class="collection-panel"><h2>Data Quality</h2><p class="collection-note">Coverage describes documentation, not a positive or negative clinical finding. Out-of-scope structures are excluded from denominators.</p>
+          <div id="quality-results"></div></div>
+      </section>
     </section>
-
-    <section class="product-section collection-detail" id="collection-detail" aria-labelledby="collection-detail-title" hidden>
-      <button class="product-text-button" id="collection-back" type="button">← Back to collections</button>
-      <p class="product-eyebrow">Collection</p>
-      <h2 id="collection-detail-title" tabindex="-1"></h2>
-      <p id="collection-detail-summary"></p>
-      <dl class="collection-counts" id="collection-detail-counts"></dl>
-      <p class="product-muted">Collection analysis and review views will be added in a later phase.</p>
-    </section>
-    <noscript><p class="product-status">Enable JavaScript to view saved collections.</p></noscript>
+    <noscript><p class="product-status">Enable JavaScript to view reviewed collections.</p></noscript>
   </main>
-  <script src="/static/collections.js" defer></script>
+  <dialog id="collection-drilldown" class="collection-drawer" aria-labelledby="drilldown-title">
+    <div class="collection-drawer-head"><div><p class="product-eyebrow">Source lineage</p><h2 id="drilldown-title"></h2></div>
+      <button type="button" class="collection-close" data-close="collection-drilldown" aria-label="Close details">×</button></div>
+    <p id="drilldown-summary" class="collection-note"></p><div id="drilldown-reports"></div>
+  </dialog>
+  <dialog id="collection-reports" class="collection-drawer" aria-labelledby="reports-title">
+    <div class="collection-drawer-head"><div><p class="product-eyebrow">Pinned membership</p><h2 id="reports-title">Reviewed reports</h2></div>
+      <button type="button" class="collection-close" data-close="collection-reports" aria-label="Close reports">×</button></div>
+    <p class="collection-note">Each report is pinned to its accepted record version.</p><div id="collection-reports-list"></div>
+  </dialog>
+  <script src="/static/collections.js?v=e3" defer></script>
 </body>
 </html>

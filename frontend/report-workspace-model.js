@@ -173,6 +173,18 @@
     };
   }
 
+  function reviewedCollectionMembers(entries) {
+    return entries.filter(entry => entry.status === 'REVIEWED' &&
+      entry.document?.durably_reviewed === true &&
+      typeof entry.document?.reviewed_record_id === 'string' &&
+      /^[0-9a-f]{32}$/.test(entry.document.reviewed_record_id) &&
+      Number.isInteger(entry.document?.reviewed_record_version) &&
+      entry.document.reviewed_record_version > 0).map(entry => ({
+      reviewed_record_id: entry.document.reviewed_record_id,
+      reviewed_record_version: entry.document.reviewed_record_version,
+    }));
+  }
+
   return { projection, reviewable, reviewProgress, nextReviewEntry, completionEligible,
-    acceptancePolicy, validatedEvidence };
+    acceptancePolicy, validatedEvidence, reviewedCollectionMembers };
 });

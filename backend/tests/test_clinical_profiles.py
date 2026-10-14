@@ -308,7 +308,8 @@ def test_journey_standardize_accept_saves_resolved_profile(tmp_path):
     assert section(evaluation_result, "pancreas")["coverage"] == "LIMITED_OR_NOT_VISUALIZED"
     store.accept_clinical_review(run.run_id, item.document_id)
     saved = repo.get_current(item.reviewed_record_id).to_dict()
-    assert saved["schema_version"] == 2
+    assert saved["schema_version"] == 3
+    assert saved["profile_coverage"] is not None
     assert saved["profile_provenance"]["profile_version"] == "0.1"
     assert saved["profile_provenance"]["scope"] == "COMPLETE"
     repo.close()

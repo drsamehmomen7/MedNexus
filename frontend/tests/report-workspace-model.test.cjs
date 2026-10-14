@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { projection, reviewable, reviewProgress, nextReviewEntry, completionEligible,
-  acceptancePolicy, validatedEvidence } =
+  acceptancePolicy, validatedEvidence, reviewedCollectionMembers } =
   require('../report-workspace-model.js');
 
 function report(overrides = {}) {
@@ -117,6 +117,21 @@ test('one and three reviewed reports enter completion only when nothing remains 
   assert.equal(eligible(['REVIEWED', 'REVIEWED', 'FAILED']), true);
   assert.equal(eligible(['FAILED']), false);
   assert.equal(eligible([]), false);
+});
+
+test('collection creation includes only exact durable reviewed versions from the session', () => {
+  const accepted = { status: 'REVIEWED', document: { durably_reviewed: true,
+    reviewed_record_id: 'a'.repeat(32), reviewed_record_version: 2 } };
+  const entries = [accepted,
+    { status: 'NEEDS_REVIEW', document: { ...accepted.document, reviewed_record_id: 'b'.repeat(32) } },
+    { status: 'FAILED', document: null },
+    { status: 'REVIEWED', document: { ...accepted.document, reviewed_record_id: 'c'.repeat(32),
+      reviewed_record_version: null } },
+    { status: 'REVIEWED', document: { ...accepted.document, durably_reviewed: false,
+      reviewed_record_id: 'd'.repeat(32) } }];
+  assert.deepEqual(reviewedCollectionMembers(entries), [
+    { reviewed_record_id: 'a'.repeat(32), reviewed_record_version: 2 },
+  ]);
 });
 
 test('only a genuine Major Review alert requires confirmation and changes acceptance wording', () => {

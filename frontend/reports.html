@@ -8,8 +8,8 @@
   <meta name="description" content="MRJ Report Workspace. Prepare and review clinical reports.">
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
   <link rel="stylesheet" href="/static/mrj-brand.css">
-  <link rel="stylesheet" href="/static/product-shell.css">
-  <link rel="stylesheet" href="/static/report-workspace.css?v=d1">
+  <link rel="stylesheet" href="/static/product-shell.css?v=e2">
+  <link rel="stylesheet" href="/static/report-workspace.css?v=e3">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
 </head>
@@ -18,8 +18,8 @@
   <header class="product-header">
     <div class="product-container product-header-inner">
       <a class="product-brand" href="/reports" aria-label="MRJ Reports home">
-        <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_128.png" width="40" height="40" alt="">
-        <span>MRJ</span>
+        <img class="mrj-brand-icon" src="/assets/brand/mrj/icon_only/png/MRJ_icon_master_transparent.png" width="52" height="52" alt="">
+        <span class="product-brand-copy"><strong>MRJ</strong><small>Medical Report Journey</small></span>
       </a>
       <nav class="product-nav" aria-label="Primary navigation">
         <a href="/reports" aria-current="page">Reports</a>
@@ -72,6 +72,9 @@
           <h2 id="completion-title" tabindex="-1">Review complete</h2>
           <p id="completion-count" class="completion-count"></p>
           <p id="completion-message" class="completion-message"></p>
+          <label class="collection-name-field" for="collection-name">Collection name
+            <input id="collection-name" type="text" maxlength="120" autocomplete="off" value="Reviewed reports">
+          </label>
           <div class="completion-actions">
             <button id="back-to-reports" class="product-action" type="button">Back to Reports</button>
             <button id="review-again" class="product-text-button" type="button">Review reports</button>
@@ -105,21 +108,9 @@
           <section id="summary-section" class="record-section" aria-labelledby="summary-title" hidden>
             <h3 id="summary-title">Clinical summary</h3><p id="record-summary" class="record-summary"></p>
           </section>
-          <section id="exam-coverage-section" class="record-section" aria-labelledby="exam-coverage-title" hidden>
-            <div class="coverage-heading"><h3 id="exam-coverage-title">Exam coverage</h3>
-              <button id="view-profile-details" class="product-text-button" type="button">View profile details</button></div>
-            <ul id="exam-coverage-list" class="exam-coverage-list"></ul>
-            <p class="product-muted">Coverage describes documentation, not a clinical finding.</p>
-          </section>
+          <div class="record-primary-grid"><div class="record-primary-main">
           <section id="findings-section" class="record-section" aria-labelledby="findings-title" hidden>
             <h3 id="findings-title">Key findings</h3><ul id="record-findings" class="record-fact-list"></ul>
-          </section>
-          <section id="measurements-section" class="record-section" aria-labelledby="measurements-title" hidden>
-            <h3 id="measurements-title">Measurements</h3>
-            <div class="record-table-wrap"><table><thead><tr><th scope="col">Measurement</th><th scope="col">Value</th><th scope="col">Context</th></tr></thead><tbody id="record-measurements"></tbody></table></div>
-          </section>
-          <section id="negative-section" class="record-section" aria-labelledby="negative-title" hidden>
-            <h3 id="negative-title">Pertinent negatives</h3><ul id="record-negatives" class="record-fact-list"></ul>
           </section>
           <section id="assessment-section" class="record-section" aria-labelledby="assessment-title" hidden>
             <h3 id="assessment-title">Report assessment</h3><ul id="record-assessments" class="record-fact-list"></ul>
@@ -134,8 +125,23 @@
             <h3 id="secondary-title">Additional findings</h3><ul id="record-secondary" class="record-fact-list"></ul>
             <details id="secondary-more" hidden><summary>Show more findings</summary><ul id="record-secondary-more" class="record-fact-list"></ul></details>
           </section>
+          </div><div class="record-primary-aside">
+          <section id="measurements-section" class="record-section" aria-labelledby="measurements-title" hidden>
+            <h3 id="measurements-title">Measurements</h3>
+            <div class="record-table-wrap"><table><thead><tr><th scope="col">Measurement</th><th scope="col">Value</th><th scope="col">Context</th></tr></thead><tbody id="record-measurements"></tbody></table></div>
+          </section>
+          <section id="negative-section" class="record-section" aria-labelledby="negative-title" hidden>
+            <h3 id="negative-title">Pertinent negatives</h3><ul id="record-negatives" class="record-fact-list"></ul>
+          </section>
           <section id="review-section" class="record-section record-review" aria-labelledby="review-title" hidden>
             <h3 id="review-title">Needs review</h3><ul id="record-review-issues"></ul>
+          </section>
+          </div></div>
+          <section id="exam-coverage-section" class="record-section" aria-labelledby="exam-coverage-title" hidden>
+            <div class="coverage-heading"><h3 id="exam-coverage-title">Exam coverage</h3>
+              <button id="view-profile-details" class="product-text-button" type="button">View profile details</button></div>
+            <ul id="exam-coverage-list" class="exam-coverage-list"></ul>
+            <p class="product-muted">Coverage describes documentation, not a clinical finding.</p>
           </section>
           <div class="record-actions">
             <p id="record-save-note">Review the clinical record and its source evidence before accepting.</p>
@@ -187,8 +193,8 @@
       <button id="confirm-major-acceptance" class="product-action" type="button">Confirm acceptance</button>
     </div>
   </dialog>
-  <script src="/static/report-workspace-model.js?v=d1" defer></script>
+  <script src="/static/report-workspace-model.js?v=e1" defer></script>
   <script src="/static/report-workspace-flow.js?v=c2c" defer></script>
-  <script src="/static/reports.js?v=d1" defer></script>
+  <script src="/static/reports.js?v=e2" defer></script>
 </body>
 </html>

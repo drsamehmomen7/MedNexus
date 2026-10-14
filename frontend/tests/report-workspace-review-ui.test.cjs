@@ -27,7 +27,8 @@ test('completion has Back to Reports first and primary, with working secondary a
   assert.match(actions, /id="review-again" class="product-text-button"/);
   assert.match(actions, /id="analyze-reports" class="product-text-button"/);
   assert.match(script, /byId\('review-again'\)\.addEventListener\('click',[\s\S]*?selectEntry\(next\)/);
-  assert.match(script, /Collection Intelligence for reviewed reports is coming in the next phase\./);
+  assert.match(script, /creation_method: 'REVIEW_SESSION'/);
+  assert.match(script, /model\.reviewedCollectionMembers\(entries\)/);
   assert.match(script, /const complete = showCompletion && model\.completionEligible\(entries\)/);
 });
 
@@ -38,7 +39,7 @@ test('skip link stays offscreen until focus and remains keyboard reachable', () 
 });
 
 test('exam coverage and profile details use the accepted record layout', () => {
-  assert.ok(html.indexOf('id="exam-coverage-section"') < html.indexOf('id="findings-section"'));
+  assert.ok(html.indexOf('id="exam-coverage-section"') > html.indexOf('id="review-section"'));
   assert.match(html, /id="view-profile-details"/);
   assert.match(html, /id="profile-dialog"/);
   assert.match(script, /byId\('exam-coverage-section'\)\.hidden = !record\.profile/);

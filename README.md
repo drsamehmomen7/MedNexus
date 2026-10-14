@@ -1,6 +1,12 @@
 # MRJ
 
-## Current checkpoint — Clinical Extraction Profiles V1 accepted (13 October 2026)
+## Current checkpoint — Phase E Reviewed Collection Intelligence V1 accepted (14 October 2026)
+
+Human product review accepted the reviewed-only Collection architecture and final visual implementation against the five approved MRJ references. Product Collections admit only durable, human-accepted `ReviewedClinicalRecord` versions; membership snapshots pin exact versions, remain reproducible after later record updates, and bind immutable AnalysisRuns to a Collection ID and version. Overview, Findings, and Measurements use the existing backend numerical authority, with contributor drill-down through the reviewed fact or governed comparable measurement to protected evidence. Data Quality keeps Clinical Extraction Profile scope and mixed-profile denominators separate, excluding `NOT_APPLICABLE` from eligible coverage. Review Complete can create a Collection through **Analyze these reports** from the session's durably reviewed records.
+
+The accepted Reports and Collections UI uses the approved repository MRJ brand asset. The Insights tab remains a next-phase state; relational Clinical Insights and Clinical Intelligence Profiles are deferred to Phase F. Phase E does not change EXTRACT clinical meaning, AnalysisRun semantics, or the seven-stage backend. OpenMed remains **USE LATER** and is not integrated; MedGemma is not integrated. See [the Phase E architecture reference](docs/architecture/phase_e_reviewed_collection_intelligence.md) and [CURRENT_STATE.md](CURRENT_STATE.md).
+
+## Historical checkpoint — Clinical Extraction Profiles V1 accepted (13 October 2026)
 
 Human clinical review accepted Phase D, D.1, and D.2 as one checkpoint. MRJ owns a versioned Clinical Extraction Profile registry with Radiology Core, US Abdomen V0.1, and MRI Shoulder V0.1. Report Workspace shows governed exam coverage with profile details; coverage and clinical assertion remain separate, so undocumented, limited/not visualized, and out-of-scope structures are never converted into negative findings. Profile ID, version, and scope persist in durable reviewed records, with V1 record compatibility. Conservative anatomy mismatch evaluation raises review signals without rewriting facts.
 

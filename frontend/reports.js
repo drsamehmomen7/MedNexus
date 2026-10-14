@@ -17,6 +17,7 @@
   let showCompletion = false;
   let majorConfirmationKey = null;
   let savingReview = false;
+  let creatingCollection = false;
 
   const escapeId = value => encodeURIComponent(value);
   const docPath = entry => `${api}/journey-runs/${escapeId(entry.runId)}/documents/${escapeId(entry.documentId)}`;
@@ -54,11 +55,17 @@
       const row = document.createElement('li');
       const button = document.createElement('button');
       const number = document.createElement('span');
+      const icon = document.createElement('span');
       const copy = document.createElement('span');
       const name = document.createElement('strong');
       const status = document.createElement('span');
       number.className = 'queue-index';
       number.textContent = String(entries.indexOf(entry) + 1).padStart(2, '0');
+      const modality = String(entry.record?.descriptor || '').toUpperCase();
+      icon.className = 'queue-modality-icon';
+      icon.textContent = modality.startsWith('MRI') ? '◉' : modality.startsWith('ULTRASOUND') || modality.startsWith('US ')
+        ? '≋' : modality.includes('CT') ? '▣' : modality.includes('X-RAY') ? '✣' : '▤';
+      icon.setAttribute('aria-hidden', 'true');
       copy.className = 'queue-copy';
       name.textContent = entry.record?.title || entry.name;
       status.className = 'queue-state';
@@ -69,7 +76,7 @@
       button.setAttribute('aria-label', `Open ${entry.name}: ${statuses[entry.status]}`);
       button.setAttribute('aria-current', String(entry.key === selected));
       button.addEventListener('click', () => selectEntry(entry));
-      button.append(number, copy);
+      button.append(number, icon, copy);
       row.append(button);
       target.append(row);
     });
@@ -145,7 +152,12 @@
       : 'All reports in this upload session have been reviewed.';
     byId('retry-failed').hidden = !failed;
     byId('analyze-reports').hidden = false;
-    byId('analyze-message').hidden = true;
+    if (!creatingCollection) {
+      const excluded = entries.length - progress.reviewed;
+      byId('analyze-message').textContent = excluded
+        ? `${excluded} unreviewed or failed ${excluded === 1 ? 'report is' : 'reports are'} excluded from collection analysis.` : '';
+      byId('analyze-message').hidden = !excluded;
+    }
     return true;
   }
 
@@ -246,6 +258,7 @@
   }
 
   function render() {
+    document.body.classList.toggle('has-reports', entries.length > 0);
     byId('report-empty').hidden = entries.length > 0;
     byId('report-work-area').hidden = entries.length === 0;
     byId('page-guidance').hidden = entries.length > 0;
@@ -452,7 +465,8 @@
         { major_review_acknowledged: majorReviewAcknowledged });
       const accepted = ownDocument(payload, entry, entry.document.order);
       if (accepted?.review_status !== 'REVIEWED' || !accepted.durably_reviewed ||
-          !accepted.reviewed_record_id) throw new Error('Review decision was not saved.');
+          !accepted.reviewed_record_id || !Number.isInteger(accepted.reviewed_record_version))
+        throw new Error('Review decision was not saved.');
       updateFromRun(entry, payload, entry.document.order);
       entry.record = model.projection(entry.document);
       entry.status = 'REVIEWED';
@@ -527,9 +541,31 @@
     if (failed) selectEntry(failed);
   });
   byId('back-to-reports').addEventListener('click', () => window.location.assign('/reports'));
-  byId('analyze-reports').addEventListener('click', () => {
-    byId('analyze-message').textContent = 'Collection Intelligence for reviewed reports is coming in the next phase.';
-    byId('analyze-message').hidden = false;
+  byId('analyze-reports').addEventListener('click', async () => {
+    if (creatingCollection) return;
+    const members = model.reviewedCollectionMembers(entries);
+    const message = byId('analyze-message');
+    const name = byId('collection-name').value.trim();
+    if (!members.length || !name) {
+      message.textContent = !members.length ? 'Accept at least one reviewed report first.' : 'Enter a collection name.';
+      message.hidden = false;
+      return;
+    }
+    creatingCollection = true;
+    byId('analyze-reports').disabled = true;
+    message.textContent = `Creating a collection from ${members.length} accepted ${members.length === 1 ? 'report' : 'reports'}…`;
+    message.hidden = false;
+    try {
+      const result = await postJson(`${api}/reviewed-collections`,
+        { name, creation_method: 'REVIEW_SESSION', members });
+      if (!/^[0-9a-f]{32}$/.test(result.collection_id || '')) throw new Error('Collection unavailable');
+      window.location.assign(`/collections#${result.collection_id}`);
+    } catch {
+      creatingCollection = false;
+      byId('analyze-reports').disabled = false;
+      message.textContent = 'The reviewed collection could not be created. Please try again.';
+      message.hidden = false;
+    }
   });
   byId('accept-record').addEventListener('click', acceptRecord);
   byId('cancel-major-acceptance').addEventListener('click', () => byId('major-review-dialog').close());
