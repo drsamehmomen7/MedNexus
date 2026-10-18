@@ -18,6 +18,9 @@ from backend.app.modules.medical_document_intelligence.services.reviewed_collect
 from backend.app.modules.medical_document_intelligence.services.clinical_insights import ClinicalInsightEngine
 from backend.app.modules.medical_document_intelligence.services.collection_visualization import visualization_store
 from backend.app.modules.medical_document_intelligence.services.collection_indicators import indicator_store
+from backend.app.modules.medical_document_intelligence.services.medgemma_comparison import (
+    comparison_enabled, comparison_service,
+)
 from backend.app.modules.medical_document_intelligence.understanding.journey import (
     JourneyMode,
     JourneyStage,
@@ -388,6 +391,46 @@ def get_journey_run(run_id: str) -> dict[str, Any]:
         return journey_store.run_payload(run_id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/medgemma-comparison/config")
+def medgemma_comparison_config() -> dict[str, bool]:
+    return {"enabled": comparison_enabled()}
+
+
+@router.get("/medgemma-comparison/evaluations")
+def list_medgemma_comparisons() -> dict[str, Any]:
+    return {"evaluations": comparison_service.list() if comparison_enabled() else []}
+
+
+@router.get("/medgemma-comparison/evaluations/{run_id}/{document_id}")
+def get_medgemma_comparison(run_id: str, document_id: str) -> JSONResponse:
+    if not comparison_enabled():
+        raise HTTPException(status_code=404, detail="Comparison Mode is disabled")
+    try:
+        result = comparison_service.get(run_id, document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Evaluation unavailable") from exc
+    if result is None:
+        raise HTTPException(status_code=404, detail="Evaluation unavailable")
+    return JSONResponse(content=result, headers={"Cache-Control": "no-store, private"})
+
+
+@router.post("/medgemma-comparison/evaluations/{run_id}/{document_id}")
+def start_medgemma_comparison(run_id: str, document_id: str) -> JSONResponse:
+    if not comparison_enabled():
+        raise HTTPException(status_code=404, detail="Comparison Mode is disabled")
+    try:
+        run = journey_store.run_payload(run_id)
+        document = next((item for item in run["documents"] if item["document_id"] == document_id), None)
+        if document is None:
+            raise LookupError("Report unavailable")
+        result = comparison_service.start(run_id, document_id, document)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Report unavailable") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return JSONResponse(content=result, headers={"Cache-Control": "no-store, private"})
 
 
 @router.post("/journey-runs/{run_id}/protect")

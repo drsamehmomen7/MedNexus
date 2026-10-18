@@ -45,3 +45,18 @@ test('exam coverage and profile details use the accepted record layout', () => {
   assert.match(script, /byId\('exam-coverage-section'\)\.hidden = !record\.profile/);
   assert.match(script, /byId\('profile-dialog'\)\.showModal\(\)/);
 });
+
+test('comparison mode keeps Native, complete MedGemma, and comparison in separate ordered sections', () => {
+  assert.ok(html.indexOf('id="native-evaluation-section"') < html.indexOf('id="medgemma-section"'));
+  assert.ok(html.indexOf('id="medgemma-section"') < html.indexOf('id="comparison-section"'));
+  assert.match(html, /id="comparison-mode-indicator"[^>]*>Comparison Mode/);
+  assert.match(script, /renderMedGemmaMarkdown\(status === 'AVAILABLE' \? evaluation\.raw_response/);
+  assert.match(script, /const comparisonNames = \{ AGREEMENT:/);
+  assert.match(script, /'No matching supported MedGemma claim'/);
+  assert.match(script, /startComparison\(entry\)/);
+  assert.match(script, /setTimeout\(\(\) => pollComparison\(entry\), 2500\)/);
+  assert.match(script, /async function loadRetainedComparisonRun\(\)/);
+  assert.match(script, /retainedPreview: true/);
+  assert.match(script, /'Retained Comparison Mode results · read-only · no extraction started\.'/);
+  assert.match(script, /UNSUPPORTED: 'Unsupported'/);
+});

@@ -10,6 +10,20 @@
   const text = value => typeof value === 'string' ? value.trim() : '';
   const readable = value => /^(CT|CTA|MRI|MRA|MRV|MR|US|XR|DX|CR|PET|SPECT)$/.test(text(value)) ? text(value) :
     text(value).replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  const genericTitle = value => /^(?:radiology|clinical) report$/i.test(text(value));
+
+  function reportTitle(study, filename) {
+    const exam = text(study.original_exam_name);
+    if (exam && !genericTitle(exam)) return exam;
+    const valid = value => value && !['UNKNOWN', 'NOT_DETERMINED'].includes(value.toUpperCase());
+    const modality = text(study.normalized_modality);
+    const region = text(study.normalized_body_region);
+    if (valid(modality) && valid(region)) return `${readable(modality)} ${readable(region)}`;
+    if (valid(modality)) return `${readable(modality)} imaging report`;
+    if (valid(region)) return `${readable(region)} imaging report`;
+    if (text(filename) && !genericTitle(filename)) return text(filename);
+    return 'Clinical report';
+  }
 
   function reviewable(document) {
     const protection = result(document, 'PROTECT');
@@ -149,7 +163,7 @@
     const laterality = text(study.normalized_laterality);
     const title = profile ? profile.profile_id === 'MRJ_RAD_MRI_SHOULDER' && ['LEFT', 'RIGHT'].includes(laterality)
       ? `MRI ${readable(laterality)} Shoulder` : text(profile.profile_name)
-      : text(study.original_exam_name) || text(document.original_filename) || 'Clinical report';
+      : reportTitle(study, document.original_filename);
     const descriptor = unique([
       text(study.normalized_modality), text(study.normalized_body_region),
       text(study.normalized_laterality),

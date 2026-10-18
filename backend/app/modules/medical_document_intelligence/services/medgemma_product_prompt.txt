@@ -1,0 +1,12 @@
+Extract clinically meaningful candidates from the protected radiology report below. Return JSON immediately: no reasoning, explanation, Markdown, preamble, or summary outside JSON. Start with { and end with }.
+
+Return exactly this compact structure, with no extra keys and at most 20 candidates:
+{"candidates":[{"concept":"...","assertion":"PRESENT|ABSENT|UNCERTAIN","anatomy":["..."],"laterality":"LEFT|RIGHT|BILATERAL|UNSPECIFIED","measurement":null,"source_quote":"...","candidate_role":"FINDING|PERTINENT_NEGATIVE|MEASUREMENT|DIAGNOSTIC_CONSIDERATION|RECOMMENDATION"}]}
+
+Use one allowed value for assertion, laterality, and candidate_role; the vertical bars above mean alternatives. Use [] when anatomy is not explicit. Keep measurement null; include any stated measurement in concept and source_quote. Copy source_quote verbatim as one contiguous substring of the protected report. Extract each clinically meaningful item ONCE; do not repeat the same finding with alternate wording. Include explicit follow-up or other recommendations as RECOMMENDATION candidates. Preserve negation and uncertainty. Do not infer diagnoses or facts absent from the report. Return {"candidates":[]} if nothing is supported.
+
+Do not provide claim IDs, offsets, model identifiers or revision, provenance, confidence, display_text, or runtime metadata. MRJ assigns and validates those details.
+
+PROTECTED_REPORT_TEXT_BEGIN
+{protected_report_text}
+PROTECTED_REPORT_TEXT_END

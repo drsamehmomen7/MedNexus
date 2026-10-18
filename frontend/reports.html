@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/mednexus-design-system.css">
   <link rel="stylesheet" href="/static/mrj-brand.css">
   <link rel="stylesheet" href="/static/product-shell.css?v=e2">
-  <link rel="stylesheet" href="/static/report-workspace.css?v=e3">
+  <link rel="stylesheet" href="/static/report-workspace.css?v=evidence-v1">
   <link rel="icon" href="/assets/brand/mrj/favicon/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/mrj/favicon/favicon-32x32.png">
 </head>
@@ -105,6 +105,9 @@
             </div>
           </header>
 
+          <div id="comparison-mode-indicator" class="comparison-mode-indicator" hidden>Comparison Mode · evaluation only</div>
+          <section id="native-evaluation-section" aria-labelledby="native-evaluation-title">
+          <h3 id="native-evaluation-title" class="evaluation-section-title" hidden>MRJ Native</h3>
           <section id="summary-section" class="record-section" aria-labelledby="summary-title" hidden>
             <h3 id="summary-title">Clinical summary</h3><p id="record-summary" class="record-summary"></p>
           </section>
@@ -142,6 +145,19 @@
               <button id="view-profile-details" class="product-text-button" type="button">View profile details</button></div>
             <ul id="exam-coverage-list" class="exam-coverage-list"></ul>
             <p class="product-muted">Coverage describes documentation, not a clinical finding.</p>
+          </section>
+          </section>
+          <section id="medgemma-section" class="record-section evaluation-panel" aria-labelledby="medgemma-title" hidden>
+            <div class="evaluation-heading"><h3 id="medgemma-title">MedGemma</h3><span id="medgemma-status" class="evaluation-status"></span></div>
+            <p id="medgemma-elapsed" class="product-muted"></p>
+            <div id="medgemma-content" class="medgemma-content"></div>
+            <p class="product-muted">Independent evaluation output. It is not included in the saved clinical record.</p>
+          </section>
+          <section id="comparison-section" class="record-section evaluation-panel" aria-labelledby="comparison-title" hidden>
+            <h3 id="comparison-title">Comparison</h3>
+            <p id="comparison-unavailable" class="product-muted"></p>
+            <div id="comparison-counts" class="comparison-counts"></div>
+            <div id="comparison-groups" class="comparison-groups"></div>
           </section>
           <div class="record-actions">
             <p id="record-save-note">Review the clinical record and its source evidence before accepting.</p>
@@ -195,6 +211,6 @@
   </dialog>
   <script src="/static/report-workspace-model.js?v=e1" defer></script>
   <script src="/static/report-workspace-flow.js?v=c2c" defer></script>
-  <script src="/static/reports.js?v=e2" defer></script>
+  <script src="/static/reports.js?v=evidence-v1" defer></script>
 </body>
 </html>

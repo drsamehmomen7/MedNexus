@@ -91,8 +91,9 @@ def sentence_anchor(section, anchor):
 
 
 class ClinicalExtractionService:
-    def __init__(self, adapter=None):
+    def __init__(self, adapter=None, medgemma_adapter=None):
         self.adapter = adapter or RadGraphXLAdapter()
+        self.medgemma_adapter = medgemma_adapter
 
     def extract(self, *, protected_text, sections, report_id, run_id, protected_document, initial_review=()):
         started = perf_counter()

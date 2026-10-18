@@ -37,7 +37,7 @@ def test_reports_shell_preserves_functional_single_and_batch_entry():
     assert 'id="add-reports" type="button">Add reports' in page
     assert 'id="report-files"' in page and 'multiple aria-label="Choose reports to upload"' in page
     assert 'id="report-queue-list"' in page and 'id="clinical-record"' in page
-    assert 'src="/static/reports.js?v=e2"' in page
+    assert 'src="/static/reports.js?v=evidence-v1"' in page
     assert '/understanding' not in page
     assert client.get("/understanding").status_code == 200
     assert client.get("/privacy").status_code == 200

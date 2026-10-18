@@ -18,6 +18,10 @@
   let majorConfirmationKey = null;
   let savingReview = false;
   let creatingCollection = false;
+  let comparisonMode = false;
+  const comparisonNames = { AGREEMENT: 'Agreement', MRJ_ONLY: 'MRJ only',
+    MEDGEMMA_ONLY: 'MedGemma only', CONFLICT: 'Conflict',
+    UNSUPPORTED: 'Unsupported', UNRESOLVED: 'Unresolved' };
 
   const escapeId = value => encodeURIComponent(value);
   const docPath = entry => `${api}/journey-runs/${escapeId(entry.runId)}/documents/${escapeId(entry.documentId)}`;
@@ -137,6 +141,176 @@
     });
   }
 
+  function renderMedGemmaMarkdown(raw) {
+    const target = byId('medgemma-content');
+    target.replaceChildren();
+    let list = null;
+    String(raw || '').split(/\r?\n/).forEach(line => {
+      const value = line.trim();
+      if (!value) { list = null; return; }
+      const heading = value.match(/^(?:#{1,4}\s*)?\*\*(.+?):?\*\*:?$/) || value.match(/^#{1,4}\s+(.+)$/);
+      if (heading) {
+        const h = document.createElement('h4');
+        h.textContent = heading[1].replace(/:$/, '');
+        target.append(h); list = null; return;
+      }
+      const bullet = value.match(/^(?:[-*+]\s+|\d+[.)]\s+)(.*)$/);
+      if (bullet) {
+        if (!list) { list = document.createElement('ul'); target.append(list); }
+        const item = document.createElement('li');
+        item.textContent = bullet[1].replaceAll('**', '');
+        list.append(item); return;
+      }
+      const paragraph = document.createElement('p');
+      paragraph.textContent = value.replaceAll('**', '');
+      target.append(paragraph); list = null;
+    });
+  }
+
+  function renderComparison(entry) {
+    const mode = comparisonMode;
+    byId('comparison-mode-indicator').hidden = !mode;
+    byId('native-evaluation-title').hidden = !mode;
+    byId('medgemma-section').hidden = !mode;
+    byId('comparison-section').hidden = !mode;
+    if (!mode) return;
+    const evaluation = entry.comparison || { status: 'PROCESSING', comparison: { status: 'NOT_AVAILABLE' } };
+    const generationLimited = evaluation.failure_code === 'GENERATION_REPETITION_LIMIT' ||
+      evaluation.output_tokens >= 2000;
+    const status = generationLimited ? 'FAILED' : ['AVAILABLE', 'PROCESSING', 'FAILED', 'UNAVAILABLE'].includes(evaluation.status)
+      ? evaluation.status : 'UNAVAILABLE';
+    byId('medgemma-status').textContent = status[0] + status.slice(1).toLowerCase();
+    byId('medgemma-status').dataset.state = status;
+    byId('medgemma-elapsed').textContent = Number.isFinite(evaluation.elapsed_seconds)
+      ? `MedGemma processing: ${evaluation.elapsed_seconds.toFixed(1)} s` : '';
+    renderMedGemmaMarkdown(status === 'AVAILABLE' ? evaluation.raw_response : '');
+    if (generationLimited) {
+      const target = byId('medgemma-content');
+      target.textContent = 'MedGemma generation became repetitive and was stopped for this report.';
+      if (evaluation.raw_response) {
+        const disclosure = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.textContent = 'Inspect incomplete raw MedGemma response';
+        const raw = document.createElement('pre');
+        raw.textContent = evaluation.raw_response;
+        disclosure.append(summary, raw);
+        target.append(disclosure);
+      }
+    }
+    if (status !== 'AVAILABLE') {
+      byId('comparison-unavailable').textContent = generationLimited
+        ? 'Comparison not valid: MedGemma output incomplete.' : status === 'PROCESSING'
+        ? 'MedGemma is processing. MRJ Native remains available.' : 'MedGemma result unavailable.';
+      byId('comparison-counts').replaceChildren();
+      byId('comparison-groups').replaceChildren();
+      return;
+    }
+    const comparison = evaluation.comparison || {};
+    byId('comparison-unavailable').textContent = comparison.status === 'MODEL_CONTENT_FAILURE'
+      ? 'Model content failure: MedGemma did not extract findings present in the protected report.'
+      : comparison.comparison_valid === false ? 'Comparison not valid: MedGemma output incomplete.' : '';
+    const counts = byId('comparison-counts');
+    counts.replaceChildren(...Object.entries(comparisonNames).map(([key, name]) => {
+      const chip = document.createElement('span');
+      chip.textContent = `${name}: ${comparison.counts?.[key] || 0}`;
+      return chip;
+    }));
+    const groups = byId('comparison-groups');
+    groups.replaceChildren();
+    Object.entries(comparisonNames).forEach(([key, name]) => {
+      const items = comparison.groups?.[key] || [];
+      if (!items.length) return;
+      const section = document.createElement('section');
+      section.className = 'comparison-group';
+      section.dataset.category = key;
+      const title = document.createElement('h4'); title.textContent = `${name} (${items.length})`;
+      section.append(title);
+      items.forEach(item => {
+        const row = document.createElement('div'); row.className = 'comparison-item';
+        const native = document.createElement('p');
+        native.textContent = item.mrj ? `MRJ Native: ${item.mrj}` : key === 'UNRESOLVED'
+          ? 'MRJ correspondence uncertain' : 'Not identified by MRJ Native';
+        const gemma = document.createElement('p');
+        gemma.textContent = item.medgemma ? `MedGemma: ${item.medgemma}` : key === 'UNRESOLVED'
+          ? 'MedGemma correspondence uncertain' : 'No matching supported MedGemma claim';
+        row.append(native, gemma);
+        if (item.reason) {
+          const reason = document.createElement('p');
+          reason.className = 'comparison-reason';
+          reason.textContent = item.reason;
+          row.append(reason);
+        }
+        section.append(row);
+      });
+      groups.append(section);
+    });
+  }
+
+  async function pollComparison(entry) {
+    if (!entry.runId || !entry.documentId || !comparisonMode) return;
+    const path = `${api}/medgemma-comparison/evaluations/${escapeId(entry.runId)}/${escapeId(entry.documentId)}`;
+    try {
+      entry.comparison = await json(await fetch(path, { cache: 'no-store' }));
+    } catch {
+      entry.comparison = { status: 'UNAVAILABLE', comparison: { status: 'NOT_AVAILABLE' } };
+    }
+    if (activeEntry() === entry) renderRecord(entry);
+    if (entry.comparison.status === 'PROCESSING') setTimeout(() => pollComparison(entry), 2500);
+  }
+
+  async function startComparison(entry) {
+    if (!comparisonMode || !entry.record) return;
+    entry.comparison = { status: 'PROCESSING', comparison: { status: 'NOT_AVAILABLE' } };
+    if (activeEntry() === entry) renderRecord(entry);
+    try {
+      const path = `${api}/medgemma-comparison/evaluations/${escapeId(entry.runId)}/${escapeId(entry.documentId)}`;
+      entry.comparison = await json(await fetch(path, { method: 'POST', cache: 'no-store' }));
+      if (activeEntry() === entry) renderRecord(entry);
+      if (entry.comparison.status === 'PROCESSING') setTimeout(() => pollComparison(entry), 2500);
+    } catch {
+      entry.comparison = { status: 'UNAVAILABLE', comparison: { status: 'NOT_AVAILABLE' } };
+      if (activeEntry() === entry) renderRecord(entry);
+    }
+  }
+
+  async function initializeComparison() {
+    try {
+      const config = await json(await fetch(`${api}/medgemma-comparison/config`, { cache: 'no-store' }));
+      comparisonMode = config.enabled === true;
+    } catch { comparisonMode = false; }
+    if (comparisonMode) await loadRetainedComparisonRun();
+    render();
+  }
+
+  async function loadRetainedComparisonRun() {
+    const runId = new URLSearchParams(window.location.search).get('comparison_run');
+    if (!/^[0-9a-f]{32}$/.test(runId || '') || entries.length) return;
+    try {
+      const listed = await json(await fetch(`${api}/medgemma-comparison/evaluations`, { cache: 'no-store' }));
+      const matches = (listed.evaluations || []).filter(item => item.run_id === runId)
+        .sort((left, right) => String(left.created_at).localeCompare(String(right.created_at))).slice(0, 20);
+      for (const item of matches) {
+        const path = `${api}/medgemma-comparison/evaluations/${escapeId(runId)}/${escapeId(item.document_id)}`;
+        const evaluation = await json(await fetch(path, { cache: 'no-store' }));
+        const document = evaluation.native_document;
+        const record = model.projection(document);
+        if (!record) continue;
+        const name = record.title;
+        const entry = { key: Symbol('retained-comparison'), file: null, uploadValid: false,
+          name, status: record.needsReview ? 'NEEDS_REVIEW' : 'READY',
+          runId, documentId: item.document_id, document, record, comparison: evaluation,
+          retainedPreview: true };
+        entries.push(entry);
+      }
+      if (entries.length) {
+        selected = entries[0].key;
+        setStatus('Retained Comparison Mode results · read-only · no extraction started.');
+      }
+    } catch {
+      setStatus('Retained evaluation could not be loaded. No extraction was started.');
+    }
+  }
+
   function renderCompletion() {
     const progress = model.reviewProgress(entries);
     const complete = showCompletion && model.completionEligible(entries);
@@ -184,6 +358,7 @@
       return;
     }
     const record = entry.record;
+    byId('view-original').hidden = Boolean(entry.retainedPreview);
     byId('record-title').textContent = record.title;
     byId('record-descriptor').textContent = record.descriptor;
     byId('record-descriptor').hidden = !record.descriptor;
@@ -245,14 +420,17 @@
       return item;
     }));
     reviewSection.dataset.severity = record.reviewAlerts.some(alert => alert.severity === 'major') ? 'major' : 'review';
+    renderComparison(entry);
     const state = record.reviewed ? 'REVIEWED' : record.needsReview ? 'NEEDS_REVIEW' : 'READY';
     byId('record-state').dataset.state = state;
     byId('record-state').textContent = statuses[state];
     const acceptance = model.acceptancePolicy(record, entries.length);
     byId('accept-record').disabled = record.reviewed || savingReview;
+    byId('accept-record').hidden = Boolean(entry.retainedPreview);
     byId('accept-record').textContent = acceptance.label;
     byId('accept-record').parentElement.dataset.majorReview = String(acceptance.confirmMajor);
-    byId('record-save-note').textContent = record.reviewed
+    byId('record-save-note').textContent = entry.retainedPreview
+      ? 'Retained evaluation preview. This view cannot save a review decision.' : record.reviewed
       ? 'Review decision recorded for this session.'
       : 'Review the clinical record and source evidence. This decision applies to the current session.';
   }
@@ -304,6 +482,7 @@
       entry.record = model.projection(entry.document);
       if (!entry.record) throw new flow.ProcessingIssue('clinical record');
       entry.status = entry.record.needsReview ? 'NEEDS_REVIEW' : 'READY';
+      startComparison(entry);
     } catch (error) {
       entry.status = 'FAILED';
       entry.failureStage = error instanceof flow.ProcessingIssue ? error.stage :
@@ -593,4 +772,5 @@
     addFiles(event.dataTransfer.files);
   });
   render();
+  initializeComparison();
 })();

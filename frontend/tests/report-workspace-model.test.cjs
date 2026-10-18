@@ -49,6 +49,32 @@ test('real Journey fields become distinct findings, explicit negatives, and meas
   assert.equal(value.protectedText, report().stage_results.PROTECT.protected_document.protected_text);
 });
 
+test('generic retained filename yields a useful standardized display name', () => {
+  const retained = report({ original_filename: 'Radiology report' });
+  const study = retained.stage_results.STANDARDIZE.standardized_study_context;
+  study.original_exam_name = null;
+  study.normalized_modality = null;
+  study.normalized_body_region = 'BREAST';
+  assert.equal(projection(retained).title, 'Breast imaging report');
+  study.normalized_modality = 'US';
+  assert.equal(projection(retained).title, 'US Breast');
+  study.normalized_body_region = null;
+  study.normalized_modality = null;
+  retained.original_filename = 'Synthetic study.pdf';
+  assert.equal(projection(retained).title, 'Synthetic study.pdf');
+});
+
+test('legacy MedGemma candidate payload cannot alter Native projection', () => {
+  const item = report();
+  item.stage_results.EXTRACT.medgemma_pilot = { status: 'AVAILABLE', candidates: [
+    { display_text: 'Unsupported candidate', assertion: 'PRESENT' },
+  ] };
+  const value = projection(item);
+  assert.equal(value.medgemma, undefined);
+  assert.deepEqual(value.groups.key.map(fact => fact.display_label), ['Right renal cyst']);
+  assert.deepEqual(value.groups, projection(report()).groups);
+});
+
 test('current Addendum, primary negative, assessment and recommendation project separately', () => {
   const item = report();
   const facts = item.stage_results.EXTRACT.clinical_synthesis.canonical_facts;
